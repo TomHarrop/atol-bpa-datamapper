@@ -2,14 +2,12 @@
 requires = ["setuptools>=42", "wheel", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
-
 [project]
 name = "atol-bpa-datamapper"
 dynamic = ["version"]
 description = "Map data from the BPA data portal for AToL's Genome Engine"
 readme = "README.md"
 license = { text = "GPL-3.0-or-later" }
-license-files = ["LICENSE"]
 authors = [{ name = "Tom Harrop", email = "tharrop@unimelb.edu.au" }]
 dependencies = ["jsonlines>=4.0.0"]
 requires-python = ">= 3.12"
@@ -29,5 +27,7 @@ map-metadata = "atol_bpa_datamapper.map_metadata:main"
 [project.urls]
 Homepage = "https://github.com/tomharrop/atol-bpa-datamapper"
 
+[tool.setuptools]
+license-files = ["LICENSE"]
 
 [tool.setuptools_scm]
