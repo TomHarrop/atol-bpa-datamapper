@@ -2,7 +2,8 @@ import sys
 import gzip
 import jsonlines
 import argparse
-from importlib import resources
+import importlib.resources as pkg_resources
+from atol_bpa_datamapper import config
 
 
 class OutputWriter:
@@ -50,19 +51,20 @@ class OutputWriter:
         self._close_file()
 
 
+def get_config_filepath(filename):
+    return pkg_resources.files(config).joinpath(filename)
+
+
 def parse_args_for_filtering():
     parser, input_group, output_group, options_group = shared_args()
     parser.description = "Filter packages from jsonlines.gz"
-
-    print(resources.contents("config"))
-    quit(1)
 
     options_group.add_argument(
         "-c",
         "--filtering_config",
         type=argparse.FileType("r"),
         help="Filtering configuration file in json.",
-        default="config/dataset_filtering_config.json",
+        default=get_config_filepath("dataset_filtering_config.json"),
     )
 
     return parser.parse_args()

@@ -1,5 +1,5 @@
 from .utils import parse_args_for_filtering, read_input, OutputWriter
-
+import json
 
 def main():
 
@@ -8,7 +8,9 @@ def main():
     args = parse_args_for_filtering()
     input_data = read_input(args.input)
 
-    print(args.filtering_config)
+    with open(args.filtering_config) as f:
+        filtering_config = json.load(f)
+        print(filtering_config)
     quit(1)
 
     i = 0
