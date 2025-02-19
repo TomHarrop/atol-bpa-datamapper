@@ -1,11 +1,13 @@
-from .utils import parse_args_for_filtering, read_input, OutputWriter
+from .utils import parse_args_for_mapping, read_input, OutputWriter
 
 
 def main():
 
     max_iterations = 10
 
-    args = parse_args_for_filtering()
+    args = parse_args_for_mapping()
+    print(args)
+    quit(1)
     input_data = read_input(args.input)
 
     i = 0

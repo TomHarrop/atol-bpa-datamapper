@@ -9,20 +9,22 @@ dynamic = ["version"]
 description = "Map data from the BPA data portal for AToL's Genome Engine"
 readme = "README.md"
 license = { text = "GPL-3.0-or-later" }
+license-files = ["LICENSE"]
 authors = [{ name = "Tom Harrop", email = "tharrop@unimelb.edu.au" }]
 dependencies = ["jsonlines>=4.0.0"]
 requires-python = ">= 3.12"
 classifiers = [
-    "Programming Language :: Python :: 3.12",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Development Status :: 3 - Alpha",
-    "Private :: Do Not Upload",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Natural Language :: English",
     "Operating System :: POSIX :: Linux",
+    "Private :: Do Not Upload",
+    "Programming Language :: Python :: 3.12",
 ]
 
 [project.scripts]
 filter-packages = "atol_bpa_datamapper.filter_packages:main"
+map-metadata = "atol_bpa_datamapper.map_metadata:main"
 
 [project.urls]
 Homepage = "https://github.com/tomharrop/atol-bpa-datamapper"
