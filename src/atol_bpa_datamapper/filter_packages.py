@@ -8,6 +8,9 @@ def main():
     args = parse_args_for_filtering()
     input_data = read_input(args.input)
 
+    print(args.filtering_config)
+    quit(1)
+
     i = 0
 
     with OutputWriter(args.output, args.dry_run) as output_writer:

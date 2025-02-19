@@ -59,7 +59,6 @@ def parse_args_for_filtering():
         type=argparse.FileType("r"),
         help="Filtering configuration file in json.",
         default="config/filtering_config.json",
-        required=True,
     )
 
     return parser.parse_args()
