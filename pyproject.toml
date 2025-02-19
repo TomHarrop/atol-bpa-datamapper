@@ -27,7 +27,5 @@ filter-packages = "atol_bpa_datamapper.filter_packages:main"
 [project.urls]
 Homepage = "https://github.com/tomharrop/atol-bpa-datamapper"
 
-[tool.setuptools]
-packages = ["atol_bpa_datamapper"]
 
 [tool.setuptools_scm]
