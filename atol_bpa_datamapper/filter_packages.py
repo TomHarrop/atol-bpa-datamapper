@@ -1,16 +1,24 @@
 import argparse
-from .utils import parse_args, read_input, OutputWriter
+from .utils import parse_args_for_filtering, read_input, OutputWriter
 
 
 def main():
-    args = parse_args()
 
+    max_iterations = 10
+
+    args = parse_args_for_filtering()
     input_data = read_input(args.input)
-    with OutputWriter(args.output, args.dry_run) as writer:
+
+    i = 0
+
+    with OutputWriter(args.output, args.dry_run) as output_writer:
         for item in input_data:
+            i += 1
             # Process each item
-            writer.write_data(item)
-            quit(1)
+            output_writer.write_data(item)
+
+            if i >= max_iterations:
+                break
 
 
 if __name__ == "__main__":
