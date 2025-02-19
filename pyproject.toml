@@ -32,4 +32,4 @@ Homepage = "https://github.com/tomharrop/atol-bpa-datamapper"
 
 [tool.setuptools.packages.find]
 where = "atol_bpa_datamapper"
-include = ["LICENSE", "README.md"]
+# include = ["LICENSE", "README.md"]
