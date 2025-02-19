@@ -2,6 +2,7 @@ import sys
 import gzip
 import jsonlines
 import argparse
+from importlib import resources
 
 
 class OutputWriter:
@@ -53,12 +54,15 @@ def parse_args_for_filtering():
     parser, input_group, output_group, options_group = shared_args()
     parser.description = "Filter packages from jsonlines.gz"
 
+    print(resources.contents("config"))
+    quit(1)
+
     options_group.add_argument(
         "-c",
         "--filtering_config",
         type=argparse.FileType("r"),
         help="Filtering configuration file in json.",
-        default="config/filtering_config.json",
+        default="config/dataset_filtering_config.json",
     )
 
     return parser.parse_args()
