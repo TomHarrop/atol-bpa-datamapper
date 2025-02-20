@@ -6,6 +6,7 @@ class BpaPackage(dict):
         super().__init__()
         self.update(package_data)
         self.fields = sorted(set(self.keys()))
+        self.id = self.get("id")
 
     def filter(self, metadata_map: "MetadataMap"):
         self.decisions = {}

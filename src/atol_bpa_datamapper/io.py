@@ -1,9 +1,9 @@
 from .logger import logger
 from .package_handler import BpaPackage
+import csv
 import gzip
 import jsonlines
 import sys
-
 
 class OutputWriter:
     def __init__(self, output_dest, dry_run=False):
@@ -59,3 +59,22 @@ def read_input(input_source):
         reader = jsonlines.Reader(f)
         for obj in reader:
             yield BpaPackage(obj)
+
+
+def write_decision_log_to_csv(decision_log, file_path):
+    """
+    Write the decision log to a CSV file.
+    """
+    writer = csv.writer(file_path)
+    # Write the header
+    header = ["id"] + list(next(iter(decision_log.values())).keys())
+    writer.writerow(header)
+    # Write the rows
+    for id, decisions in decision_log.items():
+        row = [id] + list(decisions.values())
+        writer.writerow(row)
+
+
+def write_json(data, file):
+    with gzip.open(file, "wb") as f:
+        jsonlines.Writer(f).write(data)

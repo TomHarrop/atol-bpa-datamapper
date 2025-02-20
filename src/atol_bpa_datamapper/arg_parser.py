@@ -9,24 +9,49 @@ def get_config_filepath(filename):
 
 
 def parse_args_for_filtering():
-    parser, input_group, output_group, options_group = shared_args()
+    parser = shared_args()
     parser.description = "Filter packages from jsonlines.gz"
 
-    # TODO: this is broken, I can't get the argument to be added outside the
-    # main function.
+    filter_group = parser.add_argument_group("Filtering options")
 
-    output_group.add_argument(
+    filter_group.add_argument(
+        "--decision_log",
+        type=argparse.FileType("wt"),
+        help="File to record the filtering decisions for each package",
+    )
+
+    filter_group.add_argument(
         "--field_usage",
         type=argparse.FileType("wb"),
-        help="Field usage counts file",
+        help="File for field usage counts",
+    )
+
+    filter_group.add_argument(
+        "--bpa_key_usage",
+        type=argparse.FileType("wb"),
+        help="File for BPA key usage counts",
+    )
+
+    filter_group.add_argument(
+        "--bpa_value_usage",
+        type=argparse.FileType("wb"),
+        help="File for BPA key usage counts",
     )
 
     return parser.parse_args()
 
 
 def parse_args_for_mapping():
-    parser, input_group, output_group, options_group = shared_args()
+    parser = shared_args()
     parser.description = "Map metadata in filtered jsonlines.gz"
+
+    mapping_group = parser.add_argument_group("Mapping options")
+
+    mapping_group.add_argument(
+        "--dummy_option",
+        type=argparse.FileType("wb"),
+        help="TODO: delete this",
+    )
 
     return parser.parse_args()
 
@@ -87,4 +112,4 @@ def shared_args():
         help="Test mode. Output will be uncompressed jsonlines.",
     )
 
-    return parser, input_group, output_group, options_group
+    return parser

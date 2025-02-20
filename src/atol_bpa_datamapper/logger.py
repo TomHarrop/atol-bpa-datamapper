@@ -1,4 +1,3 @@
-from .arg_parser import shared_args
 import logging
 import sys
 
@@ -17,6 +16,7 @@ def setup_logger(log_level="INFO"):
     return logger
 
 
-parser, input_group, output_group, options_group = shared_args()
-args = parser.parse_args()
-logger = setup_logger(args.log_level)
+try:
+    logger = setup_logger(args.log_level)
+except NameError:
+    logger = setup_logger()
