@@ -53,17 +53,19 @@ def main():
     logger.info(f"Kept {n_kept} packages")
 
     if args.decision_log and not args.dry_run:
-        logger.info("Writing decision log")
+        logger.info(f"Writing decision log to {args.decision_log}")
         write_decision_log_to_csv(decision_log, args.decision_log)
 
     if not args.dry_run:
-        logger.info("Writing usage counts")
         if args.field_usage:
-            write_json(args.field_usage, counters["field_usage"])
+            logger.info(f"Writing field usage counts to {args.field_usage}")
+            write_json(counters["field_usage"], args.field_usage)
         if args.bpa_key_usage:
-            write_json(args.bpa_key_usage, counters["bpa_key_usage"])
+            logger.info(f"Writing BPA key usage counts to {args.bpa_key_usage}")
+            write_json(counters["bpa_key_usage"], args.bpa_key_usage)
         if args.bpa_value_usage:
-            write_json(args.bpa_value_usage, counters["bpa_value_usage"])
+            logger.info(f"Writing BPA value usage counts to {args.bpa_value_usage}")
+            write_json(counters["bpa_value_usage"], args.bpa_value_usage)
 
 
 if __name__ == "__main__":

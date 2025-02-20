@@ -5,6 +5,7 @@ import gzip
 import jsonlines
 import sys
 
+
 class OutputWriter:
     def __init__(self, output_dest, dry_run=False):
         self.output_dest = output_dest
@@ -65,14 +66,15 @@ def write_decision_log_to_csv(decision_log, file_path):
     """
     Write the decision log to a CSV file.
     """
-    writer = csv.writer(file_path)
-    # Write the header
-    header = ["id"] + list(next(iter(decision_log.values())).keys())
-    writer.writerow(header)
-    # Write the rows
-    for id, decisions in decision_log.items():
-        row = [id] + list(decisions.values())
-        writer.writerow(row)
+    with open(file_path, "w") as file:
+        writer = csv.writer(file)
+        # Write the header
+        header = ["id"] + list(next(iter(decision_log.values())).keys())
+        writer.writerow(header)
+        # Write the rows
+        for id, decisions in decision_log.items():
+            row = [id] + list(decisions.values())
+            writer.writerow(row)
 
 
 def write_json(data, file):

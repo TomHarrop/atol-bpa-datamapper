@@ -16,26 +16,22 @@ def parse_args_for_filtering():
 
     filter_group.add_argument(
         "--decision_log",
-        type=argparse.FileType("wt"),
         help="File to record the filtering decisions for each package",
     )
 
     filter_group.add_argument(
         "--field_usage",
-        type=argparse.FileType("wb"),
         help="File for field usage counts",
     )
 
     filter_group.add_argument(
         "--bpa_key_usage",
-        type=argparse.FileType("wb"),
         help="File for BPA key usage counts",
     )
 
     filter_group.add_argument(
         "--bpa_value_usage",
-        type=argparse.FileType("wb"),
-        help="File for BPA key usage counts",
+        help="File for BPA value usage counts",
     )
 
     return parser.parse_args()
