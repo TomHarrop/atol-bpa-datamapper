@@ -1,11 +1,14 @@
+from .logger import logger
 import json
 
 
 class MetadataMap(dict):
     def __init__(self, field_mapping_file, value_mapping_file):
         super().__init__()
+        logger.info(f"Reading field mapping from {field_mapping_file}")
         with open(field_mapping_file, "rt") as f:
             field_mapping = json.load(f)
+        logger.info(f"Reading value mapping from {value_mapping_file}")
         with open(value_mapping_file, "rt") as f:
             value_mapping = json.load(f)
         # Map the expected AToL fields to fields in the BPA data
@@ -36,14 +39,19 @@ class MetadataMap(dict):
                     raise e
         # We iterate over the expected keys during mapping
         setattr(self, "expected_fields", list(self.keys()))
+        logger.debug(f"expected_fields:\n{self.expected_fields}")
+
         setattr(
             self, "metadata_sections", sorted(set(x["section"] for x in self.values()))
         )
+        logger.debug(f"metadata_sections:\n{self.metadata_sections}")
+
         setattr(
             self,
             "controlled_vocabularies",
             [k for k in self.keys() if "value_mapping" in self[k]],
         )
+        logger.debug(f"controlled_vocabularies:\n{self.controlled_vocabularies}")
 
     def get_allowed_values(self, atol_field):
         try:

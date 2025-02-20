@@ -1,4 +1,4 @@
-from .common import parse_args_for_mapping, read_input, OutputWriter
+from .io import parse_args_for_mapping, read_input, OutputWriter
 from .config_parser import MetadataMap
 
 
