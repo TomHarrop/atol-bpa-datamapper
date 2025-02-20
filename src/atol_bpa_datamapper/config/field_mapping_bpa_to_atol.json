@@ -1,0 +1,291 @@
+{
+    "organism": {
+        "scientific_name": [
+            "scientific_name",
+            "species_name",
+            "species_name",
+            "taxon_or_organism"
+        ],
+        "species": [
+            "species"
+        ],
+        "genus": [
+            "genus"
+        ],
+        "infraspecific_epithet": [
+            "sub_species",
+            "subspecies",
+            "species_complex",
+            "subspecies_or_variant",
+            "official_variety_name",
+            "variety",
+            "variety_commercial",
+            "isolate",
+            "strain_or_isolate",
+            "strain_description",
+            "serovar"
+        ],
+        "family": [
+            "family"
+        ],
+        "order_or_group": [
+            "order",
+            "taxonomic_group"
+        ],
+        "authority": [
+            "scientific_name_authorship"
+        ],
+        "taxon_id": [
+            "taxon_id"
+        ],
+        "common_name": [
+            "common_name"
+        ],
+        "bioplatforms_project_id": [
+            "organization.name"
+        ]
+    },
+    "sample": {
+        "data_context": [
+            "project_aim",
+            "data_context",
+            "ausarg_project",
+            "analysis_aim",
+            "genome_data"
+        ],
+        "voucher_id": [
+            "voucher_number",
+            "voucher_herbarium_record_number",
+            "voucher_herbarium_catalog_number",
+            "voucher_or_tissue",
+            "voucher_or_tissue_number",
+            "voucher_id",
+            "specimen_id",
+            "accession_number_seed",
+            "living_collections_catalog_number",
+            "sample_id_description",
+            "sample_label"
+        ],
+        "voucher_institution": [
+            "institution_name",
+            "museumid",
+            "specimen_id_description",
+            "herbarium_code",
+            "tissue_collection"
+        ],
+        "identified_by": [
+            "identified_by",
+            "id_vetting_by"
+        ],
+        "taxon_remarks": [
+            "scientific_name_notes",
+            "scientific_name_note",
+            "ancillary_notes"
+        ],
+        "lifestage": [
+            "lifestage",
+            "plant_developmental_stage",
+            "life_stage",
+            "dev_stage"
+        ],
+        "sex": [
+            "phenotypic_sex",
+            "sex",
+            "genotypic_sex"
+        ],
+        "organism_part": [
+            "sample_type",
+            "tissue",
+            "tissue_type",
+            "dna_source"
+        ],
+        "host_scientific_name": [
+            "host_scientific_name",
+            "original_source_host_species",
+            "specific_host"
+        ],
+        "collection_location": [
+            "indigenous_location",
+            "location_text",
+            "state_or_region",
+            "location_id",
+            "state_or_territory",
+            "site",
+            "collection_location",
+            "geo_loc_name",
+            "country"
+        ],
+        "decimal_latitude": [
+            "decimal_latitude_public",
+            "latitude",
+            "lat_lon",
+            "coord",
+            "spatial"
+        ],
+        "decimal_longitude": [
+            "decimal_longitude_public",
+            "longitude",
+            "lat_lon",
+            "coord",
+            "spatial"
+        ],
+        "elevation": [
+            "altitude",
+            "elev"
+        ],
+        "depth": [
+            "depth"
+        ],
+        "habitat": [
+            "env_local_scale",
+            "habitat"
+        ],
+        "description_of_collection_method": [
+            "collection_method",
+            "samp_mat_process"
+        ],
+        "date_of_collection": [
+            "collection_date",
+            "living_collections_event_date"
+        ],
+        "collected_by": [
+            "collector",
+            "collected_by",
+            "collectors",
+            "voucher_herbarium_collector_id"
+        ],
+        "sample_name": [
+            "bioplatforms_sample_id",
+            "sample_id",
+            "bpa_sample_id",
+            "bpa_sample_ids",
+            "resources.sample_id",
+            "resources.bioplatforms_sample_id"
+        ],
+        "specimen_id": [
+            "specimen_id"
+        ],
+        "sample_submitter": [
+            "sample_submitter",
+            "sample_submitter_name",
+            "sample_material_prepared_by"
+        ],
+        "sample_submission_date": [
+            "sample_submission_date"
+        ]
+    },
+    "reads": {
+        "platform": [
+            "type",
+            "sequence_data_type",
+            "data_type",
+            "description",
+            "library_type",
+            "sequencing_platform",
+            "Sequence",
+            "Data",
+            "Type",
+            "resources.resource_type",
+            "tags.display_name",
+            "tags.name"
+        ],
+        "sample": [
+            "ncbi_biosample_accession",
+            "ncbi_biosample_accession_number"
+        ],
+        "study": [
+            "ncbi_bioproject_accession",
+            "ncbi_bioproject_accession_number"
+        ],
+        "design_description": [
+            "experimental_design"
+        ],
+        "library_name": [
+            "bioplatforms_library_id",
+            "library_id",
+            "bpa_library_id",
+            "bpa_library_ids",
+            "resources.library_id",
+            "resources.bioplatforms_library_id"
+        ],
+        "library_strategy": [
+            "library_strategy",
+            "library_type"
+        ],
+        "library_source": [
+            "library_source",
+            "material_extraction_type",
+            "sample_material_preparation_type"
+        ],
+        "insert_size": [
+            "insert_size_range"
+        ],
+        "library_construction_protocol": [
+            "library_construction_protocol",
+            "library_prep_method",
+            "library_type"
+        ],
+        "library_selection": [
+            "library_selection"
+        ],
+        "library_layout": [
+            "library_layout"
+        ],
+        "instrument_model": [
+            "sequencing_model",
+            "sequencer",
+            "sequencing_technology"
+        ],
+        "material_extracted_by": [
+            "material_extracted_by",
+            "dna_extracted_by",
+            "genomic_material_prepared_by"
+        ],
+        "material_extraction_date": [
+            "material_extraction_date",
+            "dna_extraction_date"
+        ],
+        "library_prepared_by": [
+            "library_prepared_by"
+        ],
+        "library_prepared_date": [
+            "library_prep_date"
+        ],
+        "sequencing_kit": [
+            "sequencing_kit_chemistry_version"
+        ],
+        "flowcell_type": [
+            "flowcell_type"
+        ],
+        "dataset_name": [
+            "bioplatforms_dataset_id",
+            "dataset_id",
+            "bpa_dataset_id",
+            "bpa_dataset_ids",
+            "resources.dataset_id"
+        ],
+        "package_id": [
+            "resources.package_id"
+        ],
+        "resource_id": [
+            "resources.id"
+        ],
+        "file_name": [
+            "resources.name"
+        ],
+        "file_checksum": [
+            "resources.md5"
+        ],
+        "file_format": [
+            "file_type",
+            "resources.format"
+        ],
+        "file_submission_date": [
+            "resources.created",
+            "date_submission"
+        ],
+        "bioplatforms_url": [
+            "resources.url"
+        ]
+    }
+}

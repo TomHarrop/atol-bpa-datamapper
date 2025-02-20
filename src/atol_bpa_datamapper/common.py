@@ -59,28 +59,12 @@ def parse_args_for_filtering():
     parser, input_group, output_group, options_group = shared_args()
     parser.description = "Filter packages from jsonlines.gz"
 
-    options_group.add_argument(
-        "-c",
-        "--filtering_config",
-        type=argparse.FileType("r"),
-        help="Filtering configuration file in json.",
-        default=get_config_filepath("dataset_filtering_config.json"),
-    )
-
     return parser.parse_args()
 
 
 def parse_args_for_mapping():
     parser, input_group, output_group, options_group = shared_args()
     parser.description = "Map metadata in filtered jsonlines.gz"
-
-    options_group.add_argument(
-        "-m",
-        "--term_mapping_file",
-        type=argparse.FileType("r"),
-        help="File containing term mapping",
-        required=True,
-    )
 
     return parser.parse_args()
 
@@ -115,6 +99,23 @@ def shared_args():
     )
 
     options_group = parser.add_argument_group("Options")
+
+    options_group.add_argument(
+        "-f",
+        "--field_mapping_file",
+        type=argparse.FileType("r"),
+        help="Field mapping file in json.",
+        default=get_config_filepath("field_mapping_bpa_to_atol.json"),
+    )
+
+    options_group.add_argument(
+        "-v",
+        "--value_mapping_file",
+        type=argparse.FileType("r"),
+        help="Value mapping file in json.",
+        default=get_config_filepath("value_mapping_bpa_to_atol.json"),
+    )
+
     options_group.add_argument(
         "-n",
         "--dry-run",

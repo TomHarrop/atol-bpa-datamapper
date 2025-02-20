@@ -3,13 +3,13 @@ requires = ["setuptools>=42", "wheel", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
+dependencies = ["ckanapi>=4.8", "jsonlines>=4.0.0"]
 name = "atol-bpa-datamapper"
 dynamic = ["version"]
 description = "Map data from the BPA data portal for AToL's Genome Engine"
 readme = "README.md"
 license = { text = "GPL-3.0-or-later" }
 authors = [{ name = "Tom Harrop", email = "tharrop@unimelb.edu.au" }]
-dependencies = ["jsonlines>=4.0.0"]
 requires-python = ">= 3.12"
 classifiers = [
     "Development Status :: 3 - Alpha",

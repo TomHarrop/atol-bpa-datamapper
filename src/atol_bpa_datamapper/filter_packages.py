@@ -1,4 +1,5 @@
-from .utils import parse_args_for_filtering, read_input, OutputWriter
+from .common import parse_args_for_filtering, read_input, OutputWriter
+from .config_parser import ConfigParser
 import json
 
 def main():
@@ -6,6 +7,11 @@ def main():
     max_iterations = 10
 
     args = parse_args_for_filtering()
+
+    mapping_config = ConfigParser(args.field_mapping_file, args.value_mapping_file)
+    print(mapping_config)
+    quit(1)
+
     input_data = read_input(args.input)
 
     with open(args.filtering_config) as f:

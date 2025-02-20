@@ -1,4 +1,4 @@
-from .utils import parse_args_for_mapping, read_input, OutputWriter
+from .common import parse_args_for_mapping, read_input, OutputWriter
 
 
 def main():
@@ -6,8 +6,11 @@ def main():
     max_iterations = 10
 
     args = parse_args_for_mapping()
-    print(args)
+
+    mapping_config = ConfigParser(args.field_mapping_file, args.value_mapping_file)
+    print(mapping_config)
     quit(1)
+
     input_data = read_input(args.input)
 
     i = 0

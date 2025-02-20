@@ -1,0 +1,97 @@
+{
+    "organism": {
+        "bioplatforms_project_id": {
+            "aus-avian": [
+                "aus-avian"
+            ],
+            "ausarg": [
+                "ausarg"
+            ],
+            "bpa-omg": [
+                "bpa-omg"
+            ],
+            "bpa-plants": [
+                "bpa-plants"
+            ],
+            "bpa-wheat-pathogens-genomes": [
+                "bpa-wheat-pathogens-genomes"
+            ],
+            "cipps": [
+                "cipps"
+            ],
+            "fungi": [
+                "fungi"
+            ],
+            "grasslands": [
+                "grasslands"
+            ],
+            "plant-pathogen": [
+                "plant-pathogen"
+            ],
+            "threatened-species": [
+                "threatened-species"
+            ]
+        }
+    },
+    "sample": {
+        "data_context": {
+            "genome_assembly": [
+                "Genome resequencing",
+                "Genomics",
+                "Pangenome",
+                "Reference genome (HiC)",
+                "Reference genome for Rhodomyrtus psidioides",
+                "reference genome",
+                "Reference genome",
+                "Reference Genome",
+                "Reference genomes"
+            ]
+        }
+    },
+    "reads": {
+        "platform": {
+            "pacbio_hifi": [
+                "ausarg-pacbio-hifi",
+                "avian-pacbio-hifi",
+                "cipps-pacbio-hifi",
+                "gap-pacbio-hifi",
+                "grasslands-pacbio-hifi",
+                "pp-pacbio-hifi",
+                "tsi-pacbio-hifi",
+                "omg-pacbio"
+            ],
+            "proximo_hic": [
+                "ausarg-hi-c",
+                "gap-hi-c",
+                "grasslands-hi-c",
+                "tsi-hi-c"
+            ],
+            "illumina_genomic": [
+                "ausarg-illumina-fastq",
+                "gap-illumina-shortread",
+                "fungi-illumina-shortread",
+                "grasslands-illumina-shortread",
+                "pp-illumina-shortread",
+                "tsi-illumina-shortread",
+                "omg-genomics-hiseq",
+                "omg-novaseq-whole-genome",
+                "omg-novaseq",
+                "tsi-illumina-fastq"
+            ],
+            "ont_genomic": [
+                "ausarg-ont-promethion",
+                "fungi-ont-promethion",
+                "gap-ont-minion",
+                "gap-ont-promethion",
+                "pp-ont-promethion",
+                "omg-ont-promethion"
+            ],
+            "10x": [
+                "gap-genomics-10x",
+                "omg-10x-processed-illumina",
+                "omg-10x-raw-illumina",
+                "omg-10x-raw"
+            ]
+        }
+    }
+}
