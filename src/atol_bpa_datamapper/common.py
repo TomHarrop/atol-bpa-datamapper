@@ -1,9 +1,10 @@
-import sys
-import gzip
-import jsonlines
-import argparse
-import importlib.resources as pkg_resources
 from atol_bpa_datamapper import config
+import argparse
+import gzip
+import importlib.resources as pkg_resources
+import jsonlines
+import logging
+import sys
 
 
 class OutputWriter:
@@ -76,6 +77,20 @@ def read_input(input_source):
             yield obj
 
 
+def setup_logger(log_level="INFO"):
+    logger = logging.getLogger("atol_bpa_datamapper")
+    handler = logging.StreamHandler(sys.stderr)
+    if log_level:
+        logger.setLevel(log_level)
+        handler.setLevel(log_level)
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    return logger
+
+
 def shared_args():
     parser = argparse.ArgumentParser()
 
@@ -114,6 +129,15 @@ def shared_args():
         type=argparse.FileType("r"),
         help="Value mapping file in json.",
         default=get_config_filepath("value_mapping_bpa_to_atol.json"),
+    )
+
+    options_group.add_argument(
+        "-l",
+        "--log-level",
+        type=str,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        default="INFO",
+        help="Set the logging level (default: INFO)",
     )
 
     options_group.add_argument(

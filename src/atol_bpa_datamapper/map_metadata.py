@@ -1,4 +1,5 @@
 from .common import parse_args_for_mapping, read_input, OutputWriter
+from .config_parser import MetadataMap
 
 
 def main():
@@ -7,7 +8,7 @@ def main():
 
     args = parse_args_for_mapping()
 
-    mapping_config = ConfigParser(args.field_mapping_file, args.value_mapping_file)
+    mapping_config = MetadataMap(args.field_mapping_file, args.value_mapping_file)
     print(mapping_config)
     quit(1)
 

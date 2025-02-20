@@ -1,6 +1,7 @@
-from .common import parse_args_for_filtering, read_input, OutputWriter
-from .config_parser import ConfigParser
+from .common import parse_args_for_filtering, read_input, OutputWriter, setup_logger
+from .config_parser import MetadataMap
 import json
+
 
 def main():
 
@@ -8,15 +9,17 @@ def main():
 
     args = parse_args_for_filtering()
 
-    mapping_config = ConfigParser(args.field_mapping_file, args.value_mapping_file)
-    print(mapping_config)
-    quit(1)
+    logger = setup_logger(args.log_level)
 
+    logger.debug(f"Reading field mapping from {args.field_mapping_file}")
+    logger.debug(f"Reading value mapping from {args.value_mapping_file}")
+    bpa_to_atol_map = MetadataMap(args.field_mapping_file, args.value_mapping_file)
+    logger.debug(f"Defined fields:\n{bpa_to_atol_map.expected_fields}")
+    logger.debug(f"Controlled vocabularies:\n{bpa_to_atol_map.controlled_vocabularies}")
+
+    logger.debug(f"Reading input from {args.input.name}")
     input_data = read_input(args.input)
 
-    with open(args.filtering_config) as f:
-        filtering_config = json.load(f)
-        print(filtering_config)
     quit(1)
 
     i = 0
