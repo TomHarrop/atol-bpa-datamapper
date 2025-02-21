@@ -4,15 +4,20 @@ from .logger import logger
 class BpaPackage(dict):
     def __init__(self, package_data):
         super().__init__()
+        logger.debug("Initialising BpaPackage")
         self.update(package_data)
         self.fields = sorted(set(self.keys()))
         self.id = self.get("id")
+        logger.debug(self.id)
+        logger.debug(self.fields)
 
     def filter(self, metadata_map: "MetadataMap"):
+        logger.debug(f"Filtering BpaPackage {self.id}")
         self.decisions = {}
         self.bpa_fields = {}
         self.bpa_values = {}
         for atol_field in metadata_map.controlled_vocabularies:
+            logger.debug(f"Checking field {atol_field}")
             bpa_field_list = metadata_map[atol_field]["bpa_fields"]
             accepted_values = metadata_map.get_allowed_values(atol_field)
             value, bpa_field, keep = self.choose_value(bpa_field_list, accepted_values)
@@ -41,23 +46,44 @@ class BpaPackage(dict):
             self.decisions[atol_field] = value
 
         # summarise the decision for this package
+        logger.debug(f"Decisions: {self.decisions}")
         self.keep = all(x for x in self.decisions.values() if isinstance(x, bool))
+        logger.debug(f"Keep: {self.keep}")
+
+    def map_metadata(self, metadata_map: "MetadataMap"):
+        mapped_metadata = {k: {} for k in metadata_map.metadata_sections}
+        for atol_field in metadata_map.expected_fields:
+            section = metadata_map.get_atol_section(atol_field)
+            value, bpa_field, keep = self.choose_value(
+                metadata_map.get_bpa_fields(atol_field),
+                metadata_map.get_allowed_values(atol_field),
+            )
+            mapped_value = metadata_map.map_value(atol_field, value)
+            mapped_metadata[section][atol_field] = mapped_value
+
+        self.mapped_metadata = mapped_metadata
+
 
     def choose_value(self, fields_to_check, accepted_values):
         """
-        Returns a tuple of (chosen_value, accept_value).
+        Returns a tuple of (value, bpa_field, keep).
 
-        Package is a dict parsed from json.
+        fields_to_check is an ordered list.
 
-        keys_to_check is an ordered list.
+        If accepted_values is None, then we don't have a controlled vocabulary
+        for this field, and keep will always be True.
 
-        If package has any keys_to_check whose value is in accepted_values, the
-        value of that keys_to_check is returned and accept_value is True.
+        If accepted_values is a list, then keep will be True if the value of
+        the selected bpa_field is in the list of accepted_values.
 
-        If the package has no keys_to_check whose value is in accepted_values, the
-        value of the first keys_to_check is returned.
+        If package has any fields_to_check whose value is in accepted_values,
+        the value and the bpa_field are returned and accept_value is True.
 
-        If the package has keys_to_check at all, the value is None.
+        If the package has no fields_to_check whose value is in
+        accepted_values, the first bpa_field and its value are returned.
+
+        If the package has no bpa_fields matching fields_to_check, the value
+        and bpa_field is None.
 
         """
         values = {key: get_nested_value(self, key) for key in fields_to_check}

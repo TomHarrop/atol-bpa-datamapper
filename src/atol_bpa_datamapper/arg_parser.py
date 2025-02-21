@@ -74,7 +74,7 @@ def shared_args():
         help="Output file (default: stdout)",
     )
 
-    options_group = parser.add_argument_group("Options")
+    options_group = parser.add_argument_group("General options")
 
     options_group.add_argument(
         "-f",

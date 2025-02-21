@@ -62,14 +62,33 @@ class MetadataMap(dict):
     def get_bpa_fields(self, atol_field):
         return self[atol_field]["bpa_fields"]
 
+    def get_atol_section(self, atol_field):
+        return self[atol_field]["section"]
+
     def keep_value(self, atol_field, bpa_value):
         allowed_values = self.get_allowed_values(atol_field)
         # If there is no list of allowed values, then we don't have a
         # controlled vocabulary for this field, so we keep anything.
-        if not allowed_values:
+        if allowed_values is None:
             return True
         else:
             return bpa_value in allowed_values
 
     def map_value(self, atol_field, bpa_value):
-        raise NotImplementedError("TODO: map_value(self, atol_field, bpa_value)")
+        allowed_values = self.get_allowed_values(atol_field)
+        # If there is no list of allowed values, then we don't have a
+        # controlled vocabulary for this field, so we keep anything.
+        if allowed_values is None:
+            return bpa_value
+        try:
+            return self[atol_field]["value_mapping"][bpa_value]
+        # This is a manual override for the pesky genome_data key. If the
+        # package has no context_keys whose value is in accepted_data_context,
+        # but it does have a key called "genome_data" with value "yes",
+        # mapped_value is "genome_assembly".
+        except KeyError as e:
+            if atol_field == "data_context" and bpa_value == "yes":
+                logger.warning("Yes")
+                return "genome_assembly"
+            else:
+                raise e

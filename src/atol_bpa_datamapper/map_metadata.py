@@ -1,30 +1,34 @@
 from .arg_parser import parse_args_for_mapping
 from .io import read_input, OutputWriter
 from .config_parser import MetadataMap
+from .logger import logger, setup_logger
 
 
 def main():
 
-    max_iterations = 10
+    max_iterations = None
 
     args = parse_args_for_mapping()
+    setup_logger(args.log_level)
 
     mapping_config = MetadataMap(args.field_mapping_file, args.value_mapping_file)
-    print(mapping_config)
-    quit(1)
 
     input_data = read_input(args.input)
 
-    i = 0
+    n_packages = 0
 
     with OutputWriter(args.output, args.dry_run) as output_writer:
-        for item in input_data:
-            i += 1
-            # Process each item
-            output_writer.write_data(item)
+        for package in input_data:
+            n_packages += 1
 
-            if i >= max_iterations:
+            package.map_metadata(mapping_config)
+
+            output_writer.write_data(package.mapped_metadata)
+
+            if max_iterations and n_packages >= max_iterations:
                 break
+
+    logger.info(f"Processed {n_packages} packages")
 
 
 if __name__ == "__main__":
