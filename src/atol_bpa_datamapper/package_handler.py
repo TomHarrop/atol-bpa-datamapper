@@ -8,8 +8,10 @@ class BpaPackage(dict):
         self.update(package_data)
         self.fields = sorted(set(self.keys()))
         self.id = self.get("id")
+        self.resource_ids = sorted(set(x["id"] for x in self.get("resources")))
         logger.debug(self.id)
         logger.debug(self.fields)
+        logger.debug(self.resource_ids)
 
     def filter(self, metadata_map: "MetadataMap"):
         logger.debug(f"Filtering BpaPackage {self.id}")
@@ -51,10 +53,12 @@ class BpaPackage(dict):
         logger.debug(f"Keep: {self.keep}")
 
     def map_metadata(self, metadata_map: "MetadataMap"):
+        logger.debug(f"Mapping BpaPackage {self.id}")
         mapped_metadata = {k: {} for k in metadata_map.metadata_sections}
         self.mapping_log = []
         self.field_mapping = {}
         for atol_field in metadata_map.expected_fields:
+            logger.debug(f"Checking field {atol_field}")
             section = metadata_map.get_atol_section(atol_field)
             value, bpa_field, keep = self.choose_value(
                 metadata_map.get_bpa_fields(atol_field),
@@ -74,11 +78,13 @@ class BpaPackage(dict):
             )
 
         self.mapped_metadata = mapped_metadata
-
         self.unused_fields = [
             f for f in self.fields if f not in self.field_mapping.values()
         ]
 
+        logger.debug(f"Field mapping: {self.field_mapping}")
+        logger.debug(f"Data mapping: {self.mapping_log}")
+        logger.debug(f"Unused fields: {self.unused_fields}")
 
     def choose_value(self, fields_to_check, accepted_values):
         """
