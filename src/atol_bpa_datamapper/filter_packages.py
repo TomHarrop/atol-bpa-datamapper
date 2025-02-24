@@ -15,8 +15,8 @@ def main():
 
     # set up counters
     counters = {
-        "field_usage": Counter(),
-        "bpa_key_usage": {
+        "raw_field_usage": Counter(),
+        "bpa_field_usage": {
             atol_field: Counter()
             for atol_field in bpa_to_atol_map.controlled_vocabularies
         },
@@ -36,11 +36,11 @@ def main():
         for package in input_data:
             n_packages += 1
             logger.debug(f"Processing package {package.id}")
-            counters["field_usage"].update(package.fields)
+            counters["raw_field_usage"].update(package.fields)
 
             package.filter(bpa_to_atol_map)
             for atol_field, bpa_field in package.bpa_fields.items():
-                counters["bpa_key_usage"][atol_field].update([bpa_field])
+                counters["bpa_field_usage"][atol_field].update([bpa_field])
             for atol_field, bpa_value in package.bpa_values.items():
                 counters["bpa_value_usage"][atol_field].update([bpa_value])
 
@@ -59,12 +59,12 @@ def main():
         if args.decision_log:
             logger.info(f"Writing decision log to {args.decision_log}")
             write_decision_log_to_csv(decision_log, args.decision_log)
-        if args.field_usage:
-            logger.info(f"Writing field usage counts to {args.field_usage}")
-            write_json(counters["field_usage"], args.field_usage)
-        if args.bpa_key_usage:
-            logger.info(f"Writing BPA key usage counts to {args.bpa_key_usage}")
-            write_json(counters["bpa_key_usage"], args.bpa_key_usage)
+        if args.raw_field_usage:
+            logger.info(f"Writing field usage counts to {args.raw_field_usage}")
+            write_json(counters["raw_field_usage"], args.raw_field_usage)
+        if args.bpa_field_usage:
+            logger.info(f"Writing BPA key usage counts to {args.bpa_field_usage}")
+            write_json(counters["bpa_field_usage"], args.bpa_field_usage)
         if args.bpa_value_usage:
             logger.info(f"Writing BPA value usage counts to {args.bpa_value_usage}")
             write_json(counters["bpa_value_usage"], args.bpa_value_usage)

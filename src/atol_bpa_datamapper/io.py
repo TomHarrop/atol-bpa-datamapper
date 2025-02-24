@@ -66,7 +66,7 @@ def write_decision_log_to_csv(decision_log, file_path):
     """
     Write the decision log to a CSV file.
     """
-    with open(file_path, "w") as file:
+    with gzip.open(file_path, "wt") as file:
         writer = csv.writer(file)
         # Write the header
         header = ["id"] + list(next(iter(decision_log.values())).keys())
@@ -75,6 +75,21 @@ def write_decision_log_to_csv(decision_log, file_path):
         for id, decisions in decision_log.items():
             row = [id] + list(decisions.values())
             writer.writerow(row)
+
+
+def write_mapping_log_to_csv(mapping_log, file_path):
+    with gzip.open(file_path, "wt") as file:
+        writer = csv.writer(file)
+        # Write the header
+        first_package = next(iter(mapping_log.values()))
+        first_entry = first_package[0]
+        header = ["id"] + list(first_entry.keys())
+        writer.writerow(header)
+        # Write the rows
+        for package_id, fields in mapping_log.items():
+            for field_data in fields:
+                row = [package_id] + [field_data.get(col) for col in first_entry.keys()]
+                writer.writerow(row)
 
 
 def write_json(data, file):

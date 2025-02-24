@@ -88,7 +88,7 @@ class MetadataMap(dict):
         # mapped_value is "genome_assembly".
         except KeyError as e:
             if atol_field == "data_context" and bpa_value == "yes":
-                logger.warning("Yes")
+                logger.debug("Value of {atol_field} is {bpa_value}.")
                 return "genome_assembly"
             else:
                 raise e
