@@ -54,11 +54,11 @@ def main():
     logger.info(f"Processed {n_packages} packages")
     logger.info(f"Kept {n_kept} packages")
 
-    if args.decision_log and not args.dry_run:
-        logger.info(f"Writing decision log to {args.decision_log}")
-        write_decision_log_to_csv(decision_log, args.decision_log)
-
+    # write optional output
     if not args.dry_run:
+        if args.decision_log:
+            logger.info(f"Writing decision log to {args.decision_log}")
+            write_decision_log_to_csv(decision_log, args.decision_log)
         if args.field_usage:
             logger.info(f"Writing field usage counts to {args.field_usage}")
             write_json(counters["field_usage"], args.field_usage)

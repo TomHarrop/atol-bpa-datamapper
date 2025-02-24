@@ -44,9 +44,8 @@ def parse_args_for_mapping():
     mapping_group = parser.add_argument_group("Mapping options")
 
     mapping_group.add_argument(
-        "--dummy_option",
-        type=argparse.FileType("wb"),
-        help="TODO: delete this",
+        "--mapping_log",
+        help="File to record the filtering decisions for each package",
     )
 
     return parser.parse_args()

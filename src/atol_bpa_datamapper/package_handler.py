@@ -52,6 +52,7 @@ class BpaPackage(dict):
 
     def map_metadata(self, metadata_map: "MetadataMap"):
         mapped_metadata = {k: {} for k in metadata_map.metadata_sections}
+        self.mapping_log = {}
         for atol_field in metadata_map.expected_fields:
             section = metadata_map.get_atol_section(atol_field)
             value, bpa_field, keep = self.choose_value(
@@ -61,8 +62,13 @@ class BpaPackage(dict):
             mapped_value = metadata_map.map_value(atol_field, value)
             mapped_metadata[section][atol_field] = mapped_value
 
-        self.mapped_metadata = mapped_metadata
+            self.mapping_log[atol_field] = {
+                "bpa_field": bpa_field,
+                "value": value,
+                "mapped_value": mapped_value,
+            }
 
+        self.mapped_metadata = mapped_metadata
 
     def choose_value(self, fields_to_check, accepted_values):
         """
