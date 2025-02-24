@@ -2,6 +2,10 @@
 
 ## (unreleased)
 
+### New
+
+* Initial release.
+
 ### Other
 
 * Cosmetic: changelog.
