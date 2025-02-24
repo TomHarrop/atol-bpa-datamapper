@@ -1,10 +1,12 @@
 # Changelog
 
-## (unreleased)
+## v0.1.1 (2025-02-24)
 
 ### New
 
 * Initial release.
+
+## v0.1.0 (2025-02-24)
 
 ### Other
 
