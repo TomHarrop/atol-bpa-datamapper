@@ -63,63 +63,73 @@ class BpaPackage(dict):
         self.mapping_log = []
         self.field_mapping = {}
 
-        # Map all fields
+        # First handle non-reads sections
         for atol_field in metadata_map.expected_fields:
             section = metadata_map.get_atol_section(atol_field)
-            bpa_fields = metadata_map.get_bpa_fields(atol_field)
-            
-            if section == "reads":
-                # Handle reads section (array of objects)
-                for resource in self.get("resources", []):
-                    value = None
-                    bpa_field = None
-                    
-                    # Try to get value from resource or package level
-                    for field in bpa_fields:
-                        val = self.get_resource_value(resource, field)
-                        if val is not None:
-                            value = val
-                            bpa_field = field
-                            break
-                        val = self.get(field)
-                        if val is not None:
-                            value = val
-                            bpa_field = field
-                            break
-                    
-                    # Map the value if found
-                    if value is not None:
-                        mapped_value = metadata_map.map_value(atol_field, value)
-                        # Add to reads array for this resource
-                        resource_idx = len(mapped_metadata[section])
-                        if resource_idx >= len(mapped_metadata[section]):
-                            mapped_metadata[section].append({})
-                        mapped_metadata[section][resource_idx][atol_field] = mapped_value
-                        self.field_mapping[atol_field] = bpa_field
-                        
-                        # Log the mapping
-                        self.mapping_log.append({
-                            "atol_field": atol_field,
-                            "bpa_field": bpa_field,
-                            "value": value,
-                            "mapped_value": mapped_value,
-                            "resource_id": resource.get("id")
-                        })
-            else:
-                # Handle regular sections (objects)
-                value, bpa_field, _ = self.choose_value(bpa_fields, 
-                                                      metadata_map.get_allowed_values(atol_field))
+            if section != "reads":
+                value, bpa_field, _ = self.choose_value(
+                    metadata_map.get_bpa_fields(atol_field),
+                    metadata_map.get_allowed_values(atol_field)
+                )
                 mapped_value = metadata_map.map_value(atol_field, value)
                 mapped_metadata[section][atol_field] = mapped_value
                 self.field_mapping[atol_field] = bpa_field
                 
-                # Log the mapping
                 self.mapping_log.append({
                     "atol_field": atol_field,
                     "bpa_field": bpa_field,
                     "value": value,
                     "mapped_value": mapped_value
                 })
+        
+        # Handle reads section - group by resource
+        resources = self.get("resources", [])
+        reads_fields = [f for f in metadata_map.expected_fields 
+                       if metadata_map.get_atol_section(f) == "reads"]
+        
+        # Create one reads object per resource
+        for resource in resources:
+            reads_obj = {}
+            resource_id = resource.get("id")
+            
+            # Map all reads fields for this resource
+            for atol_field in reads_fields:
+                bpa_fields = metadata_map.get_bpa_fields(atol_field)
+                value = None
+                bpa_field = None
+                
+                # Try to get value from resource or package level
+                for field in bpa_fields:
+                    val = self.get_resource_value(resource, field)
+                    if val is not None:
+                        value = val
+                        bpa_field = field
+                        break
+                    val = self.get(field)
+                    if val is not None:
+                        value = val
+                        bpa_field = field
+                        break
+                
+                # Map the value if found
+                if value is not None:
+                    mapped_value = metadata_map.map_value(atol_field, value)
+                    reads_obj[atol_field] = mapped_value
+                    self.field_mapping[atol_field] = bpa_field
+                    
+                    self.mapping_log.append({
+                        "atol_field": atol_field,
+                        "bpa_field": bpa_field,
+                        "value": value,
+                        "mapped_value": mapped_value,
+                        "resource_id": resource_id
+                    })
+                else:
+                    # Include the field with a null value
+                    reads_obj[atol_field] = None
+            
+            # Add the complete reads object for this resource
+            mapped_metadata["reads"].append(reads_obj)
 
         self.mapped_metadata = mapped_metadata
         self.unused_fields = [f for f in self.fields if f not in self.field_mapping.values()]
