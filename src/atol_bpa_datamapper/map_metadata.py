@@ -47,17 +47,31 @@ def main():
                     pass
 
             package.map_metadata(bpa_to_atol_map)
+            
+            # Update counts before writing output
+            for section, data in package.mapped_metadata.items():
+                if section == "reads":
+                    # Handle reads array
+                    for read_obj in data:
+                        for atol_field, mapped_value in read_obj.items():
+                            if atol_field in package.field_mapping:
+                                bpa_field = package.field_mapping[atol_field]
+                                counters["mapped_field_usage"][atol_field].update([bpa_field])
+                                counters["mapped_value_usage"][atol_field].update([mapped_value])
+                else:
+                    # Handle other sections
+                    for atol_field, mapped_value in data.items():
+                        if atol_field in package.field_mapping:
+                            bpa_field = package.field_mapping[atol_field]
+                            counters["mapped_field_usage"][atol_field].update([bpa_field])
+                            counters["mapped_value_usage"][atol_field].update([mapped_value])
+            
+            # Write output
             output_writer.write_data(package.mapped_metadata)
             mapping_log[package.id] = package.mapping_log
-
-            # update counts
+            
+            # Update unused field counts
             counters["unused_field_counts"].update(package.unused_fields)
-
-            for section in package.mapped_metadata.values():
-                for atol_field, mapped_value in section.items():
-                    bpa_field = package.field_mapping[atol_field]
-                    counters["mapped_field_usage"][atol_field].update([bpa_field])
-                    counters["mapped_value_usage"][atol_field].update([mapped_value])
 
             if max_iterations and n_packages >= max_iterations:
                 break

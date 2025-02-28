@@ -53,38 +53,84 @@ class BpaPackage(dict):
         logger.debug(f"Keep: {self.keep}")
 
     def map_metadata(self, metadata_map: "MetadataMap"):
+        """Map BPA package metadata to AToL format."""
         logger.debug(f"Mapping BpaPackage {self.id}")
-        mapped_metadata = {k: {} for k in metadata_map.metadata_sections}
+        
+        # Initialize metadata sections
+        mapped_metadata = {section: [] if section == "reads" else {} 
+                         for section in metadata_map.metadata_sections}
+        
         self.mapping_log = []
         self.field_mapping = {}
-        for atol_field in metadata_map.expected_fields:
-            logger.debug(f"Checking field {atol_field}")
-            section = metadata_map.get_atol_section(atol_field)
-            value, bpa_field, keep = self.choose_value(
-                metadata_map.get_bpa_fields(atol_field),
-                metadata_map.get_allowed_values(atol_field),
-            )
-            mapped_value = metadata_map.map_value(atol_field, value)
-            mapped_metadata[section][atol_field] = mapped_value
-            self.field_mapping[atol_field] = bpa_field
 
-            self.mapping_log.append(
-                {
+        # Map all fields
+        for atol_field in metadata_map.expected_fields:
+            section = metadata_map.get_atol_section(atol_field)
+            bpa_fields = metadata_map.get_bpa_fields(atol_field)
+            
+            if section == "reads":
+                # Handle reads section (array of objects)
+                for resource in self.get("resources", []):
+                    value = None
+                    bpa_field = None
+                    
+                    # Try to get value from resource or package level
+                    for field in bpa_fields:
+                        val = self.get_resource_value(resource, field)
+                        if val is not None:
+                            value = val
+                            bpa_field = field
+                            break
+                        val = self.get(field)
+                        if val is not None:
+                            value = val
+                            bpa_field = field
+                            break
+                    
+                    # Map the value if found
+                    if value is not None:
+                        mapped_value = metadata_map.map_value(atol_field, value)
+                        # Add to reads array for this resource
+                        resource_idx = len(mapped_metadata[section])
+                        if resource_idx >= len(mapped_metadata[section]):
+                            mapped_metadata[section].append({})
+                        mapped_metadata[section][resource_idx][atol_field] = mapped_value
+                        self.field_mapping[atol_field] = bpa_field
+                        
+                        # Log the mapping
+                        self.mapping_log.append({
+                            "atol_field": atol_field,
+                            "bpa_field": bpa_field,
+                            "value": value,
+                            "mapped_value": mapped_value,
+                            "resource_id": resource.get("id")
+                        })
+            else:
+                # Handle regular sections (objects)
+                value, bpa_field, _ = self.choose_value(bpa_fields, 
+                                                      metadata_map.get_allowed_values(atol_field))
+                mapped_value = metadata_map.map_value(atol_field, value)
+                mapped_metadata[section][atol_field] = mapped_value
+                self.field_mapping[atol_field] = bpa_field
+                
+                # Log the mapping
+                self.mapping_log.append({
                     "atol_field": atol_field,
                     "bpa_field": bpa_field,
                     "value": value,
-                    "mapped_value": mapped_value,
-                }
-            )
+                    "mapped_value": mapped_value
+                })
 
         self.mapped_metadata = mapped_metadata
-        self.unused_fields = [
-            f for f in self.fields if f not in self.field_mapping.values()
-        ]
-
+        self.unused_fields = [f for f in self.fields if f not in self.field_mapping.values()]
+        
         logger.debug(f"Field mapping: {self.field_mapping}")
         logger.debug(f"Data mapping: {self.mapping_log}")
         logger.debug(f"Unused fields: {self.unused_fields}")
+
+    def get_resource_value(self, resource, field):
+        """Get a value from a specific resource."""
+        return resource.get(field)
 
     def choose_value(self, fields_to_check, accepted_values):
         """
