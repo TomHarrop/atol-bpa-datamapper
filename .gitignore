@@ -173,3 +173,10 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Input / output data
+src/atol_bpa_datamapper/input/
+src/atol_bpa_datamapper/output/
+
+# MacOS files
+*DS_Store
