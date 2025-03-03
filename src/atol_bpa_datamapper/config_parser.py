@@ -83,6 +83,7 @@ class MetadataMap(dict):
         if bpa_value is None:
             logger.warning(f"Bpa value {bpa_value} not found in controlled vocabulary.")
             return None
+
         try:
             return self[atol_field]["value_mapping"][bpa_value]
         # This is a manual override for the pesky genome_data key. If the
