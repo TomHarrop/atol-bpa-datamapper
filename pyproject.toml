@@ -34,3 +34,8 @@ license-files = ["LICENSE"]
 atol_bpa_datamapper = ["config/*.json"]
 
 [tool.setuptools_scm]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short"

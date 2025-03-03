@@ -6,17 +6,29 @@ class MetadataMap(dict):
     def __init__(self, field_mapping_file, value_mapping_file):
         super().__init__()
         logger.info(f"Reading field mapping from {field_mapping_file}")
-        with open(field_mapping_file, "rt") as f:
-            field_mapping = json.load(f)
+        
+        # Handle field mapping file
+        if hasattr(field_mapping_file, 'read'):
+            field_mapping = json.load(field_mapping_file)
+        else:
+            with open(field_mapping_file, "rt") as f:
+                field_mapping = json.load(f)
+        
         logger.info(f"Reading value mapping from {value_mapping_file}")
-        with open(value_mapping_file, "rt") as f:
-            value_mapping = json.load(f)
+        # Handle value mapping file
+        if hasattr(value_mapping_file, 'read'):
+            value_mapping = json.load(value_mapping_file)
+        else:
+            with open(value_mapping_file, "rt") as f:
+                value_mapping = json.load(f)
+                
         # Map the expected AToL fields to fields in the BPA data
         for atol_section, mapping_dict in field_mapping.items():
             for atol_field, bpa_field_list in mapping_dict.items():
                 self[atol_field] = {}
                 self[atol_field]["bpa_fields"] = bpa_field_list
                 self[atol_field]["section"] = atol_section
+                
         # Generate a value_mapping dict for each AToL field
         for atol_section, mapping_dict in value_mapping.items():
             for atol_field, value_mapping_dict in mapping_dict.items():
@@ -37,6 +49,7 @@ class MetadataMap(dict):
                         )
                     )
                     raise e
+        
         # We iterate over the expected keys during mapping
         setattr(self, "expected_fields", list(self.keys()))
         logger.debug(f"expected_fields:\n{self.expected_fields}")
@@ -80,9 +93,6 @@ class MetadataMap(dict):
         # controlled vocabulary for this field, so we keep anything.
         if allowed_values is None:
             return bpa_value
-        if bpa_value is None:
-            logger.warning(f"Bpa value {bpa_value} not found in controlled vocabulary.")
-            return None
         try:
             return self[atol_field]["value_mapping"][bpa_value]
         # This is a manual override for the pesky genome_data key. If the
@@ -91,7 +101,7 @@ class MetadataMap(dict):
         # mapped_value is "genome_assembly".
         except KeyError as e:
             if atol_field == "data_context" and bpa_value == "yes":
-                logger.warning(f"Value of {atol_field} is {bpa_value}.")
+                logger.debug("Value of {atol_field} is {bpa_value}.")
                 return "genome_assembly"
             else:
                 raise e

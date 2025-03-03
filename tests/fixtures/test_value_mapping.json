@@ -1,0 +1,32 @@
+{
+    "organism": {
+        "scientific_name": {
+            "Undetermined sp": [
+                "Undetermined sp.",
+                "Undetermined species"
+            ]
+        }
+    },
+    "reads": {
+        "platform": {
+            "illumina_genomic": [
+                "illumina",
+                "illumina genomic"
+            ]
+        },
+        "library_source": {
+            "DNA": [
+                "genomic dna",
+                "genomic DNA"
+            ]
+        }
+    },
+    "sample": {
+        "data_context": {
+            "genome_assembly": [
+                "genome_assembly",
+                "yes"
+            ]
+        }
+    }
+}
