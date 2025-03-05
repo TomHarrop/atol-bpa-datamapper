@@ -3,7 +3,7 @@ requires = ["setuptools>=42", "wheel", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-dependencies = ["ckanapi>=4.8", "jsonlines>=4.0.0"]
+dependencies = ["ckanapi>=4.8", "jsonlines>=4.0.0", "scikit-bio>=0.6.3"]
 name = "atol-bpa-datamapper"
 dynamic = ["version"]
 description = "Map data from the BPA data portal for AToL's Genome Engine"
@@ -23,6 +23,7 @@ classifiers = [
 [project.scripts]
 filter-packages = "atol_bpa_datamapper.filter_packages:main"
 map-metadata = "atol_bpa_datamapper.map_metadata:main"
+resolve-organism = "atol_bpa_datamapper.resolve_organism:main"
 
 [project.urls]
 Homepage = "https://github.com/tomharrop/atol-bpa-datamapper"
