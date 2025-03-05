@@ -15,9 +15,6 @@ def main():
     setup_logger(args.log_level)
 
     ncbi_taxdump = NcbiTaxdump(nodes_file, names_file)
-    print(ncbi_taxdump.get_rank(3075944))
-    print(ncbi_taxdump.get_scientific_name_txt(3075944))
-    quit(1)
 
     bpa_to_atol_map = MetadataMap(args.field_mapping_file, args.value_mapping_file)
     input_data = read_input(args.input)
@@ -27,3 +24,6 @@ def main():
             package.mapped_metadata["organism"], ncbi_taxdump
         )
         print(organism_section.__dict__)
+        if organism_section.has_taxid:
+            print(ncbi_taxdump.get_rank(organism_section.taxid))
+            print(ncbi_taxdump.get_scientific_name_txt(organism_section.taxid))

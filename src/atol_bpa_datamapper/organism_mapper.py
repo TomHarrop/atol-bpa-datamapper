@@ -51,7 +51,7 @@ class OrganismSection(dict):
         super().__init__()
         self.update(package_data)
         print(self)
-        self.has_taxid = self.get("taxon_id") not in [None, ""]
+        self.has_taxid = self.get("taxon_id") not in [None, "", "0", "0.0"]
         if self.has_taxid:
             self.raw_taxid = self.get("taxon_id")
         else:
