@@ -132,8 +132,15 @@ class MetadataMap(dict):
 
     def map_value(self, atol_field, bpa_value):
         """Map a BPA value to an AToL value."""
+        allowed_values = self.get_allowed_values(atol_field)
+        # If there is no list of allowed values, then we don't have a
+        # controlled vocabulary for this field, so we keep anything.
+        if allowed_values is None:
+            return bpa_value
         if bpa_value is None:
+            logger.warning(f"Bpa value {bpa_value} not found in controlled vocabulary.")
             return None
+
 
         # First apply sanitization if configured
         sanitized_value = self._sanitize_value(atol_field, bpa_value)

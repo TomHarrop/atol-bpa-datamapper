@@ -1,7 +1,7 @@
 {
     "rules": {
         "text_sanitization": {
-            "description": "Strip whitespace, unicode characters, and normalize spaces",
+            "description": "Strip double whitespace, unicode whitespace characters",
             "fields": [
                 "organism.scientific_name",
                 "organism.common_name",
