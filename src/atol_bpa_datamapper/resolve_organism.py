@@ -12,7 +12,7 @@ mapping_log_file = "test/organism_mapping_log.csv.gz"
 
 def main():
 
-    max_iterations = 100
+    max_iterations = None
 
     args = parse_args_for_mapping()
     setup_logger(args.log_level)
@@ -40,5 +40,14 @@ def main():
 
         if max_iterations and n_packages >= max_iterations:
             break
+
+        if (
+            organism_section.has_subspecies_information
+            # and organism_section.has_species_level_taxid
+        ):
+            print(package.id)
+            print(organism_section)
+            print(organism_section.__dict__)
+            quit(1)
 
     write_mapping_log_to_csv(mapping_log, mapping_log_file)
