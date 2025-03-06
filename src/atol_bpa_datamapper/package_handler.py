@@ -6,9 +6,12 @@ class BpaPackage(dict):
         super().__init__()
         logger.debug("Initialising BpaPackage")
         self.update(package_data)
-        self.fields = sorted(set(self.keys()))
         self.id = self.get("id")
+        # Add bpa_id to the package data
+        self["bpa_id"] = self.id
+        self.fields = sorted(set(self.keys()))
         self.resource_ids = sorted(set(x["id"] for x in self.get("resources")))
+        self.sanitization_changes = []
         logger.debug(self.id)
         logger.debug(self.fields)
         logger.debug(self.resource_ids)
@@ -62,6 +65,7 @@ class BpaPackage(dict):
         
         self.mapping_log = []
         self.field_mapping = {}
+        self.sanitization_changes = []
 
         # First handle non-reads sections
         for atol_field in metadata_map.expected_fields:
@@ -71,16 +75,31 @@ class BpaPackage(dict):
                     metadata_map.get_bpa_fields(atol_field),
                     metadata_map.get_allowed_values(atol_field)
                 )
-                mapped_value = metadata_map.map_value(atol_field, value)
-                mapped_metadata[section][atol_field] = mapped_value
-                self.field_mapping[atol_field] = bpa_field
-                
-                self.mapping_log.append({
-                    "atol_field": atol_field,
-                    "bpa_field": bpa_field,
-                    "value": value,
-                    "mapped_value": mapped_value
-                })
+                if value is not None:
+                    # Track sanitization changes
+                    original_value = str(value) if value is not None else None
+                    sanitized_value = metadata_map._sanitize_value(atol_field, value)
+                    sanitized_str = str(sanitized_value) if sanitized_value is not None else None
+                    
+                    if original_value != sanitized_str:
+                        self.sanitization_changes.append({
+                            "bpa_id": self.id,
+                            "field": atol_field,
+                            "original_value": value,
+                            "sanitized_value": sanitized_value
+                        })
+                    
+                    # Map the sanitized value
+                    mapped_value = metadata_map.map_value(atol_field, sanitized_value)
+                    mapped_metadata[section][atol_field] = mapped_value
+                    self.field_mapping[atol_field] = bpa_field
+                    
+                    self.mapping_log.append({
+                        "atol_field": atol_field,
+                        "bpa_field": bpa_field,
+                        "value": value,
+                        "mapped_value": mapped_value
+                    })
         
         # Handle reads section - group by resource
         resources = self.get("resources", [])
@@ -113,7 +132,22 @@ class BpaPackage(dict):
                 
                 # Map the value if found
                 if value is not None:
-                    mapped_value = metadata_map.map_value(atol_field, value)
+                    # Track sanitization changes
+                    original_value = str(value) if value is not None else None
+                    sanitized_value = metadata_map._sanitize_value(atol_field, value)
+                    sanitized_str = str(sanitized_value) if sanitized_value is not None else None
+                    
+                    if original_value != sanitized_str:
+                        self.sanitization_changes.append({
+                            "bpa_id": self.id,
+                            "field": atol_field,
+                            "original_value": value,
+                            "sanitized_value": sanitized_value,
+                            "resource_id": resource_id
+                        })
+                    
+                    # Map the sanitized value
+                    mapped_value = metadata_map.map_value(atol_field, sanitized_value)
                     reads_obj[atol_field] = mapped_value
                     self.field_mapping[atol_field] = bpa_field
                     
@@ -137,6 +171,7 @@ class BpaPackage(dict):
         logger.debug(f"Field mapping: {self.field_mapping}")
         logger.debug(f"Data mapping: {self.mapping_log}")
         logger.debug(f"Unused fields: {self.unused_fields}")
+        logger.debug(f"Sanitization changes: {self.sanitization_changes}")
 
     def get_resource_value(self, resource, field):
         """Get a value from a specific resource."""

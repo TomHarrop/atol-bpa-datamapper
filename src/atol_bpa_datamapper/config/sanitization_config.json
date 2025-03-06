@@ -1,0 +1,34 @@
+{
+    "rules": {
+        "text_sanitization": {
+            "description": "Strip whitespace, unicode characters, and normalize spaces",
+            "fields": [
+                "organism.scientific_name",
+                "organism.common_name",
+                "organism.infraspecific_epithet",
+                "organism.family",
+                "organism.genus",
+                "organism.species",
+                "organism.order_or_group"
+            ]
+        },
+        "empty_string_sanitization": {
+            "description": "Convert empty strings to null",
+            "fields": [
+                "organism.scientific_name",
+                "organism.common_name",
+                "organism.infraspecific_epithet",
+                "organism.family",
+                "organism.genus",
+                "organism.species",
+                "organism.order_or_group"
+            ]
+        },
+        "integer_sanitization": {
+            "description": "Ensure integer values, remove decimals",
+            "fields": [
+                "organism.taxon_id"
+            ]
+        }
+    }
+}

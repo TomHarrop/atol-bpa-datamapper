@@ -287,5 +287,9 @@
         "bioplatforms_url": [
             "resources.url"
         ]
+    },
+    "dataset": {
+        "bpa_id": ["id"]
     }
 }
+

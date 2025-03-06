@@ -29,6 +29,20 @@ def parse_args_for_filtering():
         help="Compressed CSV file to record the filtering decisions for each package",
     )
 
+    parser.add_argument(
+        "--sanitization_config",
+        help="Path to sanitization config file",
+        type=str,
+        required=False
+    )
+
+    parser.add_argument(
+        "--sanitization-change-file",
+        help="Path to write sanitization changes",
+        type=str,
+        default="sanitization_changes.json.gz"
+    )
+
     return parser.parse_args()
 
 
@@ -61,6 +75,20 @@ def parse_args_for_mapping():
     mapping_group.add_argument(
         "--mapping_log",
         help="Compressed CSV file to record the mapping used for each package",
+    )
+
+    parser.add_argument(
+        "--sanitization_config",
+        help="Path to sanitization config file",
+        type=str,
+        required=False
+    )
+
+    parser.add_argument(
+        "--sanitization-change-file",
+        help="Path to write sanitization changes",
+        type=str,
+        default="sanitization_changes.json.gz"
     )
 
     return parser.parse_args()

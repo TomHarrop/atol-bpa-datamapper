@@ -3,6 +3,8 @@ from .config_parser import MetadataMap
 from .io import read_input, OutputWriter, write_mapping_log_to_csv, write_json
 from .logger import logger, setup_logger
 from collections import Counter
+import gzip
+import json
 
 
 def main():
@@ -12,7 +14,11 @@ def main():
     args = parse_args_for_mapping()
     setup_logger(args.log_level)
 
-    bpa_to_atol_map = MetadataMap(args.field_mapping_file, args.value_mapping_file)
+    bpa_to_atol_map = MetadataMap(
+        args.field_mapping_file, 
+        args.value_mapping_file,
+        args.sanitization_config
+    )
     input_data = read_input(args.input)
 
     # set up counters
@@ -30,6 +36,9 @@ def main():
 
     # set up mapping log
     mapping_log = {}
+
+    # set up sanitization changes
+    sanitization_changes = []
 
     n_packages = 0
 
@@ -73,6 +82,9 @@ def main():
             # Update unused field counts
             counters["unused_field_counts"].update(package.unused_fields)
 
+            # Collect sanitization changes
+            sanitization_changes.extend(package.sanitization_changes)
+
             if max_iterations and n_packages >= max_iterations:
                 break
     logger.info(f"Processed {n_packages} packages")
@@ -94,9 +106,16 @@ def main():
         if args.mapped_value_usage:
             logger.info(f"Writing BPA value usage counts to {args.mapped_value_usage}")
             write_json(counters["mapped_value_usage"], args.mapped_value_usage)
-        if args.mapped_value_usage:
+        if args.unused_field_counts:
             logger.info(f"Writing unused field counts to {args.unused_field_counts}")
             write_json(counters["unused_field_counts"], args.unused_field_counts)
+
+        # Write sanitization changes
+        logger.info(
+            f"Writing sanitization changes to {args.sanitization_change_file}"
+        )
+        writer = OutputWriter(args.sanitization_change_file)
+        writer.write_data({"sanitization_changes": sanitization_changes})
 
 
 if __name__ == "__main__":
