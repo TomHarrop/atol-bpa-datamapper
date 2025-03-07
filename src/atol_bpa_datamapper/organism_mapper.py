@@ -13,7 +13,17 @@ import re
 
 
 CACHE_DIR = Path("dev/taxdump_cache")
-NULL_VALUES = [None, "NONE", "NULL", "NAN", "NA", "N/A", ""]
+NULL_VALUES = [
+    "",
+    "N/A",
+    "NA",
+    "NAN",
+    "NONE",
+    "NULL",
+    "UNDETERMINED SP",
+    "UNDETERMINED",
+    None,
+]
 
 
 def compute_sha256(file_path):
@@ -97,10 +107,37 @@ class NcbiTaxdump:
             "name_txt",
         ].iat[0]
 
+    def search_by_binomial_name(self, genus, species, package_id):
+        search_string = f"{genus} {species}"
+        logger.debug(f"Searching for {search_string}")
+        search_results = self.names.loc[
+            (self.names["name_txt"].str.contains(search_string))
+            & (self.names["name_class"] == "scientific name")
+        ]
+
+        if len(search_results) == 0:
+            logger.debug(f"No results found for {search_string}")
+            return None
+
+        candidate_taxids = search_results.index.tolist()
+        # TODO: levels lower than species
+        species_level_taxids = [
+            taxid for taxid in candidate_taxids if self.get_rank(taxid) == "species"
+        ]
+        if len(species_level_taxids) == 1:
+            return species_level_taxids[0]
+        else:
+            logger.warning(
+                f"Didn't find a single species-level taxid for {search_string}"
+            )
+            logger.warning(species_level_taxids)
+
+        return None
+
 
 class OrganismSection(dict):
 
-    def __init__(self, package_data, ncbi_taxdump):
+    def __init__(self, package_id, package_data, ncbi_taxdump):
         super().__init__()
         self.update(package_data)
         self.has_taxid = self.get("taxon_id") not in NULL_VALUES + ["0", "0.0"]
@@ -115,15 +152,67 @@ class OrganismSection(dict):
         # look up taxid in NCBI taxonomy
         self.check_ncbi_taxonomy_for_taxid(ncbi_taxdump)
 
-        # check for species information in the raw metadata
-        if not all([self.scientific_name, self.scientific_name_source == "ncbi"]):
-            if str(self.scientific_name).upper() not in NULL_VALUES:
-                # TODO: look this up in the taxonomy
-                print(self)
-                print(self.__dict__)
-                quit(1)
+        # Check for species information in the raw metadata. Realistically, we
+        # can only do this if we can parse the scientific name into a Genus and
+        # Species, or get that information from the Genus and Species fields,
+        # and the names table has a single exact match at the species level.
+        # Otherwise, too risky?
+        self.taxid_retrieved_from_metadata = False
+        if not self.scientific_name:
+            self.check_bpa_metadata_for_species_information(ncbi_taxdump, package_id)
 
-        # check for subspecies information
+        self.check_for_subspecies_information()
+
+    def check_bpa_metadata_for_species_information(self, ncbi_taxdump, package_id):
+        bpa_scientific_name = sanitise_string(str(self.get("scientific_name")))
+        retrieved_taxid = None
+
+        # check whatever's in the scientific name field
+        if bpa_scientific_name.upper() not in NULL_VALUES:
+            logger.info(f"Attempting to parse scientific name {bpa_scientific_name}")
+            # check if the name splits into exactly two words
+            name_parts = bpa_scientific_name.split(" ")
+            if len(name_parts) == 2:
+                genus_from_bpa_scientific_name = name_parts[0]
+                species_from_bpa_scientific_name = name_parts[1]
+                retrieved_taxid = ncbi_taxdump.search_by_binomial_name(
+                    genus_from_bpa_scientific_name,
+                    species_from_bpa_scientific_name,
+                    package_id,
+                )
+            else:
+                logger.warning(f"Could not parse scientific name {bpa_scientific_name}")
+
+        if not retrieved_taxid:
+            # check if we have genus and species fields
+            genus = sanitise_string(str(self.get("genus")))
+            species = sanitise_string(str(self.get("species")))
+
+            if genus.upper() not in NULL_VALUES and species.upper() not in NULL_VALUES:
+                logger.info(
+                    f"Attempting to parse separate genus {genus} and species {species}"
+                )
+                retrieved_taxid = ncbi_taxdump.search_by_binomial_name(
+                    genus,
+                    species,
+                    package_id,
+                )
+
+        if not retrieved_taxid:
+            logger.debug(
+                f"Could not match metadata to species-level taxid for package {package_id}"
+            )
+
+        # process the results
+        if retrieved_taxid:
+            logger.info(f"Found single species-level taxid {retrieved_taxid}")
+            self.taxid = retrieved_taxid
+            self.has_taxid = True
+            self.taxid_retrieved_from_metadata = True
+
+            self.check_ncbi_taxonomy_for_taxid(ncbi_taxdump)
+
+    def check_for_subspecies_information(self):
         if str(self.get("infraspecific_epithet")).upper() not in NULL_VALUES:
             self.has_subspecies_information = True
             self.subspecies = self.get("infraspecific_epithet")
