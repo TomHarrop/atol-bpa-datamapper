@@ -77,6 +77,25 @@ def generate_taxonomy_tree(names, nodes, update_tree=False):
             return tree
 
 
+def find_lower_ranks(tree, top_rank="species"):
+    rank_list = recursive_find_lower_ranks(tree, top_rank)
+    return [rank for rank in sorted(set(rank_list)) if rank != top_rank]
+
+
+def recursive_find_lower_ranks(
+    tree, top_rank="species", rank_list=[], top_rank_or_lower=False
+):
+    if tree.rank == top_rank:
+        top_rank_or_lower = True
+    if top_rank_or_lower:
+        for node in tree.traverse():
+            rank_list.append(node.rank)
+    else:
+        for node in tree.children:
+            recursive_find_lower_ranks(node, top_rank, rank_list, top_rank_or_lower)
+    return rank_list
+
+
 def sanitise_string(string):
     allowed_chars = re.compile("[a-zA-Z0-9 ]")
     return "".join(allowed_chars.findall(re.sub(r"\s+", " ", string))).strip()
@@ -92,10 +111,13 @@ class NcbiTaxdump:
 
         update_tree = any([nodes_changed, names_changed])
 
-        # TODO: find out which ranks are lower than species
         self.tree = generate_taxonomy_tree(
             self.names, self.nodes, update_tree=update_tree
         )
+
+        # TODO: use these ranks when checking packages
+        logger.info(f"Traversing the tree for rank information")
+        self.ranks_below_species = find_lower_ranks(self.tree, "species")
 
     def get_rank(self, taxid):
         return self.nodes.at[taxid, "rank"]
