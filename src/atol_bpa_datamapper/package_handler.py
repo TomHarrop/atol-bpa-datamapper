@@ -38,21 +38,21 @@ class BpaPackage(dict):
                 logger.debug("Checking genome_data field")
                 if self["genome_data"] == "yes":
                     logger.debug("Setting keep to True")
-                    value, bpa_field, keep = ("yes", "genome_data", True)
+                    value, bpa_field, keep = ("genome_assembly", "genome_data", True)
 
             # record the field that was used in the bpa data
             self.bpa_fields[atol_field] = bpa_field
-            self.bpa_values[atol_field] = value
+            # record the original BPA value
+            self.bpa_values[atol_field] = get_nested_value(self, bpa_field) if bpa_field else None
 
             # record the decision for this field
             decision_key = f"{atol_field}_accepted"
             self.decisions[decision_key] = keep
             self.decisions[atol_field] = value
 
-        # summarise the decision for this package
-        logger.debug(f"Decisions: {self.decisions}")
-        self.keep = all(x for x in self.decisions.values() if isinstance(x, bool))
-        logger.debug(f"Keep: {self.keep}")
+        logger.info(f"Decisions: {self.decisions}")
+        logger.info(f"Keep: {all(self.decisions[x] for x in self.decisions if x.endswith('_accepted'))}")
+        return all(self.decisions[x] for x in self.decisions if x.endswith("_accepted"))
 
     def map_metadata(self, metadata_map: "MetadataMap"):
         """Map BPA package metadata to AToL format."""
@@ -180,23 +180,19 @@ class BpaPackage(dict):
         """
         Returns a tuple of (value, bpa_field, keep).
 
-        fields_to_check is an ordered list.
+        fields_to_check is an ordered list of BPA fields to check.
+        accepted_values is a dict mapping BPA values to AToL values.
 
         If accepted_values is None, then we don't have a controlled vocabulary
         for this field, and keep will always be True.
 
-        If accepted_values is a list, then keep will be True if the value of
-        the selected bpa_field is in the list of accepted_values.
-
-        If package has any fields_to_check whose value is in accepted_values,
-        the value and the bpa_field are returned and accept_value is True.
-
-        If the package has no fields_to_check whose value is in
-        accepted_values, the first bpa_field and its value are returned.
+        If accepted_values is a dict, then:
+        1. We look for any BPA field whose value appears as a key in accepted_values
+        2. If found, we return the corresponding AToL value
+        3. If not found, we return the first value we found, with keep=False
 
         If the package has no bpa_fields matching fields_to_check, the value
         and bpa_field is None.
-
         """
         values = {key: get_nested_value(self, key) for key in fields_to_check}
 
@@ -205,8 +201,13 @@ class BpaPackage(dict):
 
         for key, value in values.items():
             if value is not None:
-                if not accepted_values or value in accepted_values:
+                # If no accepted values, accept anything
+                if not accepted_values:
                     return (value, key, True)
+                # Check if our value is in the accepted values dict
+                if value in accepted_values:
+                    return (accepted_values[value], key, True)
+                # Keep track of first value for fallback
                 if first_value is None:
                     first_value = value
                     first_key = key
@@ -217,11 +218,36 @@ class BpaPackage(dict):
 def get_nested_value(d, key):
     """
     Retrieve the value from a nested dictionary using a dot-notated key.
+    For resources, returns a list of all matching values from all resources.
     """
+    # logger.info(f"Getting nested value for key {key} from {d}")
     keys = key.split(".")
+    
+    # Special case for resources - we want to check all resources
+    if keys[0] == "resources" and len(keys) > 1:
+        if not isinstance(d.get("resources"), list):
+            return None
+            
+        # Get the nested key we want from each resource
+        nested_key = keys[1]
+        values = []
+        for resource in d["resources"]:
+            if isinstance(resource, dict) and nested_key in resource:
+                values.append(resource[nested_key])
+        
+        # logger.info(f"Found resource values for {nested_key}: {values}")
+        return values[0] if values else None  # Return first match if any
+    
+    # Normal case - traverse the dictionary
     for k in keys:
-        if isinstance(d, dict) and k in d:
-            d = d[k]
+        if isinstance(d, dict):
+            if k in d:
+                d = d[k]
+                #logger.info(f"Found dict value for {k}: {d}")
+            else:
+                #logger.info(f"Could not find key {k} in dict")
+                return None
         else:
+            #logger.info(f"Could not traverse {k}, parent is not a dict")
             return None
     return d

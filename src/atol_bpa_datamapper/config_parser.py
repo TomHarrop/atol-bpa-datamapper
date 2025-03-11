@@ -133,7 +133,7 @@ class MetadataMap(dict):
 
     def get_allowed_values(self, atol_field):
         try:
-            return sorted(set(self[atol_field]["value_mapping"].keys()))
+            return self[atol_field]["value_mapping"]
         except KeyError as e:
             return None
 
