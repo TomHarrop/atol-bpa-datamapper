@@ -11,7 +11,6 @@ class BpaPackage(dict):
         self["bpa_id"] = self.id
         self.fields = sorted(set(self.keys()))
         self.resource_ids = sorted(set(x["id"] for x in self.get("resources")))
-        self.sanitization_changes = []
         logger.debug(self.id)
         logger.debug(self.fields)
         logger.debug(self.resource_ids)
@@ -78,7 +77,7 @@ class BpaPackage(dict):
                 if value is not None:
                     # Track sanitization changes
                     original_value = str(value) if value is not None else None
-                    sanitized_value = metadata_map._sanitize_value(atol_field, value)
+                    sanitized_value = metadata_map._sanitize_value(section, atol_field, value)
                     sanitized_str = str(sanitized_value) if sanitized_value is not None else None
                     
                     if original_value != sanitized_str:
@@ -134,7 +133,7 @@ class BpaPackage(dict):
                 if value is not None:
                     # Track sanitization changes
                     original_value = str(value) if value is not None else None
-                    sanitized_value = metadata_map._sanitize_value(atol_field, value)
+                    sanitized_value = metadata_map._sanitize_value(section, atol_field, value)
                     sanitized_str = str(sanitized_value) if sanitized_value is not None else None
                     
                     if original_value != sanitized_str:

@@ -1,34 +1,23 @@
 {
-    "rules": {
+    "organism": {
+        "scientific_name": ["text_sanitization", "empty_string_sanitization"],
+        "common_name": ["text_sanitization", "empty_string_sanitization"],
+        "infraspecific_epithet": ["text_sanitization", "empty_string_sanitization"],
+        "family": ["text_sanitization", "empty_string_sanitization"],
+        "genus": ["text_sanitization", "empty_string_sanitization"],
+        "species": ["text_sanitization", "empty_string_sanitization"],
+        "order_or_group": ["text_sanitization", "empty_string_sanitization"],
+        "taxon_id": ["integer_sanitization"]
+    },
+    "sanitization_rules": {
         "text_sanitization": {
-            "description": "Strip double whitespace, unicode whitespace characters",
-            "fields": [
-                "organism.scientific_name",
-                "organism.common_name",
-                "organism.infraspecific_epithet",
-                "organism.family",
-                "organism.genus",
-                "organism.species",
-                "organism.order_or_group"
-            ]
+            "description": "Strip double whitespace, unicode whitespace characters"
         },
         "empty_string_sanitization": {
-            "description": "Convert empty strings to null",
-            "fields": [
-                "organism.scientific_name",
-                "organism.common_name",
-                "organism.infraspecific_epithet",
-                "organism.family",
-                "organism.genus",
-                "organism.species",
-                "organism.order_or_group"
-            ]
+            "description": "Convert empty strings to null"
         },
         "integer_sanitization": {
-            "description": "Ensure integer values, remove decimals",
-            "fields": [
-                "organism.taxon_id"
-            ]
+            "description": "Ensure integer values, remove decimals"
         }
     }
 }

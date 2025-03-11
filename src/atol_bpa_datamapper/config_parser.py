@@ -66,68 +66,44 @@ class MetadataMap(dict):
         )
         logger.debug(f"controlled_vocabularies:\n{self.controlled_vocabularies}")
 
-    def _text_sanitization(self, value: str) -> str:
-        """Sanitize text by removing double spaces and trimming whitespace."""
-        if not isinstance(value, str):
-            return value
-        
-        # Remove double spaces
-        while "  " in value:
-            value = value.replace("  ", " ")
-            
-        # Trim leading/trailing whitespace
-        return value.strip()
-
-    def _empty_string_sanitization(self, value: Any) -> Optional[str]:
-        """Convert empty strings to None."""
-        if isinstance(value, str) and not value.strip():
-            return None
-        return value
-
-    def _integer_sanitization(self, value: Any) -> str:
-        """Convert float or integer to string, removing decimal places if float."""
-        if isinstance(value, (int, float)):
-            # Convert to integer string, removing decimal places
-            return str(int(value))
-        elif isinstance(value, str):
-            try:
-                # Try to convert to float first to handle both integers and floats
-                num = float(value)
-                # Convert to integer string, removing decimal places
-                return str(int(num))
-            except ValueError:
-                # If conversion fails, return original string
-                return value
-        return str(value)
-
-    def _sanitize_value(self, field: str, value: Any) -> Any:
+    def _sanitize_value(self, section: str, field: str, value: Any):
+        logger.info(f"Sanitizing {field} with value {value}")
         """Apply sanitization rules to a value based on field name."""
-        if not self.sanitization_config or value is None:
+        if value is None:
+            return None
+
+        if not self.sanitization_config:
             return value
-            
-        # Apply rules in specific order
-        original_value = value
+
+        # Get sanitization rules for this field
+        section_config = self.sanitization_config.get(section, {})
+        rules_to_apply = section_config.get(field, [])
+        
+        # Apply each rule in sequence
         sanitized_value = value
-        
-        # Convert field name to match sanitization config format
-        field_parts = field.split(".")
-        if len(field_parts) > 1:
-            field = field_parts[-1]  # Use last part of field name
-        
-        # Add "organism." prefix for organism fields
-        if field in ["scientific_name", "common_name", "infraspecific_epithet", 
-                    "family", "genus", "species", "order_or_group", "taxon_id"]:
-            field = f"organism.{field}"
-        
-        if field in self.sanitization_config["rules"]["empty_string_sanitization"]["fields"]:
-            sanitized_value = self._empty_string_sanitization(sanitized_value)
-            
-        if field in self.sanitization_config["rules"]["text_sanitization"]["fields"]:
-            sanitized_value = self._text_sanitization(sanitized_value)
-            
-        if field in self.sanitization_config["rules"]["integer_sanitization"]["fields"]:
-            sanitized_value = self._integer_sanitization(sanitized_value)
-            
+        for rule in rules_to_apply:
+            rule_config = self.sanitization_config["sanitization_rules"].get(rule)
+            if not rule_config:
+                logger.warning(f"Unknown sanitization rule: {rule}")
+                continue
+                
+            if rule == "text_sanitization":
+                if isinstance(sanitized_value, str):
+                    # Remove double whitespace and unicode whitespace
+                    sanitized_value = ' '.join(sanitized_value.split())
+                    
+            elif rule == "empty_string_sanitization":
+                if isinstance(sanitized_value, str) and not sanitized_value.strip():
+                    sanitized_value = None
+                    
+            elif rule == "integer_sanitization":
+                try:
+                    if isinstance(sanitized_value, (int, float, str)):
+                        sanitized_value = int(float(str(sanitized_value)))
+                except (ValueError, TypeError):
+                    logger.warning(f"Could not convert {sanitized_value} to integer")
+                    sanitized_value = None
+
         return sanitized_value
 
     def map_value(self, atol_field, bpa_value):
@@ -141,9 +117,9 @@ class MetadataMap(dict):
             logger.warning(f"Bpa value {bpa_value} not found in controlled vocabulary.")
             return None
 
-
+        section = self.get_atol_section(atol_field)
         # First apply sanitization if configured
-        sanitized_value = self._sanitize_value(atol_field, bpa_value)
+        sanitized_value = self._sanitize_value(section, atol_field, bpa_value)
         
         # Map the sanitized value to AToL value
         try:
