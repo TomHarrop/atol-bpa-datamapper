@@ -77,9 +77,9 @@ def generate_taxonomy_tree(names, nodes, update_tree=False):
             return tree
 
 
-def find_lower_ranks(tree, top_rank="species"):
+def find_lower_ranks(tree, top_rank="species", excluded_ranks=["no rank"]):
     rank_list = recursive_find_lower_ranks(tree, top_rank)
-    return [rank for rank in sorted(set(rank_list)) if rank != top_rank]
+    return [rank for rank in sorted(set(rank_list)) if rank not in excluded_ranks]
 
 
 def recursive_find_lower_ranks(
@@ -102,7 +102,7 @@ def sanitise_string(string):
 
 
 class NcbiTaxdump:
-    def __init__(self, nodes_file, names_file):
+    def __init__(self, nodes_file, names_file, resolve_to_rank="species"):
         logger.info(f"Reading NCBI taxonomy from {nodes_file}")
         self.nodes, nodes_changed = read_taxdump_file(nodes_file, "nodes")
 
@@ -117,7 +117,11 @@ class NcbiTaxdump:
 
         # TODO: use these ranks when checking packages
         logger.info(f"Traversing the tree for rank information")
-        self.ranks_below_species = find_lower_ranks(self.tree, "species")
+        self.resolve_to_rank = resolve_to_rank
+        self.accepted_ranks = find_lower_ranks(self.tree, self.resolve_to_rank)
+        logger.debug(
+            f"Accepted ranks including and below {self.resolve_to_rank}:\n{self.accepted_ranks}"
+        )
 
     def get_rank(self, taxid):
         return self.nodes.at[taxid, "rank"]
@@ -142,17 +146,16 @@ class NcbiTaxdump:
             return None
 
         candidate_taxids = search_results.index.tolist()
-        # TODO: levels lower than species
-        species_level_taxids = [
-            taxid for taxid in candidate_taxids if self.get_rank(taxid) == "species"
+        accepted_level_taxids = [
+            taxid
+            for taxid in candidate_taxids
+            if self.get_rank(taxid) in self.accepted_ranks
         ]
-        if len(species_level_taxids) == 1:
-            return species_level_taxids[0]
+        if len(accepted_level_taxids) == 1:
+            return accepted_level_taxids[0]
         else:
-            logger.warning(
-                f"Didn't find a single species-level taxid for {search_string}"
-            )
-            logger.warning(species_level_taxids)
+            logger.debug(f"Didn't find a single taxid for {search_string}")
+            logger.debug(accepted_level_taxids)
 
         return None
 
@@ -191,7 +194,7 @@ class OrganismSection(dict):
 
         # check whatever's in the scientific name field
         if bpa_scientific_name.upper() not in NULL_VALUES:
-            logger.info(f"Attempting to parse scientific name {bpa_scientific_name}")
+            logger.debug(f"Attempting to parse scientific name {bpa_scientific_name}")
             # check if the name splits into exactly two words
             name_parts = bpa_scientific_name.split(" ")
             if len(name_parts) == 2:
@@ -211,7 +214,7 @@ class OrganismSection(dict):
             species = sanitise_string(str(self.get("species")))
 
             if genus.upper() not in NULL_VALUES and species.upper() not in NULL_VALUES:
-                logger.info(
+                logger.debug(
                     f"Attempting to parse separate genus {genus} and species {species}"
                 )
                 retrieved_taxid = ncbi_taxdump.search_by_binomial_name(
@@ -222,17 +225,18 @@ class OrganismSection(dict):
 
         if not retrieved_taxid:
             logger.debug(
-                f"Could not match metadata to species-level taxid for package {package_id}"
+                f"Could not match metadata to taxid at accepted level for package {package_id}"
             )
 
         # process the results
         if retrieved_taxid:
-            logger.info(f"Found single species-level taxid {retrieved_taxid}")
+            logger.debug(f"Found single taxid at accepted level {retrieved_taxid}")
             self.taxid = retrieved_taxid
             self.has_taxid = True
             self.taxid_retrieved_from_metadata = True
 
             self.check_ncbi_taxonomy_for_taxid(ncbi_taxdump)
+            logger.debug(f"Assigning scientific name {self.scientific_name}")
 
     def check_for_subspecies_information(self):
         if str(self.get("infraspecific_epithet")).upper() not in NULL_VALUES:
@@ -259,8 +263,7 @@ class OrganismSection(dict):
             self.scientific_name = None
             self.scientific_name_source = None
 
-        # TODO: there are ranks lower than species
-        self.has_species_level_taxid = self.rank == "species"
+        self.has_taxid_at_accepted_level = self.rank in ncbi_taxdump.accepted_ranks
 
     def format_taxid(self):
         # check if the raw_taxid is an int

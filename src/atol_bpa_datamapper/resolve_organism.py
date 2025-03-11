@@ -13,13 +13,13 @@ mapping_log_file = "test/organism_mapping_log.csv.gz"
 def main():
 
     # debugging options
-    max_iterations = None
+    max_iterations = 10
     manual_record = None
 
     args = parse_args_for_mapping()
     setup_logger(args.log_level)
 
-    ncbi_taxdump = NcbiTaxdump(nodes_file, names_file)
+    ncbi_taxdump = NcbiTaxdump(nodes_file, names_file, resolve_to_rank="species")
 
     mapping_log = {}
     n_packages = 0
