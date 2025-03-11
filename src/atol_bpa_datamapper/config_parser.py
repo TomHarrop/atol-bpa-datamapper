@@ -117,20 +117,19 @@ class MetadataMap(dict):
             logger.warning(f"Bpa value {bpa_value} not found in controlled vocabulary.")
             return None
 
-        section = self.get_atol_section(atol_field)
+
         # First apply sanitization if configured
-        sanitized_value = self._sanitize_value(section, atol_field, bpa_value)
         
         # Map the sanitized value to AToL value
         try:
-            return self[atol_field]["value_mapping"][sanitized_value]
+            return self[atol_field]["value_mapping"][bpa_value]
         except KeyError as e:
             if atol_field == "data_context" and bpa_value == "yes":
                 logger.warning(f"Value of {atol_field} is {bpa_value}.")
                 return "genome_assembly"
             else:
-                logger.warning(f"Value {sanitized_value} not found in mapping for {atol_field}")
-                return sanitized_value
+                logger.warning(f"Value {bpa_value} not found in mapping for {atol_field}")
+                return bpa_value
 
     def get_allowed_values(self, atol_field):
         try:
