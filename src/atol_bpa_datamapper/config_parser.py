@@ -51,7 +51,7 @@ class MetadataMap(dict):
                     raise e
                     
         # We iterate over the expected keys during mapping
-        setattr(self, "expected_fields", list(self.keys()))
+        setattr(self, "expected_fields", sorted(self.keys()))
         logger.debug(f"expected_fields:\n{self.expected_fields}")
 
         setattr(
@@ -62,7 +62,7 @@ class MetadataMap(dict):
         setattr(
             self,
             "controlled_vocabularies",
-            [k for k in self.keys() if "value_mapping" in self[k]],
+            sorted([k for k in self.keys() if "value_mapping" in self[k]])
         )
         logger.debug(f"controlled_vocabularies:\n{self.controlled_vocabularies}")
 
@@ -99,7 +99,7 @@ class MetadataMap(dict):
             elif rule == "integer_sanitization":
                 try:
                     if isinstance(sanitized_value, (int, float, str)):
-                        sanitized_value = int(float(str(sanitized_value)))
+                        sanitized_value = str(int(float(str(sanitized_value))))
                 except (ValueError, TypeError):
                     logger.warning(f"Could not convert {sanitized_value} to integer")
                     sanitized_value = None
