@@ -9,6 +9,7 @@ import skbio.io
 from skbio.tree import TreeNode
 import re
 
+
 # This may get integrated into the package handler
 
 
@@ -109,13 +110,16 @@ class NcbiTaxdump:
         logger.info(f"Reading NCBI taxon names from {names_file}")
         self.names, names_changed = read_taxdump_file(names_file, "names")
 
+        # Create a dictionary for faster lookups
+        scientific_names = self.names[self.names["name_class"] == "scientific name"]
+        self.scientific_name_dict = scientific_names["name_txt"].to_dict()
+
         update_tree = any([nodes_changed, names_changed])
 
         self.tree = generate_taxonomy_tree(
             self.names, self.nodes, update_tree=update_tree
         )
 
-        # TODO: use these ranks when checking packages
         logger.info(f"Traversing the tree for rank information")
         self.resolve_to_rank = resolve_to_rank
         self.accepted_ranks = find_lower_ranks(self.tree, self.resolve_to_rank)
@@ -127,11 +131,7 @@ class NcbiTaxdump:
         return self.nodes.at[taxid, "rank"]
 
     def get_scientific_name_txt(self, taxid):
-        return self.names.loc[
-            (self.names.index == taxid)
-            & (self.names["name_class"] == "scientific name"),
-            "name_txt",
-        ].iat[0]
+        return self.scientific_name_dict.get(taxid, None)
 
     def search_by_binomial_name(self, genus, species, package_id):
         search_string = f"{genus} {species}"
@@ -163,6 +163,7 @@ class NcbiTaxdump:
 class OrganismSection(dict):
 
     def __init__(self, package_id, package_data, ncbi_taxdump):
+
         super().__init__()
         self.update(package_data)
         self.has_taxid = self.get("taxon_id") not in NULL_VALUES + ["0", "0.0"]
@@ -187,6 +188,7 @@ class OrganismSection(dict):
             self.check_bpa_metadata_for_species_information(ncbi_taxdump, package_id)
 
         self.check_for_subspecies_information()
+
 
     def check_bpa_metadata_for_species_information(self, ncbi_taxdump, package_id):
         bpa_scientific_name = sanitise_string(str(self.get("scientific_name")))

@@ -92,3 +92,4 @@ class MetadataMap(dict):
                 return "genome_assembly"
             else:
                 raise e
+
