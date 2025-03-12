@@ -23,6 +23,7 @@ NULL_VALUES = [
     "NULL",
     "UNDETERMINED SP",
     "UNDETERMINED",
+    "UNKNOWN",
     None,
 ]
 
@@ -101,6 +102,10 @@ def sanitise_string(string):
     allowed_chars = re.compile("[a-zA-Z0-9 ]")
     return "".join(allowed_chars.findall(re.sub(r"\s+", " ", string))).strip()
 
+
+def remove_whitespace(string):
+    allowed_chars = re.compile("[a-zA-Z0-9]")
+    return re.sub(r"[^a-zA-Z0-9]+", "_", string)
 
 class NcbiTaxdump:
     def __init__(self, nodes_file, names_file, resolve_to_rank="species"):
@@ -187,8 +192,16 @@ class OrganismSection(dict):
         if not self.scientific_name:
             self.check_bpa_metadata_for_species_information(ncbi_taxdump, package_id)
 
-        self.check_for_subspecies_information()
+        self.check_for_subspecies_information(ncbi_taxdump, package_id)
 
+        # generate a key for grouping the organisms
+        # TODO: this should be some sort of UUID
+        if self.has_taxid_at_accepted_level:
+            self.organism_grouping_key = "_".join(
+                [remove_whitespace(self.atol_scientific_name), str(self.taxid)]
+            )
+        else:
+            self.organism_grouping_key = None
 
     def check_bpa_metadata_for_species_information(self, ncbi_taxdump, package_id):
         bpa_scientific_name = sanitise_string(str(self.get("scientific_name")))
@@ -238,17 +251,42 @@ class OrganismSection(dict):
             self.taxid_retrieved_from_metadata = True
 
             self.check_ncbi_taxonomy_for_taxid(ncbi_taxdump)
-            logger.debug(f"Assigning scientific name {self.scientific_name}")
+            logger.debug(
+                f"Assigning scientific name {self.scientific_name} to package {package_id}"
+            )
 
-    def check_for_subspecies_information(self):
-        if str(self.get("infraspecific_epithet")).upper() not in NULL_VALUES:
+    def check_for_subspecies_information(self, ncbi_taxdump, package_id):
+        # some taxids resolve lower than species, use these first
+        if (
+            self.has_taxid_at_accepted_level
+            and self.rank != ncbi_taxdump.resolve_to_rank
+        ):
             self.has_subspecies_information = True
-            self.subspecies = self.get("infraspecific_epithet")
-            self.subspecies_sanitised = sanitise_string(self.subspecies)
-        else:
-            self.has_subspecies_information = False
-            self.subspecies = None
-            self.subspecies_sanitised = None
+            self.atol_scientific_name = self.scientific_name
+            self.subspecies_source = "ncbi"
+            return
+
+        # try to resolve the subspecies information manually
+        if (
+            self.scientific_name
+            and str(self.get("infraspecific_epithet")).upper() not in NULL_VALUES
+        ):
+            logger.warning(
+                f'{package_id} has subspecies information but taxid {self.taxid} rank "{self.rank}" is not lower than "{ncbi_taxdump.resolve_to_rank}"'
+            )
+            logger.debug("Accepted ranks: {ncbi_taxdump.accepted_ranks}")
+            self.has_subspecies_information = True
+            subspecies_sanitised = sanitise_string(self.get("infraspecific_epithet"))
+            self.atol_scientific_name = " ".join(
+                [self.scientific_name, subspecies_sanitised]
+            )
+            self.subspecies_source = "parsed"
+            logger.debug("Assigning {self.atol_scientific_name}")
+            return
+
+        self.atol_scientific_name = self.scientific_name
+        self.has_subspecies_information = False
+        self.subspecies_source = None
 
     def check_ncbi_taxonomy_for_taxid(self, ncbi_taxdump):
         # Check if it's an NCBI taxid
