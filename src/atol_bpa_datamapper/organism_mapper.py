@@ -9,11 +9,10 @@ import skbio.io
 from skbio.tree import TreeNode
 import re
 
+########################################################
+# This may get integrated into the package handler !!! #
+########################################################
 
-# This may get integrated into the package handler
-
-
-CACHE_DIR = Path("dev/taxdump_cache")
 NULL_VALUES = [
     "",
     "N/A",
@@ -39,14 +38,14 @@ def compute_sha256(file_path):
     return hex_digest
 
 
-def read_taxdump_file(file_path, scheme):
+def read_taxdump_file(file_path, cache_dir, scheme):
     """
     Reads the taxdump file and caches it in a shelve file.
 
     Return a tuple of the data and a boolean indicating whether the cache was
     updated.
     """
-    cache_file = Path(CACHE_DIR, f"{Path(file_path).stem}_{scheme}.db")
+    cache_file = Path(cache_dir, f"{Path(file_path).stem}_{scheme}.db")
     Path.mkdir(cache_file.parent, exist_ok=True, parents=True)
     current_checksum = compute_sha256(file_path)
 
@@ -66,8 +65,8 @@ def read_taxdump_file(file_path, scheme):
             return (data, True)
 
 
-def generate_taxonomy_tree(names, nodes, update_tree=False):
-    cache_file = Path(CACHE_DIR, "taxonomy_tree.db")
+def generate_taxonomy_tree(names, nodes, cache_dir, update_tree=False):
+    cache_file = Path(cache_dir, "taxonomy_tree.db")
     with shelve.open(cache_file) as cache:
         if "tree" in cache and not update_tree:
             logger.info(f"Reading taxonomy tree from {cache_file}")
@@ -107,22 +106,26 @@ def remove_whitespace(string):
     allowed_chars = re.compile("[a-zA-Z0-9]")
     return re.sub(r"[^a-zA-Z0-9]+", "_", string)
 
+
 class NcbiTaxdump:
-    def __init__(self, nodes_file, names_file, resolve_to_rank="species"):
+
+    def __init__(self, nodes_file, names_file, cache_dir, resolve_to_rank="species"):
         logger.info(f"Reading NCBI taxonomy from {nodes_file}")
-        self.nodes, nodes_changed = read_taxdump_file(nodes_file, "nodes")
+        self.nodes, nodes_changed = read_taxdump_file(
+            nodes_file, cache_dir, "nodes_slim"
+        )
 
         logger.info(f"Reading NCBI taxon names from {names_file}")
-        self.names, names_changed = read_taxdump_file(names_file, "names")
+        names, names_changed = read_taxdump_file(names_file, cache_dir, "names")
 
         # Create a dictionary for faster lookups
-        scientific_names = self.names[self.names["name_class"] == "scientific name"]
+        scientific_names = names[names["name_class"] == "scientific name"]
         self.scientific_name_dict = scientific_names["name_txt"].to_dict()
 
         update_tree = any([nodes_changed, names_changed])
 
         self.tree = generate_taxonomy_tree(
-            self.names, self.nodes, update_tree=update_tree
+            names, self.nodes, cache_dir, update_tree=update_tree
         )
 
         logger.info(f"Traversing the tree for rank information")
@@ -141,21 +144,24 @@ class NcbiTaxdump:
     def search_by_binomial_name(self, genus, species, package_id):
         search_string = f"{genus} {species}"
         logger.debug(f"Searching for {search_string}")
-        search_results = self.names.loc[
-            (self.names["name_txt"].str.contains(search_string))
-            & (self.names["name_class"] == "scientific name")
+
+        # Perform the lookup in the scientific_name_dict
+        candidate_taxids = [
+            taxid
+            for taxid, name in self.scientific_name_dict.items()
+            if search_string in name
         ]
 
-        if len(search_results) == 0:
+        if len(candidate_taxids) == 0:
             logger.debug(f"No results found for {search_string}")
             return None
 
-        candidate_taxids = search_results.index.tolist()
         accepted_level_taxids = [
             taxid
             for taxid in candidate_taxids
             if self.get_rank(taxid) in self.accepted_ranks
         ]
+
         if len(accepted_level_taxids) == 1:
             return accepted_level_taxids[0]
         else:

@@ -1,25 +1,27 @@
-from .arg_parser import parse_args_for_mapping
+from .arg_parser import parse_args_for_grouping
 from .config_parser import MetadataMap
 from .io import read_input, OutputWriter, write_mapping_log_to_csv
 from .logger import logger, setup_logger
 from .organism_mapper import OrganismSection, NcbiTaxdump
 
-nodes_file = "dev/nodes.dmp"
-names_file = "dev/names.dmp"
-mapping_log_file = "test/organism_mapping_log.csv.gz"
 
 
 def main():
 
     # debugging options
-    max_iterations = 300
+    max_iterations = None
     manual_record = None
 
-    args = parse_args_for_mapping()
+    args = parse_args_for_grouping()
     setup_logger(args.log_level)
 
     # shared objects
-    ncbi_taxdump = NcbiTaxdump(nodes_file, names_file, resolve_to_rank="species")
+    ncbi_taxdump = NcbiTaxdump(
+        args.nodes,
+        args.names,
+        args.cache_dir,
+        resolve_to_rank="species",
+    )
     bpa_to_atol_map = MetadataMap(args.field_mapping_file, args.value_mapping_file)
     input_data = read_input(args.input)
 
@@ -28,7 +30,6 @@ def main():
     grouped_packages = {}
     rejected_packages = []
 
-    # with OutputWriter(args.output, args.dry_run) as writer:
     for package in input_data:
 
         n_packages += 1
@@ -61,8 +62,11 @@ def main():
         if n_packages % 100 == 0:
             logger.info(f"Processed {n_packages} packages")
 
-    print(grouped_packages)
-    print(rejected_packages)
-    quit(1)
+    with OutputWriter(args.output, args.dry_run) as writer:
+        writer.write_data(grouped_packages)
 
-    write_mapping_log_to_csv(mapping_log, mapping_log_file)
+    write_mapping_log_to_csv(mapping_log, args.mapping_log)
+    with open(args.rejected_packages, "wt") as f:
+        for package in sorted(set(rejected_packages)):
+            f.write(package)
+            f.write("\n")

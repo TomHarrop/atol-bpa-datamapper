@@ -104,3 +104,40 @@ Mapping options:
   --mapping_log MAPPING_LOG
                         Compressed CSV file to record the mapping used for each package
 ```
+### resolve-organism
+
+```
+usage: resolve-organism [-h] [-i INPUT] [-o OUTPUT] [-f FIELD_MAPPING_FILE] [-v VALUE_MAPPING_FILE] [-l {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [-n] --nodes NODES --names NAMES [--rejected_packages REJECTED_PACKAGES]
+                        [--mapping_log MAPPING_LOG] [--cache_dir CACHE_DIR]
+
+Group packages in *filtered* metadata, according to derived species information
+
+options:
+  -h, --help            show this help message and exit
+
+Input:
+  -i INPUT, --input INPUT
+                        Input file (default: stdin)
+  --nodes NODES         NCBI nodes.dmp file from taxdump
+  --names NAMES         NCBI names.dmp file from taxdump
+
+Output:
+  -o OUTPUT, --output OUTPUT
+                        Output file (default: stdout)
+  --rejected_packages REJECTED_PACKAGES
+                        Text list of packages that had insufficient organism information
+  --mapping_log MAPPING_LOG
+                        Compressed CSV file to record derived organism info for each package
+
+General options:
+  -f FIELD_MAPPING_FILE, --field_mapping_file FIELD_MAPPING_FILE
+                        Field mapping file in json.
+  -v VALUE_MAPPING_FILE, --value_mapping_file VALUE_MAPPING_FILE
+                        Value mapping file in json.
+  -l {DEBUG,INFO,WARNING,ERROR,CRITICAL}, --log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        Set the logging level (default: INFO)
+  -n, --dry-run         Test mode. Output will be uncompressed jsonlines.
+  --cache_dir CACHE_DIR
+                        Directory to cache the NCBI taxonomy after processing
+
+```
