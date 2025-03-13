@@ -1,5 +1,33 @@
 # Changelog
 
+## v0.1.2 (2025-03-13)
+
+### Other
+
+* Print groups to output.
+
+* Rudimentary package sorting.
+
+* Remove profiling.
+
+* Abandon multiprocessing, IPC is too slow.
+
+* Attempt multiprocessing.
+
+* Handle ranks.
+
+* Traverse NCBI taxonomy tree for ranks.
+
+* Lookup taxid in taxonomy.
+
+* Start looking for species information in the metadat.
+
+* Check accession against ncbi.
+
+* Basic taxdump lookup.
+
+* Read and cache the NCBI taxonomy.
+
 ## v0.1.1 (2025-02-24)
 
 ### New
