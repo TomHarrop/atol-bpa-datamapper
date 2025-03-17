@@ -4,9 +4,21 @@ Map data from the BPA data portal for AToL's Genome Engine.
 
 ## Installation
 
-### Recommended
+### Recommended: Use the [BioContainer](https://quay.io/repository/biocontainers/atol-bpa-datamapper?tab=tags)
 
-- TODO: Use the Docker container from BioContainers
+*e.g.* with Apptainer/Singularity:
+
+```bash
+apptainer exec \
+  docker://quay.io/biocontainers/atol-bpa-datamapper:0.1.2--pyhdfd78af_0 \
+  filter-packages
+```
+
+### Via `pip` or `conda`
+
+Local installation isn't supported, but can be done with `pip`
+from this repo, or from 
+[bioconda](https://anaconda.org/bioconda/atol-bpa-datamapper).
 
 ## Usage
 
