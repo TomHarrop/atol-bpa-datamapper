@@ -262,17 +262,20 @@ class BpaPackage(dict):
         first_key = None
 
         for key, value in values.items():
-            if value is not None:
-                # If no accepted values, accept anything
-                if not accepted_values:
-                    return (value, key, True)
-                # Check if our value is in the accepted values dict
-                if value in accepted_values:
-                    return (accepted_values[value], key, True)
-                # Keep track of first value for fallback
-                if first_value is None:
-                    first_value = value
-                    first_key = key
+            # Skip None values and empty strings
+            if value is None or (isinstance(value, str) and value.strip() == ""):
+                continue
+
+            # If no accepted values, accept anything
+            if not accepted_values:
+                return (value, key, True)
+            # Check if our value is in the accepted values dict
+            if value in accepted_values:
+                return (accepted_values[value], key, True)
+            # Keep track of first value for fallback
+            if first_value is None:
+                first_value = value
+                first_key = key
 
         return (first_value, first_key, False)
 

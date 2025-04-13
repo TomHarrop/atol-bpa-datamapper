@@ -401,3 +401,28 @@ def test_map_metadata_parent_fields_to_resources(nested_package_data, metadata_m
     assert package.field_mapping["library_construction_protocol"] == "library_construction_protocol"
     assert package.field_mapping["library_source"] == "library_source"
     assert package.field_mapping["instrument_model"] == "sequencing_platform"
+
+def test_map_metadata_skip_empty_strings(nested_package_data, metadata_map):
+    """Test that empty strings are skipped in favor of non-empty values lower in the field list."""
+    # Add a field with empty string at higher priority and meaningful value at lower priority
+    nested_package_data["empty_field"] = ""
+    nested_package_data["meaningful_field"] = "Meaningful Value"
+    
+    # Create a new package with the modified data
+    package = BpaPackage(nested_package_data)
+    
+    # Manually add a test field to the metadata map that checks empty_field first, then meaningful_field
+    metadata_map["test_field"] = {
+        "bpa_fields": ["empty_field", "meaningful_field"],
+        "section": "sample"
+    }
+    metadata_map.expected_fields.append("test_field")
+    
+    # Map metadata
+    mapped_metadata = package.map_metadata(metadata_map)
+    
+    # Verify that the meaningful value was used instead of the empty string
+    assert mapped_metadata["sample"]["test_field"] == "Meaningful Value"
+    
+    # Verify the field mapping contains the correct source field
+    assert package.field_mapping["test_field"] == "meaningful_field"
