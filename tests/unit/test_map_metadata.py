@@ -52,6 +52,21 @@ def field_mapping_data():
             ],
             "library_size": [
                 "resources.library_size"
+            ],
+            "flowcell_type": [
+                "flowcell_type"
+            ],
+            "insert_size": [
+                "insert_size_range"
+            ],
+            "library_construction_protocol": [
+                "library_construction_protocol"
+            ],
+            "library_source": [
+                "library_source"
+            ],
+            "instrument_model": [
+                "sequencing_platform"
             ]
         }
     }
@@ -137,7 +152,7 @@ def metadata_map(tmp_path, field_mapping_data, value_mapping_data, sanitization_
     
     # Verify metadata sections
     assert metadata_map.metadata_sections == ["organism", "reads", "sample"]
-    assert metadata_map.expected_fields == ["data_context", "library_size", "library_type", "platform", "scientific_name", "taxon_id"]
+    assert metadata_map.expected_fields == ["data_context", "flowcell_type", "insert_size", "instrument_model", "library_construction_protocol", "library_size", "library_source", "library_type", "platform", "scientific_name", "taxon_id"]
     assert metadata_map.controlled_vocabularies == ["data_context", "library_size", "library_type", "platform", "scientific_name"]
     
     return metadata_map
@@ -337,3 +352,52 @@ def test_map_metadata_multiple_resources(nested_package_data, metadata_map):
     platform_logs = [l for l in package.mapping_log if l["atol_field"] == "platform"]
     assert len(platform_logs) == 2
     assert {"resource_1", "resource_2"} == {l["resource_id"] for l in platform_logs}
+
+def test_map_metadata_parent_fields_to_resources(nested_package_data, metadata_map):
+    """Test mapping of parent-level fields to resource objects in the reads section."""
+    # Add parent-level fields that should be mapped to resources
+    nested_package_data["flowcell_type"] = "10B-300"
+    nested_package_data["insert_size_range"] = "588.0"
+    nested_package_data["library_construction_protocol"] = "Illumina DNA Prep M"
+    nested_package_data["library_source"] = "DNA"
+    nested_package_data["sequencing_platform"] = "NovaSeq"
+    
+    # Add a resource with minimal information
+    nested_package_data["resources"] = [{
+        "id": "resource_1",
+        "type": "test-illumina-shortread",
+        "file_name": "test_file.fastq.gz",
+        "md5": "test_md5"
+    }]
+    
+    package = BpaPackage(nested_package_data)
+    
+    # Map metadata
+    mapped_metadata = package.map_metadata(metadata_map)
+    
+    # Verify reads section has the resource
+    assert len(mapped_metadata["reads"]) == 1
+    
+    # Verify parent-level fields are correctly mapped to the resource
+    reads = mapped_metadata["reads"][0]
+    assert reads["platform"] == "illumina_genomic"  # From resource.type
+    assert reads["flowcell_type"] == "10B-300"  # From parent
+    assert reads["insert_size"] == "588.0"  # From parent
+    assert reads["library_construction_protocol"] == "Illumina DNA Prep M"  # From parent
+    assert reads["library_source"] == "DNA"  # From parent
+    assert reads["instrument_model"] == "NovaSeq"  # From parent sequencing_platform
+    
+    # Verify the mapping log contains entries for parent-level fields
+    parent_field_logs = [log for log in package.mapping_log 
+                         if log["atol_field"] in ["flowcell_type", "insert_size", 
+                                                 "library_construction_protocol", 
+                                                 "library_source", "instrument_model"]]
+    
+    assert len(parent_field_logs) == 5
+    
+    # Verify field mapping contains correct source fields
+    assert package.field_mapping["flowcell_type"] == "flowcell_type"
+    assert package.field_mapping["insert_size"] == "insert_size_range"
+    assert package.field_mapping["library_construction_protocol"] == "library_construction_protocol"
+    assert package.field_mapping["library_source"] == "library_source"
+    assert package.field_mapping["instrument_model"] == "sequencing_platform"

@@ -67,7 +67,6 @@ class MetadataMap(dict):
         logger.debug(f"controlled_vocabularies:\n{self.controlled_vocabularies}")
 
     def _sanitize_value(self, section: str, field: str, value: Any):
-        logger.info(f"Sanitizing {field} with value {value}")
         """Apply sanitization rules to a value based on field name."""
         if value is None:
             return None
