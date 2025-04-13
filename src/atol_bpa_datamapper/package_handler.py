@@ -51,8 +51,9 @@ class BpaPackage(dict):
             self.decisions[atol_field] = value
 
         logger.info(f"Decisions: {self.decisions}")
-        logger.info(f"Keep: {all(self.decisions[x] for x in self.decisions if x.endswith('_accepted'))}")
-        return all(self.decisions[x] for x in self.decisions if x.endswith("_accepted"))
+        self.keep = all(self.decisions[x] for x in self.decisions if x.endswith('_accepted'))
+        logger.debug(f"Keep: {self.keep}")
+        return self.keep
 
     def map_metadata(self, metadata_map: "MetadataMap"):
         """Map BPA package metadata to AToL format."""
