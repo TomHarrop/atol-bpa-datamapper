@@ -2,6 +2,8 @@ from atol_bpa_datamapper import config
 import argparse
 import importlib.resources as pkg_resources
 import sys
+import os
+from pathlib import Path
 
 
 def get_config_filepath(filename):
@@ -9,7 +11,7 @@ def get_config_filepath(filename):
 
 
 def parse_args_for_filtering():
-    parser, counter_group = shared_args()
+    parser, input_group, output_group, options_group, counter_group = field_value_args()
     parser.description = "Filter packages from jsonlines.gz"
 
     counter_group.add_argument(
@@ -46,8 +48,46 @@ def parse_args_for_filtering():
     return parser.parse_args()
 
 
+def parse_args_for_grouping():
+    parser, input_group, output_group, options_group = shared_args()
+    parser.description = "Group packages in *filtered* metadata, according to derived species information"
+
+    input_group.add_argument(
+        "--nodes",
+        required=True,
+        help="NCBI nodes.dmp file from taxdump",
+    )
+
+    input_group.add_argument(
+        "--names",
+        required=True,
+        help="NCBI names.dmp file from taxdump",
+    )
+
+    output_group.add_argument(
+        "--rejected_packages",
+        help="Text list of packages that had insufficient organism information",
+    )
+
+    output_group.add_argument(
+        "--mapping_log",
+        help="Compressed CSV file to record derived organism info for each package",
+    )
+
+    options_group.add_argument(
+        "--cache_dir",
+        help="Directory to cache the NCBI taxonomy after processing",
+        default=Path(
+            os.getenv("XDG_CACHE_HOME", os.path.expanduser("~/.cache")),
+            "atol_bpa_datamapper",
+        ),
+    )
+
+    return parser.parse_args()
+
+
 def parse_args_for_mapping():
-    parser, counter_group = shared_args()
+    parser, input_group, output_group, options_group, counter_group = field_value_args()
     parser.description = "Map metadata in filtered jsonlines.gz"
 
     counter_group.add_argument(
@@ -150,10 +190,17 @@ def shared_args():
         help="Test mode. Output will be uncompressed jsonlines.",
     )
 
+    return parser, input_group, output_group, options_group
+
+
+def field_value_args():
+
+    parser, input_group, output_group, options_group = shared_args()
+
     counter_group = parser.add_argument_group("Counters")
     counter_group.add_argument(
         "--raw_field_usage",
         help="File for field usage counts in the raw data",
     )
 
-    return parser, counter_group
+    return parser, input_group, output_group, options_group, counter_group

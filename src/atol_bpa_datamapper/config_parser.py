@@ -116,13 +116,12 @@ class MetadataMap(dict):
         if bpa_value is None:
             logger.warning(f"Bpa value {bpa_value} not found in controlled vocabulary.")
             return None
-
-
-        # First apply sanitization if configured
-        
-        # Map the sanitized value to AToL value
         try:
             return self[atol_field]["value_mapping"][bpa_value]
+        # This is a manual override for the pesky genome_data key. If the
+        # package has no context_keys whose value is in accepted_data_context,
+        # but it does have a key called "genome_data" with value "yes",
+        # mapped_value is "genome_assembly".
         except KeyError as e:
             if atol_field == "data_context" and bpa_value == "yes":
                 logger.warning(f"Value of {atol_field} is {bpa_value}.")
