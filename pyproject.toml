@@ -34,4 +34,7 @@ license-files = ["LICENSE"]
 [tool.setuptools.package-data]
 atol_bpa_datamapper = ["config/*.json"]
 
+[tool.setuptools.exclude-package-data]
+"*" = ["dev/*"]
+
 [tool.setuptools_scm]
