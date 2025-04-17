@@ -2,50 +2,56 @@ from .logger import logger
 from .package_handler import BpaPackage
 import csv
 import gzip
-import json
 import jsonlines
 import sys
-from typing import Union, TextIO, BinaryIO, Any
 
 
 class OutputWriter:
-    """Write output data to a file or stdout."""
-
-    def __init__(self, output_dest: Union[str, TextIO, BinaryIO], dry_run=False):
-        """Initialize writer with output destination."""
+    def __init__(self, output_dest, dry_run=False):
         self.output_dest = output_dest
         self.dry_run = dry_run
-        if isinstance(output_dest, str):
-            logger.info(f"Writing output to {self.output_dest}")
-        else:
-            logger.info(f"Writing output to {self.output_dest.name}")
+        self.file_object = None
+        self.writer = None
+        logger.info(f"Writing output to {self.output_dest.name}")
 
     def __enter__(self):
+        self._open_file()
         return self
 
-    def write_data(self, data: Any):
-        """Write data to output destination."""
-        if isinstance(self.output_dest, str):
-            # File output
-            if self.output_dest.endswith('.gz'):
-                with gzip.open(self.output_dest, 'wt', encoding='utf-8') as f:
-                    json.dump(data, f, indent=2)
-            else:
-                with open(self.output_dest, 'w', encoding='utf-8') as f:
-                    json.dump(data, f, indent=2)
+    def _open_file(self):
+        logger.debug(f"Opening {self.output_dest.name} for writing")
+        if self.dry_run:
+            self.file_object = (
+                self.output_dest
+                if self.output_dest is sys.stdout.buffer
+                else open(self.output_dest.name, "w")
+            )
         else:
-            # Stdout or other file-like object
-            if hasattr(self.output_dest, 'mode') and 'b' in self.output_dest.mode:
-                # Binary mode - wrap in GzipFile for stdout
-                with gzip.GzipFile(fileobj=self.output_dest, mode='wb') as gz:
-                    writer = jsonlines.Writer(gz)
-                    writer.write(data)
-            else:
-                # Text mode
-                json.dump(data, self.output_dest, indent=2)
+            self.file_object = (
+                gzip.open(self.output_dest, "wt")
+                if self.output_dest is not sys.stdout.buffer
+                else gzip.GzipFile(fileobj=self.output_dest, mode="w")
+            )
+        self.writer = jsonlines.Writer(self.file_object)
+        return self
+
+    def write_data(self, data):
+        try:
+            self.writer.write(data)
+        except (AttributeError, RuntimeError) as e:
+            self._open_file()
+            self.writer.write(data)
+            self._close_file()
+
+    def _close_file(self):
+        logger.debug(f"Closing {self.output_dest.name}")
+        if self.writer:
+            self.writer.close()
+        if self.file_object and self.file_object is not self.output_dest:
+            self.file_object.close()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
+        self._close_file()
 
 
 def read_input(input_source):

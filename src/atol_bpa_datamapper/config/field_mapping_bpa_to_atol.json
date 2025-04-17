@@ -172,9 +172,18 @@
         ],
         "sample_submission_date": [
             "sample_submission_date"
+        ],
+        "material_extracted_by": [
+            "material_extracted_by",
+            "dna_extracted_by",
+            "genomic_material_prepared_by"
+        ],
+        "material_extraction_date": [
+            "material_extraction_date",
+            "dna_extraction_date"
         ]
     },
-    "reads": {
+    "experiment": {
         "platform": [
             "type",
             "sequence_data_type",
@@ -217,9 +226,6 @@
             "material_extraction_type",
             "sample_material_preparation_type"
         ],
-        "insert_size": [
-            "insert_size_range"
-        ],
         "library_construction_protocol": [
             "library_construction_protocol",
             "library_prep_method",
@@ -236,14 +242,8 @@
             "sequencer",
             "sequencing_technology"
         ],
-        "material_extracted_by": [
-            "material_extracted_by",
-            "dna_extracted_by",
-            "genomic_material_prepared_by"
-        ],
-        "material_extraction_date": [
-            "material_extraction_date",
-            "dna_extraction_date"
+        "insert_size": [
+            "insert_size_range"
         ],
         "library_prepared_by": [
             "library_prepared_by"
@@ -257,19 +257,11 @@
         "flowcell_type": [
             "flowcell_type"
         ],
-        "dataset_name": [
-            "bioplatforms_dataset_id",
-            "dataset_id",
-            "bpa_dataset_id",
-            "bpa_dataset_ids",
-            "resources.dataset_id"
-        ],
-        "package_id": [
-            "resources.package_id"
-        ],
-        "resource_id": [
-            "resources.id"
-        ],
+        "bioplatforms_dataset_url": [
+            "url"
+        ]
+    },
+    "runs": {
         "file_name": [
             "resources.name"
         ],
@@ -284,8 +276,22 @@
             "resources.created",
             "date_submission"
         ],
-        "bioplatforms_url": [
+        "package_id": [
+            "resources.package_id",
+            "id"
+        ],
+        "resource_id": [
+            "resources.id"
+        ],
+        "bioplatforms_resource_url": [
             "resources.url"
+        ],
+        "dataset_name": [
+            "bioplatforms_dataset_id",
+            "dataset_id",
+            "bpa_dataset_id",
+            "bpa_dataset_ids",
+            "resources.dataset_id"
         ]
     },
     "dataset": {

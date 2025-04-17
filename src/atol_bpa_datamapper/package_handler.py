@@ -6,11 +6,11 @@ class BpaPackage(dict):
         super().__init__()
         logger.debug("Initialising BpaPackage")
         self.update(package_data)
+        self.fields = sorted(set(self.keys()))
         self.id = self.get("id")
         # Add bpa_id to the package data
         self["bpa_id"] = self.id
-        self.fields = sorted(set(self.keys()))
-        self.resource_ids = sorted(set(x["id"] for x in self.get("resources")))
+        self.resource_ids = sorted(set(x["id"] for x in self.get("resources", [])))
         logger.debug(self.id)
         logger.debug(self.fields)
         logger.debug(self.resource_ids)
@@ -38,225 +38,235 @@ class BpaPackage(dict):
                 logger.debug("Checking genome_data field")
                 if self["genome_data"] == "yes":
                     logger.debug("Setting keep to True")
-                    value, bpa_field, keep = ("genome_assembly", "genome_data", True)
+                    value, bpa_field, keep = ("yes", "genome_data", True)
 
             # record the field that was used in the bpa data
             self.bpa_fields[atol_field] = bpa_field
-            # record the original BPA value
-            self.bpa_values[atol_field] = self.get_nested_value(self, bpa_field) if bpa_field else None
+            self.bpa_values[atol_field] = value
 
             # record the decision for this field
             decision_key = f"{atol_field}_accepted"
             self.decisions[decision_key] = keep
             self.decisions[atol_field] = value
 
-        logger.info(f"Decisions: {self.decisions}")
-        self.keep = all(self.decisions[x] for x in self.decisions if x.endswith('_accepted'))
+        # summarise the decision for this package
+        logger.debug(f"Decisions: {self.decisions}")
+        self.keep = all(x for x in self.decisions.values() if isinstance(x, bool))
         logger.debug(f"Keep: {self.keep}")
-        return self.keep
 
     def map_metadata(self, metadata_map: "MetadataMap"):
-        """Map BPA package metadata to AToL format."""
+        """Map BPA package metadata to AToL format, handling resources properly."""
         logger.debug(f"Mapping BpaPackage {self.id}")
         
+        # Define sections that should be treated as resource-level (list type)
+        resource_sections = [ "runs"]
+        
         # Initialize metadata sections
-        mapped_metadata = {section: [] if section == "reads" else {} 
-                         for section in metadata_map.metadata_sections}
+        # Use a list for resource-level sections, dictionaries for other sections
+        mapped_metadata = {
+            section: [] if section in resource_sections else {} 
+            for section in metadata_map.metadata_sections
+        }
         
         self.mapping_log = []
         self.field_mapping = {}
         self.sanitization_changes = []
-
-        # First handle non-reads sections
+        
+        # First handle non-resource sections
         for atol_field in metadata_map.expected_fields:
             section = metadata_map.get_atol_section(atol_field)
-            if section != "reads":
-                value, bpa_field, _ = self.choose_value(
+            if section not in resource_sections:
+                value, bpa_field, keep = self.choose_value(
                     metadata_map.get_bpa_fields(atol_field),
-                    metadata_map.get_allowed_values(atol_field)
+                    metadata_map.get_allowed_values(atol_field),
                 )
-                if value is not None:
+                
+                if value is not None and bpa_field is not None:
                     # Get the original value directly from package
-                    original_value = self.get_nested_value(self, bpa_field)
+                    original_value = get_nested_value(self, bpa_field)
                     
-                    # Track sanitization changes
-                    original_str = str(original_value) if original_value is not None else None
-                    sanitized_value = metadata_map._sanitize_value(section, atol_field, original_value)
-                    sanitized_str = str(sanitized_value) if sanitized_value is not None else None
+                    # Apply sanitization rules
+                    sanitized_value = self._apply_sanitization(metadata_map, section, atol_field, original_value)
                     
-                    # Record sanitization if the value was changed during sanitization
-                    if original_str != sanitized_str:
-                        self.sanitization_changes.append({
-                            "bpa_id": self.id,
-                            "field": atol_field,
-                            "original_value": original_value,
-                            "sanitized_value": sanitized_value
-                        })
-                    
-                    # Store the mapped value
-                    mapped_metadata[section][atol_field] = metadata_map.map_value(atol_field, sanitized_value)
+                    # Map the sanitized value
+                    try:
+                        mapped_value = metadata_map.map_value(atol_field, sanitized_value)
+                    except KeyError as e:
+                        # Handle invalid values gracefully
+                        logger.warning(f"Invalid value '{sanitized_value}' for field '{atol_field}': {e}")
+                        mapped_value = sanitized_value
+                        
+                    mapped_metadata[section][atol_field] = mapped_value
                     self.field_mapping[atol_field] = bpa_field
-                    
-                    self.mapping_log.append({
-                        "atol_field": atol_field,
-                        "bpa_field": bpa_field,
-                        "value": original_value,
-                        "mapped_value": metadata_map.map_value(atol_field, sanitized_value)
-                    })
+
+                    self.mapping_log.append(
+                        {
+                            "atol_field": atol_field,
+                            "bpa_field": bpa_field,
+                            "value": original_value,
+                            "sanitized_value": sanitized_value,
+                            "mapped_value": mapped_value,
+                        }
+                    )
         
-        # Handle reads section
-        if "resources" in self:
+        # Handle resource-level sections - map each resource to an entry in the appropriate list
+        if "resources" in self and self["resources"]:
             for resource in self["resources"]:
                 resource_id = resource["id"]
-                resource_metadata = {}
                 
-                # Initialize all reads fields to None
-                for atol_field in metadata_map.expected_fields:
-                    if metadata_map.get_atol_section(atol_field) == "reads":
-                        resource_metadata[atol_field] = None
+                # Create a dictionary for each resource section
+                resource_metadata = {section: {} for section in resource_sections}
                 
+                # Process each field for this resource
                 for atol_field in metadata_map.expected_fields:
                     section = metadata_map.get_atol_section(atol_field)
-                    if section == "reads":
+                    if section in resource_sections:
+                        # Get the field list and separate resource and parent fields
                         bpa_field_list = metadata_map.get_bpa_fields(atol_field)
-                        # Remove "resources." prefix since we're already in a resource
-                        resource_field_list = [f.replace("resources.", "") for f in bpa_field_list if f.startswith("resources.")]
-                        # Keep fields that don't start with "resources." as they might be parent-level fields
-                        parent_field_list = [f for f in bpa_field_list if not f.startswith("resources.")]
+                        resource_fields = [
+                            f.replace("resources.", "") 
+                            for f in bpa_field_list 
+                            if f.startswith("resources.")
+                        ]
+                        parent_fields = [
+                            f for f in bpa_field_list 
+                            if not f.startswith("resources.")
+                        ]
                         
-                        # First try to get value from resource
-                        value, bpa_field, _ = self.choose_value(
-                            resource_field_list,
+                        # First try to get value from resource fields
+                        value, bpa_field, keep = self.choose_value_from_resource(
+                            resource_fields,
                             metadata_map.get_allowed_values(atol_field),
                             resource
                         )
                         
-                        # If not found in resource, try parent-level fields
-                        if value is None and parent_field_list:
-                            value, bpa_field, _ = self.choose_value(
-                                parent_field_list,
+                        # If no value found in resource, try parent fields
+                        if value is None and parent_fields:
+                            value, bpa_field, keep = self.choose_value(
+                                parent_fields,
                                 metadata_map.get_allowed_values(atol_field)
                             )
+                            # Record that this value came from parent
+                            source = "parent"
+                            # Get the original value directly from package
+                            original_value = get_nested_value(self, bpa_field) if bpa_field else None
+                        else:
+                            # Record that this value came from resource
+                            source = "resource"
+                            # Get the original value directly from resource
+                            original_value = get_nested_value(resource, bpa_field) if bpa_field else None
                         
-                        if value is not None:
-                            # Get the original value
-                            original_value = None
-                            resource_field = None
+                        # Map the value if found
+                        if value is not None and bpa_field is not None:
+                            # Apply sanitization rules
+                            sanitized_value = self._apply_sanitization(metadata_map, section, atol_field, original_value, resource_id)
                             
-                            if bpa_field in resource_field_list:
-                                # Value came from resource
-                                resource_field = bpa_field
-                                original_value = self.get_nested_value(resource, resource_field)
+                            # Map the sanitized value
+                            try:
+                                mapped_value = metadata_map.map_value(atol_field, sanitized_value)
+                            except KeyError as e:
+                                # Handle invalid values gracefully
+                                logger.warning(f"Invalid value '{sanitized_value}' for field '{atol_field}': {e}")
+                                mapped_value = sanitized_value
+                                
+                            resource_metadata[section][atol_field] = mapped_value
+                            
+                            # Record the correct field mapping path
+                            if source == "resource":
+                                self.field_mapping[atol_field] = f"resources.{bpa_field}"
                             else:
-                                # Value came from parent
-                                resource_field = bpa_field
-                                original_value = self.get_nested_value(self, resource_field)
+                                self.field_mapping[atol_field] = bpa_field
                             
-                            # Track sanitization changes
-                            original_str = str(original_value) if original_value is not None else None
-                            sanitized_value = metadata_map._sanitize_value(section, atol_field, original_value)
-                            sanitized_str = str(sanitized_value) if sanitized_value is not None else None
-                            
-                            # Record sanitization if the value was changed during sanitization
-                            if original_str != sanitized_str:
-                                self.sanitization_changes.append({
-                                    "bpa_id": self.id,
-                                    "field": atol_field,
-                                    "original_value": original_value,
+                            # Add to mapping log with resource information
+                            self.mapping_log.append(
+                                {
+                                    "atol_field": atol_field,
+                                    "bpa_field": bpa_field,
+                                    "value": original_value,
                                     "sanitized_value": sanitized_value,
-                                    "resource_id": resource_id
-                                })
-                            
-                            # Store the mapped value
-                            resource_metadata[atol_field] = metadata_map.map_value(atol_field, sanitized_value)
-                            
-                            # Store the correct field mapping path
-                            if bpa_field in resource_field_list:
-                                self.field_mapping[atol_field] = f"resources.{resource_field}"
-                            else:
-                                self.field_mapping[atol_field] = resource_field
-                            
-                            # Add to mapping log
-                            self.mapping_log.append({
-                                "atol_field": atol_field,
-                                "bpa_field": self.field_mapping[atol_field],
-                                "value": original_value,
-                                "mapped_value": metadata_map.map_value(atol_field, sanitized_value),
-                                "resource_id": resource_id
-                            })
+                                    "mapped_value": mapped_value,
+                                    "resource_id": resource_id,
+                                    "source": source,
+                                }
+                            )
                 
-                # Always append resource metadata since we initialized all fields
-                mapped_metadata["reads"].append(resource_metadata)
-
-        self.mapped_metadata = mapped_metadata
-        self.unused_fields = [f for f in self.fields if f not in self.field_mapping.values()]
+                # Add the resource metadata to the appropriate section lists if not empty
+                for section in resource_sections:
+                    if resource_metadata[section]:
+                        # Add resource_id to the metadata
+                        resource_metadata[section]["resource_id"] = resource_id
+                        mapped_metadata[section].append(resource_metadata[section])
         
-        logger.debug(f"Field mapping: {self.field_mapping}")
-        logger.debug(f"Data mapping: {self.mapping_log}")
-        logger.debug(f"Unused fields: {self.unused_fields}")
-        logger.debug(f"Sanitization changes: {self.sanitization_changes}")
+        # Store the mapped metadata
+        self.mapped_metadata = mapped_metadata
+        
+        # Track fields that weren't used
+        self.unused_fields = [
+            field for field in self.fields 
+            if field not in [self.field_mapping.get(atol_field) for atol_field in self.field_mapping]
+        ]
         
         return mapped_metadata
 
-    def get_nested_value(self, obj, field):
-        """Get a value from a nested field."""
-        if field is None:
-            return None
-            
-        parts = field.split(".")
-        current = obj
+    def _apply_sanitization(self, metadata_map, section, atol_field, original_value, resource_id=None):
+        """
+        Apply sanitization rules to a value and record changes if any.
         
-        for part in parts:
-            if current is None:
-                return None
-            if isinstance(current, dict):
-                current = current.get(part)
-            elif isinstance(current, list):
-                # Try to get value from each item in the list
-                for item in current:
-                    if isinstance(item, dict):
-                        value = item.get(part)
-                        if value is not None:
-                            current = value
-                            break
-                else:
-                    return None
-            else:
-                return None
-        return current
+        Args:
+            metadata_map: The MetadataMap instance
+            section: The section of the metadata (e.g., "organism", "reads")
+            atol_field: The AToL field name
+            original_value: The value to sanitize
+            resource_id: Optional resource ID for resource-level fields
+            
+        Returns:
+            The sanitized value
+        """
+        # Apply sanitization rules
+        original_str = str(original_value) if original_value is not None else None
+        sanitized_value, applied_rules = metadata_map._sanitize_value(section, atol_field, original_value)
+        sanitized_str = str(sanitized_value) if sanitized_value is not None else None
+        
+        # Record sanitization if the value was changed during sanitization
+        if original_str != sanitized_str:
+            sanitization_record = {
+                "bpa_id": self.id,
+                "field": atol_field,
+                "original_value": original_value,
+                "sanitized_value": sanitized_value,
+                "applied_rules": applied_rules
+            }
+            
+            # Add resource_id if provided
+            if resource_id is not None:
+                sanitization_record["resource_id"] = resource_id
+                
+            self.sanitization_changes.append(sanitization_record)
+            
+        return sanitized_value
 
-    def get_resource_value(self, resource, field):
-        """Get a value from a specific resource."""
-        if "." in field:
-            # Handle nested fields
-            parts = field.split(".")
-            if parts[0] == "resources":
-                # Remove "resources" prefix since we're already in a resource
-                field = ".".join(parts[1:])
-        return self.get_nested_value(resource, field)
-
-    def choose_value(self, fields_to_check, accepted_values, resource=None):
+    def choose_value(self, fields_to_check, accepted_values):
         """
         Returns a tuple of (value, bpa_field, keep).
 
-        fields_to_check is an ordered list of BPA fields to check.
-        accepted_values is a dict mapping BPA values to AToL values.
+        fields_to_check is an ordered list.
 
         If accepted_values is None, then we don't have a controlled vocabulary
         for this field, and keep will always be True.
 
-        If accepted_values is a dict, then:
-        1. We look for any BPA field whose value appears as a key in accepted_values
-        2. If found, we return the corresponding AToL value
-        3. If not found, we return the first value we found, with keep=False
+        If accepted_values is a list, then keep will be True if the value of
+        the selected bpa_field is in the list of accepted_values.
+
+        If package has any fields_to_check whose value is in accepted_values,
+        the value and the bpa_field are returned and accept_value is True.
+
+        If the package has no fields_to_check whose value is in
+        accepted_values, the first bpa_field and its value are returned.
 
         If the package has no bpa_fields matching fields_to_check, the value
         and bpa_field is None.
         """
-        if resource is None:
-            values = {key: self.get_nested_value(self, key) for key in fields_to_check}
-        else:
-            values = {key: self.get_nested_value(resource, key) for key in fields_to_check}
+        values = {key: get_nested_value(self, key) for key in fields_to_check}
 
         first_value = None
         first_key = None
@@ -265,14 +275,33 @@ class BpaPackage(dict):
             # Skip None values and empty strings
             if value is None or (isinstance(value, str) and value.strip() == ""):
                 continue
-
-            # If no accepted values, accept anything
-            if not accepted_values:
+                
+            if not accepted_values or value in accepted_values:
                 return (value, key, True)
-            # Check if our value is in the accepted values dict
-            if value in accepted_values:
-                return (accepted_values[value], key, True)
-            # Keep track of first value for fallback
+            if first_value is None:
+                first_value = value
+                first_key = key
+
+        return (first_value, first_key, False)
+        
+    def choose_value_from_resource(self, fields_to_check, accepted_values, resource):
+        """
+        Returns a tuple of (value, bpa_field, keep) from a specific resource.
+        
+        Similar to choose_value but operates on a specific resource rather than the package.
+        """
+        values = {key: get_nested_value(resource, key) for key in fields_to_check}
+
+        first_value = None
+        first_key = None
+
+        for key, value in values.items():
+            # Skip None values and empty strings
+            if value is None or (isinstance(value, str) and value.strip() == ""):
+                continue
+                
+            if not accepted_values or value in accepted_values:
+                return (value, key, True)
             if first_value is None:
                 first_value = value
                 first_key = key
@@ -283,36 +312,14 @@ class BpaPackage(dict):
 def get_nested_value(d, key):
     """
     Retrieve the value from a nested dictionary using a dot-notated key.
-    For resources, returns a list of all matching values from all resources.
     """
-    # logger.info(f"Getting nested value for key {key} from {d}")
     keys = key.split(".")
+    current = d
     
-    # Special case for resources - we want to check all resources
-    if keys[0] == "resources" and len(keys) > 1:
-        if not isinstance(d.get("resources"), list):
+    for k in keys:
+        if isinstance(current, dict) and k in current:
+            current = current[k]
+        else:
             return None
             
-        # Get the nested key we want from each resource
-        nested_key = keys[1]
-        values = []
-        for resource in d["resources"]:
-            if isinstance(resource, dict) and nested_key in resource:
-                values.append(resource[nested_key])
-        
-        # logger.info(f"Found resource values for {nested_key}: {values}")
-        return values[0] if values else None  # Return first match if any
-    
-    # Normal case - traverse the dictionary
-    for k in keys:
-        if isinstance(d, dict):
-            if k in d:
-                d = d[k]
-                #logger.info(f"Found dict value for {k}: {d}")
-            else:
-                #logger.info(f"Could not find key {k} in dict")
-                return None
-        else:
-            #logger.info(f"Could not traverse {k}, parent is not a dict")
-            return None
-    return d
+    return current

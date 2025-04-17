@@ -3,8 +3,6 @@ from .config_parser import MetadataMap
 from .io import read_input, OutputWriter, write_mapping_log_to_csv, write_json
 from .logger import logger, setup_logger
 from collections import Counter
-import gzip
-import json
 
 
 def main():
@@ -14,11 +12,7 @@ def main():
     args = parse_args_for_mapping()
     setup_logger(args.log_level)
 
-    bpa_to_atol_map = MetadataMap(
-        args.field_mapping_file, 
-        args.value_mapping_file,
-        args.sanitization_config
-    )
+    bpa_to_atol_map = MetadataMap(args.field_mapping_file, args.value_mapping_file)
     input_data = read_input(args.input)
 
     # set up counters
@@ -36,9 +30,9 @@ def main():
 
     # set up mapping log
     mapping_log = {}
-
-    # set up sanitization changes
-    sanitization_changes = []
+    
+    # set up sanitization changes log
+    sanitization_changes = {}
 
     n_packages = 0
 
@@ -56,34 +50,31 @@ def main():
                     pass
 
             package.map_metadata(bpa_to_atol_map)
-            
-            # Update counts before writing output
-            for section, data in package.mapped_metadata.items():
-                if section == "reads":
-                    # Handle reads array
-                    for read_obj in data:
-                        for atol_field, mapped_value in read_obj.items():
-                            if atol_field in package.field_mapping:
-                                bpa_field = package.field_mapping[atol_field]
-                                counters["mapped_field_usage"][atol_field].update([bpa_field])
-                                counters["mapped_value_usage"][atol_field].update([mapped_value])
-                else:
-                    # Handle other sections
-                    for atol_field, mapped_value in data.items():
-                        if atol_field in package.field_mapping:
-                            bpa_field = package.field_mapping[atol_field]
-                            counters["mapped_field_usage"][atol_field].update([bpa_field])
-                            counters["mapped_value_usage"][atol_field].update([mapped_value])
-            
-            # Write output
             output_writer.write_data(package.mapped_metadata)
             mapping_log[package.id] = package.mapping_log
             
-            # Update unused field counts
+            # Store sanitization changes if any were made
+            if hasattr(package, 'sanitization_changes') and package.sanitization_changes:
+                sanitization_changes[package.id] = package.sanitization_changes
+
+            # update counts
             counters["unused_field_counts"].update(package.unused_fields)
 
-            # Collect sanitization changes
-            sanitization_changes.extend(package.sanitization_changes)
+            for section_name, section in package.mapped_metadata.items():
+                if isinstance(section, dict):
+                    # Handle dictionary sections (organism, sample, etc.)
+                    for atol_field, mapped_value in section.items():
+                        bpa_field = package.field_mapping[atol_field]
+                        counters["mapped_field_usage"][atol_field].update([bpa_field])
+                        counters["mapped_value_usage"][atol_field].update([mapped_value])
+                elif isinstance(section, list) and section_name == "runs":
+                    # Handle list section (reads)
+                    for resource_entry in section:
+                        for atol_field, mapped_value in resource_entry.items():
+                            # For reads section, the field mapping might not be in package.field_mapping
+                            # It's recorded in the mapping_log with resource_id
+                            # For simplicity, we'll just count the mapped values
+                            counters["mapped_value_usage"][atol_field].update([mapped_value])
 
             if max_iterations and n_packages >= max_iterations:
                 break
@@ -109,13 +100,9 @@ def main():
         if args.unused_field_counts:
             logger.info(f"Writing unused field counts to {args.unused_field_counts}")
             write_json(counters["unused_field_counts"], args.unused_field_counts)
-
-        # Write sanitization changes
-        logger.info(
-            f"Writing sanitization changes to {args.sanitization_change_file}"
-        )
-        writer = OutputWriter(args.sanitization_change_file)
-        writer.write_data({"sanitization_changes": sanitization_changes})
+        if args.sanitization_changes and sanitization_changes:
+            logger.info(f"Writing sanitization changes to {args.sanitization_changes}")
+            write_json(sanitization_changes, args.sanitization_changes)
 
 
 if __name__ == "__main__":

@@ -48,7 +48,7 @@
             ]
         }
     },
-    "reads": {
+    "experiment": {
         "platform": {
             "pacbio_hifi": [
                 "ausarg-pacbio-hifi",
