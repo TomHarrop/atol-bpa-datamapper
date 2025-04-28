@@ -1,13 +1,26 @@
 #!/usr/bin/env python3
 
 from collections import defaultdict
+from datetime import datetime
+from pathlib import Path
+from uuid import uuid4
 import json
 import pandas as pd
 import re
 
-sample_schema = "dev/sample_schema_2025-04-16.tsv"
-reads_scema = "dev/reads_schema_2025-04-16.tsv"
-json_output_file = "results/2025-04-17/field_mapping_bpa_to_atol.json"
+outdir = f"{datetime.today().strftime("%Y-%m-%d")}_{uuid4()}"
+
+sample_schema = (
+    "https://docs.google.com/spreadsheets/d/"
+    "1ml5hASZ-qlAuuTrwHeGzNVqqe1mXsmmoDTekd6d9pto"
+    "/export?gid=2142397762&format=tsv"
+)
+
+reads_scema = (
+    "https://docs.google.com/spreadsheets/d/"
+    "1ml5hASZ-qlAuuTrwHeGzNVqqe1mXsmmoDTekd6d9pto"
+    "/export?gid=1743767073&format=tsv"
+)
 
 
 def read_schema(schema_file):
@@ -68,6 +81,8 @@ def main():
     output_data = {k: dict(v) for k, v in output_data.items()}
 
     # Write the JSON output
+    json_output_file = Path("results", outdir, "field_mapping_bpa_to_atol.json")
+    Path(json_output_file.parent).mkdir(parents=True, exist_ok=True)
     with open(json_output_file, mode="w", encoding="utf-8") as json_file:
         json.dump(output_data, json_file, indent=4)
 
