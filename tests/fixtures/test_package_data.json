@@ -1,0 +1,36 @@
+{
+  "id": "test-package-123",
+  "type": "illumina-shortread",
+  "data_type": "illumina-shortread",
+  "scientific_name": "Homo sapiens",
+  "project_aim": "Genome resequencing",
+  "platform": "illumina",
+  "library_type": "paired",
+  "library_size": "350",
+  "resources": [
+    {
+      "id": "resource_1",
+      "type": "illumina-shortread",
+      "library_type": "paired",
+      "library_size": "350",
+      "name": "test_file_1.fastq.gz",
+      "md5": "abcdef1234567890",
+      "format": "FASTQ",
+      "created": "2025-01-01",
+      "package_id": "test-package-123",
+      "url": "https://example.com/resource1"
+    },
+    {
+      "id": "resource_2",
+      "type": "pacbio-hifi",
+      "library_type": "single",
+      "library_size": "1000",
+      "name": "test_file_2.fastq.gz",
+      "md5": "0987654321fedcba",
+      "format": "FASTQ",
+      "created": "2025-01-02",
+      "package_id": "test-package-123",
+      "url": "https://example.com/resource2"
+    }
+  ]
+}
