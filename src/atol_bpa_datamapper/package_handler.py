@@ -313,6 +313,9 @@ def get_nested_value(d, key):
     """
     Retrieve the value from a nested dictionary using a dot-notated key.
     """
+    if d is None or key is None:
+        return None
+        
     keys = key.split(".")
     current = d
     
