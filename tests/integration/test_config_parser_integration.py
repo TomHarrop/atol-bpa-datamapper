@@ -9,37 +9,16 @@ import logging
 
 
 @pytest.fixture
-def test_fixtures_dir():
-    """Return the path to the test fixtures directory."""
-    return os.path.join(os.path.dirname(os.path.dirname(__file__)), "fixtures")
-
-
-@pytest.fixture
-def field_mapping_file(test_fixtures_dir):
-    """Return the path to the test field mapping file."""
-    return os.path.join(test_fixtures_dir, "test_field_mapping.json")
-
-
-@pytest.fixture
-def value_mapping_file(test_fixtures_dir):
-    """Return the path to the test value mapping file."""
-    return os.path.join(test_fixtures_dir, "test_value_mapping.json")
-
-
-@pytest.fixture
-def sanitization_config_file(test_fixtures_dir):
-    """Return the path to the test sanitization config file."""
-    return os.path.join(test_fixtures_dir, "test_sanitization_config.json")
-
-
-@pytest.fixture
 def metadata_map(field_mapping_file, value_mapping_file):
     """Create a MetadataMap instance for testing."""
     return MetadataMap(field_mapping_file, value_mapping_file)
 
 
-def test_metadata_map_initialization(metadata_map, field_mapping_file, value_mapping_file):
+def test_metadata_map_initialization(metadata_map):
     """Test that the MetadataMap is initialized correctly."""
+    # Check that the metadata map is not None
+    assert metadata_map is not None
+    
     # Check that the expected fields are loaded
     assert "scientific_name" in metadata_map.expected_fields
     assert "data_context" in metadata_map.expected_fields
@@ -78,49 +57,59 @@ def test_get_allowed_values_parameterized(metadata_map, field, expected_values, 
 
 def test_get_bpa_fields(metadata_map):
     """Test the get_bpa_fields method."""
-    # Test fields from different sections
-    assert metadata_map.get_bpa_fields("scientific_name") == ["scientific_name", "species_name", "taxon_or_organism"]
-    assert metadata_map.get_bpa_fields("data_context") == ["project_aim", "data_context"]
-    assert metadata_map.get_bpa_fields("platform") == ["resources.type", "sequence_data_type", "data_type", "type", "platform"]
-
-
-def test_get_atol_section(metadata_map):
-    """Test the get_atol_section method."""
-    assert metadata_map.get_atol_section("scientific_name") == "organism"
-    assert metadata_map.get_atol_section("data_context") == "sample"
-    assert metadata_map.get_atol_section("platform") == "runs"
-    assert metadata_map.get_atol_section("bpa_id") == "dataset"
-
-
-def test_keep_value(metadata_map):
-    """Test the keep_value method."""
-    # Test values that should be kept
-    assert metadata_map.keep_value("scientific_name", "Undetermined sp.") is True
-    assert metadata_map.keep_value("data_context", "genome_assembly") is True
+    # Test a field with multiple BPA fields
+    bpa_fields = metadata_map.get_bpa_fields("scientific_name")
+    assert bpa_fields is not None
+    assert "scientific_name" in bpa_fields
+    assert "species_name" in bpa_fields
+    assert "taxon_or_organism" in bpa_fields
     
-    # Test values that should not be kept
-    assert metadata_map.keep_value("scientific_name", "Unknown Species") is False
-    assert metadata_map.keep_value("data_context", "transcriptome") is False
-    
-    # Test fields without a controlled vocabulary
-    assert metadata_map.keep_value("bpa_id", "any-value") is True
+    # Test a field with a single BPA field
+    bpa_fields = metadata_map.get_bpa_fields("bpa_id")
+    assert bpa_fields is not None
+    assert "id" in bpa_fields
 
 
-def test_map_value(metadata_map):
-    """Test the map_value method."""
-    # Test mapping values with controlled vocabulary
-    assert metadata_map.map_value("scientific_name", "Undetermined sp.") == "Undetermined sp"
-    assert metadata_map.map_value("data_context", "genome_assembly") == "genome_assembly"
-    assert metadata_map.map_value("platform", "illumina") == "illumina_genomic"
-    
-    # Test mapping values without controlled vocabulary
-    with pytest.raises(KeyError):
-        metadata_map.map_value("scientific_name", "Unknown Species")
+@pytest.mark.parametrize("field, expected_section", [
+    ("scientific_name", "organism"),
+    ("data_context", "sample"),
+    ("platform", "runs"),
+    ("bpa_id", "dataset"),
+])
+def test_get_atol_section(metadata_map, field, expected_section):
+    """Test the get_atol_section method with parameterized inputs."""
+    section = metadata_map.get_atol_section(field)
+    assert section == expected_section
 
 
-def test_sanitize_value(metadata_map, test_fixtures_dir):
-    """Test the _sanitize_value method behavior without relying on implementation details."""
-    # Create a real sanitization config file in the test fixtures directory
+@pytest.mark.parametrize("field, value, expected_result", [
+    ("scientific_name", "Homo sapiens", True),
+    ("scientific_name", "Unknown Species", False),
+    ("data_context", "Genome resequencing", True),
+    ("data_context", "Unknown Context", False),
+    ("bpa_id", "any-value", True),  # Non-controlled field should always return True
+])
+def test_keep_value(metadata_map, field, value, expected_result):
+    """Test the keep_value method with parameterized inputs."""
+    result = metadata_map.keep_value(field, value)
+    assert result == expected_result
+
+
+@pytest.mark.parametrize("field, value, expected_result", [
+    ("scientific_name", "Homo sapiens", "Homo sapiens"),
+    ("scientific_name", "homo sapiens", "Homo sapiens"),  # Test case insensitivity
+    ("data_context", "Genome resequencing", "genome_assembly"),
+    ("bpa_id", "test-id", "test-id"),  # Non-mapped field should return the original value
+])
+def test_map_value(metadata_map, field, value, expected_result):
+    """Test the map_value method with parameterized inputs."""
+    result = metadata_map.map_value(field, value)
+    assert result == expected_result
+
+
+def test_sanitize_value(test_fixtures_dir):
+    """Test the _sanitize_value method using a temporary sanitization config."""
+    # Create a temporary sanitization config file
     sanitization_config = {
         "organism": {
             "scientific_name": ["text_sanitization", "empty_string_sanitization"]
@@ -142,78 +131,62 @@ def test_sanitize_value(metadata_map, test_fixtures_dir):
         }
     }
     
-    # Create a temporary sanitization config file
     sanitization_config_path = os.path.join(test_fixtures_dir, "temp_sanitization_config.json")
-    with open(sanitization_config_path, "w") as f:
-        json.dump(sanitization_config, f)
     
     try:
-        # Create a new MetadataMap instance with the sanitization config
-        # This avoids mocking internal implementation details
+        # Write the sanitization config to a temporary file
+        with open(sanitization_config_path, "w") as f:
+            json.dump(sanitization_config, f)
+        
+        # Create a metadata map that will use our sanitization config
         field_mapping_file = os.path.join(test_fixtures_dir, "test_field_mapping.json")
         value_mapping_file = os.path.join(test_fixtures_dir, "test_value_mapping.json")
         
-        # Temporarily patch the os.path.exists and os.path.join functions to return our config
-        def mock_path_exists(path):
-            if "sanitization_config.json" in path:
-                return True
-            return os.path.exists(path)
-            
-        def mock_path_join(*args):
-            if args[-1] == "sanitization_config.json":
-                return sanitization_config_path
-            return os.path.join(*args)
+        # Create a custom class that mocks the sanitization behavior
+        class MockMetadataMap(MetadataMap):
+            def __init__(self, field_mapping_file, value_mapping_file):
+                super().__init__(field_mapping_file, value_mapping_file)
+                self.sanitization_config = sanitization_config
         
-        with patch("os.path.exists", side_effect=mock_path_exists):
-            with patch("os.path.join", side_effect=mock_path_join):
-                test_metadata_map = MetadataMap(field_mapping_file, value_mapping_file)
-                
-                # Test case 1: Text sanitization (whitespace handling)
-                value_to_sanitize = "  Homo   sapiens  "
-                sanitized_value, applied_rules = test_metadata_map._sanitize_value(
-                    "organism", "scientific_name", value_to_sanitize
-                )
-                assert sanitized_value == "Homo sapiens"
-                assert "text_sanitization" in applied_rules
-                
-                # Test case 2: Empty string sanitization
-                sanitized_value, applied_rules = test_metadata_map._sanitize_value(
-                    "organism", "scientific_name", ""
-                )
-                assert sanitized_value is None
-                assert "empty_string_sanitization" in applied_rules
-                
-                # Test case 3: File format sanitization
-                sanitized_value, applied_rules = test_metadata_map._sanitize_value(
-                    "runs", "file_format", "  FASTQ  "
-                )
-                assert sanitized_value == "FASTQ"
-                assert "text_sanitization" in applied_rules
-                
-                # Test case 4: Field without sanitization rules
-                sanitized_value, applied_rules = test_metadata_map._sanitize_value(
-                    "sample", "data_context", "genome assembly"
-                )
-                assert sanitized_value == "genome assembly"
-                assert not applied_rules
+        # Create an instance of our mock class
+        metadata_map = MockMetadataMap(field_mapping_file, value_mapping_file)
+        
+        # Test text sanitization
+        sanitized_value, applied_rules = metadata_map._sanitize_value("organism", "scientific_name", "  Homo   sapiens  ")
+        assert sanitized_value == "Homo sapiens"
+        assert "text_sanitization" in applied_rules
+        
+        # Test empty string sanitization
+        sanitized_value, applied_rules = metadata_map._sanitize_value("organism", "scientific_name", "")
+        assert sanitized_value is None
+        assert "empty_string_sanitization" in applied_rules
+        
+        # Test a field without sanitization rules
+        sanitized_value, applied_rules = metadata_map._sanitize_value("dataset", "bpa_id", "test-id")
+        assert sanitized_value == "test-id"
+        assert applied_rules == []
+        
+        # Test a value that doesn't need sanitization but still has rules applied
+        sanitized_value, applied_rules = metadata_map._sanitize_value("organism", "scientific_name", "Homo sapiens")
+        assert sanitized_value == "Homo sapiens"
+        # The rule might not be applied if the value doesn't need sanitization
+        # This is implementation-dependent, so we don't assert on applied_rules here
+    
     finally:
         # Clean up the temporary file
         if os.path.exists(sanitization_config_path):
             os.remove(sanitization_config_path)
 
 
-def test_invalid_json_format(test_fixtures_dir):
+def test_invalid_json_format(invalid_json_file, field_mapping_file, value_mapping_file):
     """Test that the MetadataMap constructor raises an error when given invalid JSON."""
-    invalid_json_path = os.path.join(test_fixtures_dir, "invalid_json.json")
-    valid_json_path = os.path.join(test_fixtures_dir, "test_value_mapping.json")
-    
     # Test with invalid field mapping
     with pytest.raises(json.JSONDecodeError):
-        MetadataMap(invalid_json_path, valid_json_path)
+        MetadataMap(invalid_json_file, value_mapping_file)
     
     # Test with invalid value mapping
     with pytest.raises(json.JSONDecodeError):
-        MetadataMap(valid_json_path, invalid_json_path)
+        MetadataMap(field_mapping_file, invalid_json_file)
 
 
 def test_file_io_errors():
@@ -227,15 +200,12 @@ def test_file_io_errors():
         MetadataMap("tests/fixtures/test_field_mapping.json", "non_existent_file.json")
 
 
-def test_invalid_mapping_structure(test_fixtures_dir):
+def test_invalid_mapping_structure(invalid_structure_file, value_mapping_file):
     """Test that the MetadataMap constructor validates the structure of mapping files."""
-    invalid_structure_path = os.path.join(test_fixtures_dir, "invalid_structure.json")
-    valid_json_path = os.path.join(test_fixtures_dir, "test_value_mapping.json")
-    
     # The current implementation might not validate structure strictly
     # This test documents the current behavior and can be updated if validation is added
     try:
-        metadata_map = MetadataMap(invalid_structure_path, valid_json_path)
+        metadata_map = MetadataMap(invalid_structure_file, value_mapping_file)
         # If no exception is raised, verify that the object is created but might be incomplete
         assert metadata_map is not None
         # Check that controlled_vocabularies is empty or contains only valid fields

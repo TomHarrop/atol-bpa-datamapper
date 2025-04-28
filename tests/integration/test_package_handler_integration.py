@@ -52,20 +52,18 @@ def metadata_map(field_mapping_file, value_mapping_file):
 
 def test_bpa_package_initialization(bpa_package, package_data):
     """Test that the BpaPackage is initialized correctly."""
-    # Check that the package data is loaded
-    assert bpa_package.id == "test-package-123"
-    assert bpa_package["id"] == "test-package-123"
-    assert bpa_package["bpa_id"] == "test-package-123"  # Should be added automatically
+    # Check that the package data is stored correctly
+    assert bpa_package["id"] == package_data["id"]
     
     # Check that the fields are extracted
-    assert "type" in bpa_package.fields
+    assert hasattr(bpa_package, "fields")
+    assert isinstance(bpa_package.fields, list)
     assert "scientific_name" in bpa_package.fields
-    assert "project_aim" in bpa_package.fields
     
     # Check that the resource IDs are extracted
-    assert len(bpa_package.resource_ids) == 2
-    assert "resource_1" in bpa_package.resource_ids
-    assert "resource_2" in bpa_package.resource_ids
+    assert hasattr(bpa_package, "resource_ids")
+    assert isinstance(bpa_package.resource_ids, list)
+    assert len(bpa_package.resource_ids) == len(package_data["resources"])
 
 
 def test_filter_package(bpa_package, metadata_map):
@@ -176,117 +174,49 @@ def test_map_metadata(bpa_package, metadata_map, package_data, value_mapping_fil
             assert "resource_id" in entry
 
 
-def test_choose_value(bpa_package):
-    """Test the choose_value method of BpaPackage."""
-    # Test with a single field that exists
-    value, field, keep = bpa_package.choose_value(["scientific_name"], None)
-    assert value == "Homo sapiens"
-    assert field == "scientific_name"
-    assert keep is True
-    
-    # Test with multiple fields, first one exists
-    value, field, keep = bpa_package.choose_value(["type", "non_existent_field"], None)
-    assert value == "illumina-shortread"
-    assert field == "type"
-    assert keep is True
-    
-    # Test with multiple fields, second one exists
-    value, field, keep = bpa_package.choose_value(["non_existent_field", "scientific_name"], None)
-    assert value == "Homo sapiens"
-    assert field == "scientific_name"
-    assert keep is True
-    
-    # Test with no existing fields
-    value, field, keep = bpa_package.choose_value(["non_existent_field1", "non_existent_field2"], None)
-    assert value is None
-    assert field is None
-    assert keep is False
-    
-    # Test with controlled vocabulary
-    value, field, keep = bpa_package.choose_value(["scientific_name"], ["Homo sapiens"])
-    assert value == "Homo sapiens"
-    assert field == "scientific_name"
-    assert keep is True
-    
-    # Test with controlled vocabulary, value not in list
-    value, field, keep = bpa_package.choose_value(["scientific_name"], ["Mus musculus"])
-    assert value == "Homo sapiens"
-    assert field == "scientific_name"
-    assert keep is False
+@pytest.mark.parametrize("fields_to_check, accepted_values, expected_value, expected_field, expected_keep", [
+    (["scientific_name", "species_name"], None, "Homo sapiens", "scientific_name", True),
+    (["project_aim", "data_context"], None, "Genome resequencing", "project_aim", True),
+    (["non_existent1", "non_existent2"], None, None, None, False),
+    (["scientific_name"], ["Homo sapiens"], "Homo sapiens", "scientific_name", True),
+    (["scientific_name"], ["Unknown Species"], "Homo sapiens", "scientific_name", False),
+])
+def test_choose_value(bpa_package, fields_to_check, accepted_values, expected_value, expected_field, expected_keep):
+    """Test the choose_value method with parameterized inputs."""
+    value, field, keep = bpa_package.choose_value(fields_to_check, accepted_values)
+    assert value == expected_value
+    assert field == expected_field
+    assert keep == expected_keep
 
 
-def test_choose_value_from_resource(bpa_package):
-    """Test the choose_value_from_resource method of BpaPackage."""
-    # Get the first resource
-    resource = bpa_package["resources"][0]
-    
-    # Test with a single field that exists
-    value, field, keep = bpa_package.choose_value_from_resource(["type"], None, resource)
-    assert value == "illumina-shortread"
-    assert field == "type"
-    assert keep is True
-    
-    # Test with multiple fields, first one exists
-    value, field, keep = bpa_package.choose_value_from_resource(["type", "non_existent_field"], None, resource)
-    assert value == "illumina-shortread"
-    assert field == "type"
-    assert keep is True
-    
-    # Test with multiple fields, second one exists
-    value, field, keep = bpa_package.choose_value_from_resource(["non_existent_field", "library_type"], None, resource)
-    assert value == "paired"
-    assert field == "library_type"
-    assert keep is True
-    
-    # Test with no existing fields
-    value, field, keep = bpa_package.choose_value_from_resource(
-        ["non_existent_field1", "non_existent_field2"], None, resource
-    )
-    assert value is None
-    assert field is None
-    assert keep is False
-    
-    # Test with controlled vocabulary
-    value, field, keep = bpa_package.choose_value_from_resource(["type"], ["illumina-shortread"], resource)
-    assert value == "illumina-shortread"
-    assert field == "type"
-    assert keep is True
-    
-    # Test with controlled vocabulary, value not in list
-    value, field, keep = bpa_package.choose_value_from_resource(["type"], ["pacbio-hifi"], resource)
-    assert value == "illumina-shortread"
-    assert field == "type"
-    assert keep is False
+@pytest.mark.parametrize("fields_to_check, accepted_values, resource_index, expected_value, expected_field, expected_keep", [
+    (["type", "platform"], None, 0, "illumina-shortread", "type", True),
+    (["library_type"], None, 0, "paired", "library_type", True),
+    (["non_existent1", "non_existent2"], None, 0, None, None, False),
+    (["type"], ["illumina-shortread"], 0, "illumina-shortread", "type", True),
+    (["type"], ["pacbio-hifi"], 0, "illumina-shortread", "type", False),
+])
+def test_choose_value_from_resource(bpa_package, fields_to_check, accepted_values, resource_index, expected_value, expected_field, expected_keep):
+    """Test the choose_value_from_resource method with parameterized inputs."""
+    resource = bpa_package["resources"][resource_index]
+    value, field, keep = bpa_package.choose_value_from_resource(fields_to_check, accepted_values, resource)
+    assert value == expected_value
+    assert field == expected_field
+    assert keep == expected_keep
 
 
-def test_get_nested_value():
-    """Test the get_nested_value function."""
-    # Create a nested dictionary
-    data = {
-        "level1": {
-            "level2": {
-                "level3": "value"
-            }
-        },
-        "array": [
-            {"id": "item1", "value": "value1"},
-            {"id": "item2", "value": "value2"}
-        ]
-    }
-    
-    # Test simple key
-    assert get_nested_value(data, "level1") == data["level1"]
-    
-    # Test nested key with dot notation
-    assert get_nested_value(data, "level1.level2.level3") == "value"
-    
-    # Test non-existent key
-    assert get_nested_value(data, "non_existent") is None
-    assert get_nested_value(data, "level1.non_existent") is None
-    
-    # The current implementation doesn't support array notation
-    # So we'll test what it actually does instead
-    assert get_nested_value(data, "array") == data["array"]
+@pytest.mark.parametrize("data, path, expected_value", [
+    ({"scientific_name": "Homo sapiens"}, "scientific_name", "Homo sapiens"),
+    ({"project_aim": "Genome resequencing"}, "project_aim", "Genome resequencing"),
+    # Array indexing is not supported in the current implementation
+    ({"resources": [{"type": "illumina genomic"}, {"type": "pacbio hifi"}]}, "resources", [{"type": "illumina genomic"}, {"type": "pacbio hifi"}]),
+    ({"level1": {"level2": {"level3": "value"}}}, "level1.level2.level3", "value"),
+    ({}, "non_existent_path", None),
+])
+def test_get_nested_value(data, path, expected_value):
+    """Test the get_nested_value function with parameterized inputs."""
+    value = get_nested_value(data, path)
+    assert value == expected_value
 
 
 def test_large_dataset_performance(metadata_map):

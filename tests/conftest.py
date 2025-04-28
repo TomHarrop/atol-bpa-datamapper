@@ -1,6 +1,7 @@
 """Test fixtures for atol-bpa-datamapper."""
 
 import json
+import os
 import pytest
 import tempfile
 from pathlib import Path
@@ -72,26 +73,43 @@ def value_mapping_data():
 
 
 @pytest.fixture
-def field_mapping_file(field_mapping_data):
-    """Create a temporary field mapping file."""
-    with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as f:
-        json.dump(field_mapping_data, f)
-        temp_file = f.name
-    
-    yield temp_file
-    
-    # Clean up
-    Path(temp_file).unlink()
+def test_fixtures_dir():
+    """Return the path to the test fixtures directory."""
+    return os.path.join(os.path.dirname(__file__), "fixtures")
 
 
 @pytest.fixture
-def value_mapping_file(value_mapping_data):
-    """Create a temporary value mapping file."""
-    with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as f:
-        json.dump(value_mapping_data, f)
-        temp_file = f.name
-    
-    yield temp_file
-    
-    # Clean up
-    Path(temp_file).unlink()
+def field_mapping_file(test_fixtures_dir):
+    """Return the path to the test field mapping file."""
+    return os.path.join(test_fixtures_dir, "test_field_mapping.json")
+
+
+@pytest.fixture
+def value_mapping_file(test_fixtures_dir):
+    """Return the path to the test value mapping file."""
+    return os.path.join(test_fixtures_dir, "test_value_mapping.json")
+
+
+@pytest.fixture
+def sanitization_config_file(test_fixtures_dir):
+    """Return the path to the test sanitization config file."""
+    return os.path.join(test_fixtures_dir, "test_sanitization_config.json")
+
+
+@pytest.fixture
+def invalid_json_file(test_fixtures_dir):
+    """Return the path to an invalid JSON file for testing error handling."""
+    return os.path.join(test_fixtures_dir, "invalid_json.json")
+
+
+@pytest.fixture
+def invalid_structure_file(test_fixtures_dir):
+    """Return the path to a file with invalid structure for testing validation."""
+    return os.path.join(test_fixtures_dir, "invalid_structure.json")
+
+
+@pytest.fixture
+def metadata_map(field_mapping_file, value_mapping_file):
+    """Create a MetadataMap instance for testing."""
+    from atol_bpa_datamapper.config_parser import MetadataMap
+    return MetadataMap(field_mapping_file, value_mapping_file)
