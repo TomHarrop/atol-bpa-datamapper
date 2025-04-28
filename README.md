@@ -26,6 +26,8 @@ The input is compressed jsonlines data output from the `ckanapi search datasets`
 
 Output is compressed jsonlines data.
 
+See [`dev/scripts/test_commands.sh`](dev/scripts/test_commands.sh) for an example.
+
 ### filter-packages
 
 ```
@@ -153,3 +155,13 @@ General options:
                         Directory to cache the NCBI taxonomy after processing
 
 ```
+
+### Deployment
+
+The package comes with metadata mapping specifications in
+[`src/atol_bpa_datamapper/config`](src/atol_bpa_datamapper/config). The field
+mapping spec is automatically generated from [AToL's metadata
+schema](https://docs.google.com/spreadsheets/d/1ml5hASZ-qlAuuTrwHeGzNVqqe1mXsmmoDTekd6d9pto)
+using the script at
+[`dev/scripts/read_atol_schemas.py`](dev/scripts/read_atol_schemas.py).
+
