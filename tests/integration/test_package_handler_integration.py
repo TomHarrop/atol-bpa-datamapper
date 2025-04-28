@@ -69,11 +69,11 @@ def test_bpa_package_initialization(bpa_package, package_data):
 
 
 def test_filter_package(bpa_package, metadata_map):
-    """Test the filter method of BpaPackage."""
+    """Test the filter method of BpaPackage with deterministic assertions."""
     # Filter the package
     bpa_package.filter(metadata_map)
     
-    # Check that the decisions are made correctly
+    # Check that the decisions are made correctly for specific fields
     assert bpa_package.decisions["scientific_name_accepted"] is True
     assert bpa_package.decisions["data_context_accepted"] is True
     
@@ -85,22 +85,26 @@ def test_filter_package(bpa_package, metadata_map):
     assert bpa_package.bpa_fields["scientific_name"] == "scientific_name"
     assert bpa_package.bpa_fields["data_context"] == "project_aim"
     
-    # In our test setup, we only have two controlled vocabulary fields.
-    # The filter method requires all boolean decisions to be True for the package to be kept.
-    # Let's check the decisions dictionary to understand why keep is False
-    print("Decisions:", bpa_package.decisions)
+    # Verify that the keep attribute is determined by all boolean decisions
+    expected_keep_value = all(
+        decision for field, decision in bpa_package.decisions.items() 
+        if isinstance(decision, bool) and field.endswith("_accepted")
+    )
+    assert bpa_package.keep == expected_keep_value
     
-    # Since we're testing the filter functionality and not the specific decision outcome,
-    # we'll just verify that the keep attribute exists and is set based on the decisions
-    assert hasattr(bpa_package, "keep")
-    assert isinstance(bpa_package.keep, bool)
-    
-    # For a complete test, we should ensure all controlled vocabulary fields are properly set up
-    # in our test fixtures to result in keep=True, but for now we'll just test the mechanism
+    # Verify that decisions dictionary contains entries for all controlled vocabulary fields
+    for field in metadata_map.controlled_vocabularies:
+        decision_key = f"{field}_accepted"
+        assert decision_key in bpa_package.decisions, f"Missing decision for {field}"
+        assert field in bpa_package.bpa_values, f"Missing value for {field}"
 
 
-def test_map_metadata(bpa_package, metadata_map):
-    """Test the map_metadata method of BpaPackage."""
+def test_map_metadata(bpa_package, metadata_map, package_data, value_mapping_file):
+    """Test the map_metadata method of BpaPackage with values derived from fixtures."""
+    # Load the value mapping to derive expected values
+    with open(value_mapping_file, "r") as f:
+        value_mapping = json.load(f)
+    
     # Map the metadata
     mapped_metadata = bpa_package.map_metadata(metadata_map)
     
@@ -110,35 +114,53 @@ def test_map_metadata(bpa_package, metadata_map):
     assert "runs" in mapped_metadata
     assert "dataset" in mapped_metadata
     
-    # Check organism section
-    assert mapped_metadata["organism"]["scientific_name"] == "Homo sapiens"
+    # Check organism section - derive expected value from value mapping
+    expected_scientific_name = package_data["scientific_name"]
+    # Map through value mapping if needed
+    if "organism" in value_mapping and "scientific_name" in value_mapping["organism"]:
+        for mapped_value, original_values in value_mapping["organism"]["scientific_name"].items():
+            if expected_scientific_name in original_values:
+                expected_scientific_name = mapped_value
+                break
+    assert mapped_metadata["organism"]["scientific_name"] == expected_scientific_name
     
-    # Check sample section
-    assert mapped_metadata["sample"]["data_context"] == "genome_assembly"
+    # Check sample section - derive expected value from value mapping
+    expected_data_context = package_data["project_aim"]
+    # Map through value mapping if needed
+    if "sample" in value_mapping and "data_context" in value_mapping["sample"]:
+        for mapped_value, original_values in value_mapping["sample"]["data_context"].items():
+            if expected_data_context in original_values:
+                expected_data_context = mapped_value
+                break
+    assert mapped_metadata["sample"]["data_context"] == expected_data_context
     
-    # Check runs section (resource-level)
-    assert len(mapped_metadata["runs"]) == 2
+    # Check runs section (resource-level) - verify correct number of resources
+    assert len(mapped_metadata["runs"]) == len(package_data["resources"])
     
-    # Check first resource
-    assert mapped_metadata["runs"][0]["platform"] == "illumina_genomic"
-    assert mapped_metadata["runs"][0]["library_type"] == "paired"
-    assert mapped_metadata["runs"][0]["library_size"] == "350"
-    assert mapped_metadata["runs"][0]["file_name"] == "test_file_1.fastq.gz"
-    assert mapped_metadata["runs"][0]["file_checksum"] == "abcdef1234567890"
-    assert mapped_metadata["runs"][0]["file_format"] == "FASTQ"
-    assert mapped_metadata["runs"][0]["resource_id"] == "resource_1"
-    
-    # Check second resource
-    assert mapped_metadata["runs"][1]["platform"] == "pacbio_hifi"
-    assert mapped_metadata["runs"][1]["library_type"] == "single"
-    assert mapped_metadata["runs"][1]["library_size"] == "1000"
-    assert mapped_metadata["runs"][1]["file_name"] == "test_file_2.fastq.gz"
-    assert mapped_metadata["runs"][1]["file_checksum"] == "0987654321fedcba"
-    assert mapped_metadata["runs"][1]["file_format"] == "FASTQ"
-    assert mapped_metadata["runs"][1]["resource_id"] == "resource_2"
+    # Check each resource
+    for i, resource in enumerate(package_data["resources"]):
+        mapped_resource = mapped_metadata["runs"][i]
+        
+        # Check platform - derive expected value from value mapping
+        expected_platform = resource["type"]
+        # Map through value mapping if needed
+        if "runs" in value_mapping and "platform" in value_mapping["runs"]:
+            for mapped_value, original_values in value_mapping["runs"]["platform"].items():
+                if expected_platform in original_values:
+                    expected_platform = mapped_value
+                    break
+        assert mapped_resource["platform"] == expected_platform
+        
+        # Check other resource fields
+        assert mapped_resource["library_type"] == resource["library_type"]
+        assert mapped_resource["library_size"] == resource["library_size"]
+        assert mapped_resource["file_name"] == resource["name"]
+        assert mapped_resource["file_checksum"] == resource["md5"]
+        assert mapped_resource["file_format"] == resource["format"]
+        assert mapped_resource["resource_id"] == resource["id"]
     
     # Check dataset section
-    assert mapped_metadata["dataset"]["bpa_id"] == "test-package-123"
+    assert mapped_metadata["dataset"]["bpa_id"] == package_data["id"]
     
     # Check mapping log
     assert len(bpa_package.mapping_log) > 0
@@ -265,3 +287,55 @@ def test_get_nested_value():
     # The current implementation doesn't support array notation
     # So we'll test what it actually does instead
     assert get_nested_value(data, "array") == data["array"]
+
+
+def test_large_dataset_performance(metadata_map):
+    """Test that the BpaPackage can handle large datasets efficiently."""
+    import time
+    
+    # Create a large package with many resources
+    large_package = {
+        "id": "large-package-test",
+        "scientific_name": "Homo sapiens",
+        "project_aim": "Genome resequencing",
+        "resources": []
+    }
+    
+    # Add 100 resources to the package
+    for i in range(100):
+        large_package["resources"].append({
+            "id": f"resource_{i}",
+            "name": f"test_file_{i}.fastq.gz",
+            "md5": f"checksum_{i}",
+            "format": "FASTQ",
+            "type": "illumina genomic",
+            "library_type": "paired",
+            "library_size": "350"
+        })
+    
+    # Measure time to create and process the package
+    start_time = time.time()
+    
+    # Create the package
+    bpa_package = BpaPackage(large_package)
+    
+    # Filter the package
+    bpa_package.filter(metadata_map)
+    
+    # Map the metadata
+    mapped_metadata = bpa_package.map_metadata(metadata_map)
+    
+    # Calculate elapsed time
+    elapsed_time = time.time() - start_time
+    
+    # Assert that the processing time is reasonable (adjust threshold as needed)
+    # This is a baseline test - the actual threshold should be determined based on
+    # real-world requirements and hardware capabilities
+    assert elapsed_time < 2.0, f"Processing took too long: {elapsed_time:.2f} seconds"
+    
+    # Verify that all resources were processed
+    assert len(mapped_metadata["runs"]) == 100
+    
+    # Verify that the first and last resources were mapped correctly
+    assert mapped_metadata["runs"][0]["resource_id"] == "resource_0"
+    assert mapped_metadata["runs"][99]["resource_id"] == "resource_99"
