@@ -83,7 +83,7 @@ def field_mapping_data():
                 "data_context"
             ]
         },
-        "reads": {
+        "runs": {
             "platform": [
                 "resources.type",
                 "sequence_data_type",
@@ -120,7 +120,7 @@ def value_mapping_data():
                 ]
             }
         },
-        "reads": {
+        "runs": {
             "platform": {
                 "pacbio_hifi": [
                     "test-pacbio-hifi",

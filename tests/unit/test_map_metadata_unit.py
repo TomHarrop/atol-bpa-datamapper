@@ -19,7 +19,7 @@ def test_map_metadata_basic(mock_parse_args, mock_output_writer, mock_read_input
     package1.mapped_metadata = {
         "dataset": {"field1": "value1"},
         "organism": {"field2": "value2"},
-        "reads": [{"field3": "value3"}]
+        "runs": [{"field3": "value3"}]
     }
     package1.field_mapping = {"field1": "bpa_field1", "field2": "bpa_field2"}
     package1.mapping_log = [
@@ -87,7 +87,7 @@ def test_map_metadata_dry_run(mock_parse_args, mock_output_writer, mock_read_inp
     package1.mapped_metadata = {
         "dataset": {"field1": "value1"},
         "organism": {"field2": "value2"},
-        "reads": [{"field3": "value3"}]
+        "runs": [{"field3": "value3"}]
     }
     package1.field_mapping = {"field1": "bpa_field1", "field2": "bpa_field2"}
     package1.mapping_log = []
@@ -155,7 +155,7 @@ def test_map_metadata_with_output_files(mock_parse_args, mock_write_json, mock_w
     package1.mapped_metadata = {
         "dataset": {"field1": "value1"},
         "organism": {"field2": "value2"},
-        "reads": [{"field3": "value3"}]
+        "runs": [{"field3": "value3"}]
     }
     package1.field_mapping = {"field1": "bpa_field1", "field2": "bpa_field2"}
     package1.mapping_log = [
@@ -225,7 +225,7 @@ def test_map_metadata_with_different_section_types(mock_parse_args, mock_output_
     package1.id = "package1"
     package1.mapped_metadata = {
         "dataset": {"field1": "value1"},  # Dictionary section
-        "reads": [  # List section
+        "runs": [  # List section
             {"field3": "value3", "field4": "value4"},
             {"field3": "value5", "field4": "value6"}
         ]

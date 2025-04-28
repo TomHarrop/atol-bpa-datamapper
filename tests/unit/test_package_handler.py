@@ -101,12 +101,12 @@ def test_map_metadata_multiple_resources():
     
     # Create a simple metadata map
     metadata_map = MagicMock()
-    metadata_map.metadata_sections = ["dataset", "organism", "reads"]
+    metadata_map.metadata_sections = ["dataset", "organism", "runs"]
     metadata_map.expected_fields = ["field_a", "field_b", "field_c"]
     
     def mock_get_atol_section(field):
         if field == "field_c":
-            return "reads"
+            return "runs"
         return "dataset"
     
     def mock_get_bpa_fields(field):
@@ -138,18 +138,18 @@ def test_map_metadata_multiple_resources():
     
     # Check that the result has the expected structure
     assert "dataset" in result
-    assert "reads" in result
-    assert len(result["reads"]) == 2
+    assert "runs" in result
+    assert len(result["runs"]) == 2
     
     # Check that the dataset fields were mapped correctly
     assert result["dataset"]["field_a"] == "value1"
     assert result["dataset"]["field_b"] == "value2"
     
-    # Check that the reads fields were mapped correctly
-    assert result["reads"][0]["field_c"] == "resource1_value"
-    assert result["reads"][0]["resource_id"] == "resource1"
-    assert result["reads"][1]["field_c"] == "resource2_value"
-    assert result["reads"][1]["resource_id"] == "resource2"
+    # Check that the runs fields were mapped correctly
+    assert result["runs"][0]["field_c"] == "resource1_value"
+    assert result["runs"][0]["resource_id"] == "resource1"
+    assert result["runs"][1]["field_c"] == "resource2_value"
+    assert result["runs"][1]["resource_id"] == "resource2"
 
 
 def test_map_metadata_with_controlled_vocabulary():
@@ -220,12 +220,12 @@ def test_map_metadata_with_empty_resources():
     
     # Create a simple metadata map
     metadata_map = MagicMock()
-    metadata_map.metadata_sections = ["dataset", "reads"]
+    metadata_map.metadata_sections = ["dataset", "runs"]
     metadata_map.expected_fields = ["field_a", "field_c"]
     
     def mock_get_atol_section(field):
         if field == "field_c":
-            return "reads"
+            return "runs"
         return "dataset"
     
     def mock_get_bpa_fields(field):
@@ -255,13 +255,13 @@ def test_map_metadata_with_empty_resources():
     
     # Check that the result has the expected structure
     assert "dataset" in result
-    assert "reads" in result
+    assert "runs" in result
     
     # Check that the dataset fields were mapped correctly
     assert result["dataset"]["field_a"] == "value1"
     
-    # Check that the reads section is empty
-    assert result["reads"] == []
+    # Check that the runs section is empty
+    assert result["runs"] == []
 
 
 def test_map_metadata_with_nested_fields():
@@ -375,12 +375,12 @@ def test_map_metadata_with_fallback_fields():
     
     # Create a metadata map with fallback fields
     metadata_map = MagicMock()
-    metadata_map.metadata_sections = ["dataset", "reads"]
+    metadata_map.metadata_sections = ["dataset", "runs"]
     metadata_map.expected_fields = ["package_name", "file_format"]
     
     def mock_get_atol_section(field):
         if field == "file_format":
-            return "reads"
+            return "runs"
         return "dataset"
     
     def mock_get_bpa_fields(field):
@@ -410,13 +410,13 @@ def test_map_metadata_with_fallback_fields():
     
     # Check that the result has the expected structure
     assert "dataset" in result
-    assert "reads" in result
+    assert "runs" in result
     
     # Check that the first available field was used
     assert result["dataset"]["package_name"] == "This is a test package"
     
     # Check that the fallback field was used when the first choice was None
-    assert result["reads"][0]["file_format"] == "FASTQ"
+    assert result["runs"][0]["file_format"] == "FASTQ"
 
 
 def test_get_nested_value():

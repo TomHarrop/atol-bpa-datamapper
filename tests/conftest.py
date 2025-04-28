@@ -40,7 +40,7 @@ def field_mapping_data():
         "sample": {
             "project_aim": ["project_aim"]
         },
-        "reads": {
+        "runs": {
             "platform": ["resources.platform", "platform_type"],
             "library_name": ["resources.library_name"],
             "type": ["resources.type"]
@@ -62,7 +62,7 @@ def value_mapping_data():
                 "genome_assembly": ["genome_assembly"]
             }
         },
-        "reads": {
+        "runs": {
             "platform": {
                 "illumina_genomic": ["illumina"],
                 "pacbio_hifi": ["pacbio"]

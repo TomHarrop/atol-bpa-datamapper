@@ -123,7 +123,7 @@ def field_mapping_data():
                 "data_context"
             ]
         },
-        "reads": {
+        "runs": {
             "platform": [
                 "platform",  # Parent-level field
                 "resources.type",  # Resource-level field
@@ -173,7 +173,7 @@ def value_mapping_data():
                 ]
             }
         },
-        "reads": {
+        "runs": {
             "platform": {
                 "pacbio_hifi": [
                     "test-pacbio-hifi",
@@ -233,12 +233,12 @@ def test_map_metadata_nested_fields(nested_package_data, metadata_map):
     # Verify sample section
     assert mapped_metadata["sample"]["data_context"] == "genome_assembly"
     
-    # Verify reads section
-    assert len(mapped_metadata["reads"]) == 1  # One resource
-    reads = mapped_metadata["reads"][0]
-    assert reads["platform"] == "illumina_genomic"
-    assert reads["library_type"] == "paired"
-    assert reads["library_size"] == "350"
+    # Verify runs section
+    assert len(mapped_metadata["runs"]) == 1  # One resource
+    runs = mapped_metadata["runs"][0]
+    assert runs["platform"] == "illumina_genomic"
+    assert runs["library_type"] == "paired"
+    assert runs["library_size"] == "350"
     
     # Verify mapping log
     assert len(package.mapping_log) >= 5  # scientific_name, data_context, platform, library_type, library_size
@@ -288,20 +288,20 @@ def test_map_metadata_multiple_resources(multiple_resources_package_data, metada
     # Verify sample section
     assert mapped_metadata["sample"]["data_context"] == "genome_assembly"
     
-    # Verify reads section
-    assert len(mapped_metadata["reads"]) == 2  # Two resources
+    # Verify runs section
+    assert len(mapped_metadata["runs"]) == 2  # Two resources
     
     # First resource
-    reads1 = mapped_metadata["reads"][0]
-    assert reads1["platform"] == "illumina_genomic"
-    assert reads1["library_type"] == "paired"
-    assert reads1["library_size"] == "350"
+    runs1 = mapped_metadata["runs"][0]
+    assert runs1["platform"] == "illumina_genomic"
+    assert runs1["library_type"] == "paired"
+    assert runs1["library_size"] == "350"
     
     # Second resource
-    reads2 = mapped_metadata["reads"][1]
-    assert reads2["platform"] == "pacbio_hifi"
-    assert reads2["library_type"] == "single"
-    assert reads2["library_size"] == "1000"
+    runs2 = mapped_metadata["runs"][1]
+    assert runs2["platform"] == "pacbio_hifi"
+    assert runs2["library_type"] == "single"
+    assert runs2["library_size"] == "1000"
     
     # Verify mapping log
     assert len(package.mapping_log) >= 8  # scientific_name, data_context, 2x platform, 2x library_type, 2x library_size
@@ -328,8 +328,8 @@ def test_map_metadata_empty_resources(empty_resources_package_data, metadata_map
     # Verify sample section
     assert mapped_metadata["sample"]["data_context"] == "genome_assembly"
     
-    # Verify reads section
-    assert mapped_metadata["reads"] == []  # Empty resources array
+    # Verify runs section
+    assert mapped_metadata["runs"] == []  # Empty resources array
     
     # Verify mapping log
     resource_entries = [entry for entry in package.mapping_log if "resource_id" in entry]
@@ -343,27 +343,27 @@ def test_map_metadata_empty_resources(empty_resources_package_data, metadata_map
     assert "library_size" not in package.field_mapping
 
 def test_map_metadata_parent_fields_to_resources(parent_field_override_package_data, metadata_map):
-    """Test mapping of parent-level fields to resource objects in the reads section."""
+    """Test mapping of parent-level fields to resource objects in the runs section."""
     package = BpaPackage(parent_field_override_package_data)
     
     # Map metadata
     mapped_metadata = package.map_metadata(metadata_map)
     
-    # Verify reads section
-    assert len(mapped_metadata["reads"]) == 2  # Two resources
+    # Verify runs section
+    assert len(mapped_metadata["runs"]) == 2  # Two resources
     
     # First resource - should use parent platform
-    assert mapped_metadata["reads"][0]["platform"] == "illumina_genomic"
-    assert mapped_metadata["reads"][0]["library_type"] == "paired"
-    assert mapped_metadata["reads"][0]["library_size"] == "350"
+    assert mapped_metadata["runs"][0]["platform"] == "illumina_genomic"
+    assert mapped_metadata["runs"][0]["library_type"] == "paired"
+    assert mapped_metadata["runs"][0]["library_size"] == "350"
     
     # Second resource - should use its own type unless parent fields are prioritized
     # The implementation may vary, so we'll check both possibilities
-    second_resource_platform = mapped_metadata["reads"][1]["platform"]
+    second_resource_platform = mapped_metadata["runs"][1]["platform"]
     assert second_resource_platform in ["illumina_genomic", "pacbio_hifi"], f"Unexpected platform: {second_resource_platform}"
     
-    assert mapped_metadata["reads"][1]["library_type"] == "single"
-    assert mapped_metadata["reads"][1]["library_size"] == "1000"
+    assert mapped_metadata["runs"][1]["library_type"] == "single"
+    assert mapped_metadata["runs"][1]["library_size"] == "1000"
     
     # Verify field mapping - this depends on which field was used
     if "platform" in package.field_mapping:
@@ -400,11 +400,11 @@ def test_map_metadata_skip_empty_strings(empty_string_package_data, metadata_map
     # Map metadata
     mapped_metadata = package.map_metadata(metadata_map)
     
-    # Verify reads section
-    assert len(mapped_metadata["reads"]) == 1  # One resource
+    # Verify runs section
+    assert len(mapped_metadata["runs"]) == 1  # One resource
     
     # Resource should use resources.type instead of empty parent platform
-    assert mapped_metadata["reads"][0]["platform"] == "illumina_genomic"
+    assert mapped_metadata["runs"][0]["platform"] == "illumina_genomic"
     
     # Verify field mapping - this depends on which field was used
     if "platform" in package.field_mapping:
