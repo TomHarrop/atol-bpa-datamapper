@@ -1,86 +1,97 @@
-"""Test configuration and fixtures for the atol-bpa-datamapper package."""
+"""Test fixtures for atol-bpa-datamapper."""
 
 import json
-from pathlib import Path
 import pytest
+import tempfile
+from pathlib import Path
 
-# Get the path to the test fixtures directory
-FIXTURES_DIR = Path(__file__).parent / "fixtures"
-
-@pytest.fixture
-def field_mapping_file():
-    """Path to the test field mapping file."""
-    return str(FIXTURES_DIR / "test_field_mapping.json")
-
-@pytest.fixture
-def value_mapping_file():
-    """Path to the test value mapping file."""
-    return str(FIXTURES_DIR / "test_value_mapping.json")
-
-@pytest.fixture
-def empty_mapping_file():
-    """Path to an empty mapping file."""
-    return str(FIXTURES_DIR / "empty_mapping.json")
 
 @pytest.fixture
 def sample_bpa_package():
-    """Sample BPA package data."""
+    """Sample BPA package data with multiple resources."""
     return {
-        "id": "test_package_001",
+        "id": "test_package",
+        "scientific_name": "Undetermined species",
+        "project_aim": "genome_assembly",
         "resources": [
             {
-                "id": "resource_001",
-                "name": "test_file_1.fastq",
+                "id": "resource1",
                 "type": "illumina",
                 "library_name": "lib_001",
-                "library_source": "genomic DNA",
-                "insert_size": "500"
+                "platform": "illumina"
             },
             {
-                "id": "resource_002",
-                "name": "test_file_2.fastq",
-                "type": "illumina genomic",
-                "library_name": "lib_001",
-                "library_source": "genomic dna",
-                "insert_size": "500"
+                "id": "resource2",
+                "type": "pacbio",
+                "library_name": "lib_002",
+                "platform": "pacbio"
             }
-        ],
-        "scientific_name": "Undetermined sp.",
-        "species": "sp",
-        "genus": "Undetermined",
-        "family": "Unknown",
-        "order": "Unknown",
-        "project_aim": "genome_assembly",
-        "voucher_id": "V12345"
+        ]
     }
 
+
 @pytest.fixture
-def expected_mapped_metadata():
-    """Expected output after mapping the sample BPA package."""
+def field_mapping_data():
+    """Sample field mapping data."""
     return {
         "organism": {
-            "scientific_name": "Undetermined sp",
-            "species": "sp",
-            "genus": "Undetermined",
-            "family": "Unknown",
-            "order_or_group": "Unknown"
+            "scientific_name": ["scientific_name"]
         },
-        "reads": [
-            {
-                "platform": "illumina_genomic",
-                "library_name": "lib_001",
-                "library_source": "DNA",
-                "insert_size": "500"
-            },
-            {
-                "platform": "illumina_genomic",
-                "library_name": "lib_001",
-                "library_source": "DNA",
-                "insert_size": "500"
-            }
-        ],
         "sample": {
-            "data_context": "genome_assembly",
-            "voucher_id": "V12345"
+            "project_aim": ["project_aim"]
+        },
+        "reads": {
+            "platform": ["resources.platform", "platform_type"],
+            "library_name": ["resources.library_name"],
+            "type": ["resources.type"]
         }
     }
+
+
+@pytest.fixture
+def value_mapping_data():
+    """Sample value mapping data."""
+    return {
+        "organism": {
+            "scientific_name": {
+                "Undetermined sp": ["Undetermined species"]
+            }
+        },
+        "sample": {
+            "project_aim": {
+                "genome_assembly": ["genome_assembly"]
+            }
+        },
+        "reads": {
+            "platform": {
+                "illumina_genomic": ["illumina"],
+                "pacbio_hifi": ["pacbio"]
+            }
+        }
+    }
+
+
+@pytest.fixture
+def field_mapping_file(field_mapping_data):
+    """Create a temporary field mapping file."""
+    with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as f:
+        json.dump(field_mapping_data, f)
+        temp_file = f.name
+    
+    yield temp_file
+    
+    # Clean up
+    Path(temp_file).unlink()
+
+
+@pytest.fixture
+def value_mapping_file(value_mapping_data):
+    """Create a temporary value mapping file."""
+    with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as f:
+        json.dump(value_mapping_data, f)
+        temp_file = f.name
+    
+    yield temp_file
+    
+    # Clean up
+    Path(temp_file).unlink()
