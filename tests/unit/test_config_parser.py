@@ -9,6 +9,13 @@ from atol_bpa_datamapper.config_parser import MetadataMap
 
 def test_metadata_map_initialization():
     """Test MetadataMap initialization with mock files."""
+    # This test verifies that:
+    # 1. The MetadataMap class correctly initializes from field and value mapping files
+    # 2. The mapping data is correctly loaded and structured
+    # 3. The expected_fields attribute contains all fields from the field mapping
+    # 4. The metadata_sections attribute contains all sections from the field mapping
+    # 5. The controlled_vocabularies attribute is correctly populated
+    
     # The field mapping file format is organized by section first, then field
     field_mapping = {
         "dataset": {
@@ -71,6 +78,12 @@ def test_metadata_map_initialization():
 
 def test_get_allowed_values():
     """Test get_allowed_values method."""
+    # This test verifies that:
+    # 1. The get_allowed_values method returns the correct allowed values for each field
+    # 2. Fields with controlled vocabularies return the expected list of values
+    # 3. Fields without controlled vocabularies return None
+    # 4. The method handles case sensitivity correctly
+    
     metadata_map = MetadataMap.__new__(MetadataMap)  # Create instance without calling __init__
     
     # Set up the metadata map manually with the correct structure
@@ -103,6 +116,12 @@ def test_get_allowed_values():
 
 def test_get_bpa_fields():
     """Test get_bpa_fields method."""
+    # This test verifies that:
+    # 1. The get_bpa_fields method returns the correct BPA fields for each AToL field
+    # 2. The method correctly handles fields with multiple possible BPA sources
+    # 3. The method returns an empty list for unknown fields
+    # 4. The returned fields match the configuration in the field mapping
+    
     metadata_map = MetadataMap.__new__(MetadataMap)  # Create instance without calling __init__
     
     # Set up the metadata map manually
@@ -131,6 +150,12 @@ def test_get_bpa_fields():
 
 def test_get_atol_section():
     """Test get_atol_section method."""
+    # This test verifies that:
+    # 1. The get_atol_section method returns the correct section for each field
+    # 2. The method works correctly with fields from different sections
+    # 3. The method returns None for unknown fields
+    # 4. The returned sections match the configuration in the field mapping
+    
     metadata_map = MetadataMap.__new__(MetadataMap)  # Create instance without calling __init__
     
     # Set up the metadata map manually with the correct key name
@@ -159,6 +184,13 @@ def test_get_atol_section():
 
 def test_map_value():
     """Test map_value method."""
+    # This test verifies that:
+    # 1. The map_value method correctly maps input values to their AToL equivalents
+    # 2. Case-insensitive matching works correctly
+    # 3. Values are correctly transformed according to the value mapping configuration
+    # 4. The method returns the original value for unmapped values
+    # 5. The method handles unknown fields gracefully
+    
     metadata_map = MetadataMap.__new__(MetadataMap)  # Create instance without calling __init__
     
     # Set up the metadata map manually with the correct structure

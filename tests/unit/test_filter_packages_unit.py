@@ -16,6 +16,13 @@ from atol_bpa_datamapper.package_handler import BpaPackage
 def test_filter_packages_basic(mock_parse_args, mock_output_writer, mock_read_input, 
                               mock_metadata_map, mock_write_json, mock_write_decision_log):
     """Test basic functionality of filter_packages."""
+    # This test verifies that:
+    # 1. The filter_packages main function correctly processes input packages
+    # 2. Packages are correctly filtered based on their keep attribute
+    # 3. Only packages with keep=True are included in the output
+    # 4. The output is correctly written to the specified file
+    # 5. Statistics are correctly calculated and output when requested
+    
     # Set up mock packages
     package1 = MagicMock(spec=BpaPackage)
     package1.id = "package1"
@@ -85,6 +92,13 @@ def test_filter_packages_basic(mock_parse_args, mock_output_writer, mock_read_in
 def test_filter_packages_dry_run(mock_parse_args, mock_output_writer, mock_read_input, 
                                 mock_metadata_map, mock_write_json, mock_write_decision_log):
     """Test filter_packages with dry run."""
+    # This test verifies that:
+    # 1. The filter_packages function correctly handles dry run mode
+    # 2. In dry run mode, packages are filtered but no output is written
+    # 3. Statistics are still calculated and displayed
+    # 4. The write_json function is not called in dry run mode
+    # 5. The decision log is still written if specified
+    
     # Set up mock packages
     package1 = MagicMock(spec=BpaPackage)
     package1.id = "package1"
@@ -150,6 +164,13 @@ def test_filter_packages_dry_run(mock_parse_args, mock_output_writer, mock_read_
 def test_filter_packages_empty_input(mock_parse_args, mock_output_writer, mock_read_input, 
                                     mock_metadata_map, mock_write_json, mock_write_decision_log):
     """Test filter_packages with empty input."""
+    # This test verifies that:
+    # 1. The filter_packages function correctly handles empty input
+    # 2. When no packages are provided, the function completes without errors
+    # 3. No output is written when there are no packages
+    # 4. Statistics are still calculated and show zero packages
+    # 5. The decision log is not written when there are no packages
+    
     # Configure mocks for empty input
     mock_read_input.return_value = []
     
@@ -200,6 +221,13 @@ def test_filter_packages_empty_input(mock_parse_args, mock_output_writer, mock_r
 def test_filter_packages_with_stats_output(mock_parse_args, mock_output_writer, mock_read_input, 
                                           mock_metadata_map, mock_write_json, mock_write_decision_log):
     """Test filter_packages with statistics output."""
+    # This test verifies that:
+    # 1. The filter_packages function correctly generates statistics
+    # 2. Statistics include counts of accepted and rejected packages
+    # 3. Statistics include reasons for rejection
+    # 4. Statistics are correctly written to the specified file
+    # 5. The decision log is correctly written with all filtering decisions
+    
     # Set up mock packages
     package1 = MagicMock(spec=BpaPackage)
     package1.id = "package1"

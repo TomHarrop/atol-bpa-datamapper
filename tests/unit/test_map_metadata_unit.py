@@ -13,6 +13,13 @@ from atol_bpa_datamapper.package_handler import BpaPackage
 @patch('atol_bpa_datamapper.map_metadata.parse_args_for_mapping')
 def test_map_metadata_basic(mock_parse_args, mock_output_writer, mock_read_input, mock_metadata_map):
     """Test basic functionality of map_metadata."""
+    # This test verifies that:
+    # 1. The map_metadata main function correctly processes input packages
+    # 2. Each package's map_metadata method is called with the correct metadata map
+    # 3. The mapped metadata is correctly written to the output file
+    # 4. Statistics are correctly calculated and displayed
+    # 5. The function handles all required command line arguments
+    
     # Set up mock packages
     package1 = MagicMock(spec=BpaPackage)
     package1.id = "package1"
@@ -81,6 +88,13 @@ def test_map_metadata_basic(mock_parse_args, mock_output_writer, mock_read_input
 def test_map_metadata_dry_run(mock_parse_args, mock_output_writer, mock_read_input, mock_metadata_map, 
                              mock_write_json, mock_write_mapping_log):
     """Test map_metadata with dry_run=True."""
+    # This test verifies that:
+    # 1. The map_metadata function correctly handles dry run mode
+    # 2. In dry run mode, packages are processed but no output is written
+    # 3. Statistics are still calculated and displayed
+    # 4. The write_json function is not called in dry run mode
+    # 5. The mapping log is still written if specified
+    
     # Set up mock packages
     package1 = MagicMock(spec=BpaPackage)
     package1.id = "package1"
@@ -149,6 +163,13 @@ def test_map_metadata_dry_run(mock_parse_args, mock_output_writer, mock_read_inp
 @patch('atol_bpa_datamapper.map_metadata.parse_args_for_mapping')
 def test_map_metadata_with_output_files(mock_parse_args, mock_write_json, mock_write_mapping_log, mock_output_writer, mock_read_input, mock_metadata_map):
     """Test map_metadata with output files."""
+    # This test verifies that:
+    # 1. The map_metadata function correctly handles output file arguments
+    # 2. Statistics files are written when specified in the arguments
+    # 3. Mapping log files are written when specified in the arguments
+    # 4. The write_json and write_mapping_log_to_csv functions are called with correct arguments
+    # 5. The function correctly processes multiple packages and aggregates their statistics
+    
     # Set up mock packages
     package1 = MagicMock(spec=BpaPackage)
     package1.id = "package1"
@@ -220,6 +241,13 @@ def test_map_metadata_with_output_files(mock_parse_args, mock_write_json, mock_w
 @patch('atol_bpa_datamapper.map_metadata.parse_args_for_mapping')
 def test_map_metadata_with_different_section_types(mock_parse_args, mock_output_writer, mock_read_input, mock_metadata_map):
     """Test map_metadata with different section types (dict and list)."""
+    # This test verifies that:
+    # 1. The map_metadata function correctly handles different section types
+    # 2. Dictionary sections are correctly processed and written to output
+    # 3. List sections are correctly processed and written to output
+    # 4. The function correctly handles packages with mixed section types
+    # 5. Statistics are correctly calculated for all section types
+    
     # Set up mock packages
     package1 = MagicMock(spec=BpaPackage)
     package1.id = "package1"

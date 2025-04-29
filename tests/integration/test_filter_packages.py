@@ -160,6 +160,12 @@ def metadata_map(tmp_path, field_mapping_data, value_mapping_data):
 
 def test_filter_package_nested_fields(nested_package_data, metadata_map):
     """Test filtering of packages with nested fields."""
+    # This test verifies that:
+    # 1. Packages with nested fields are correctly processed
+    # 2. Field values are correctly extracted from nested structures
+    # 3. Packages that meet all filter criteria are accepted
+    # 4. The correct fields and values are used for filtering decisions
+    
     # Create a modified package with parent-level fields
     modified_package_data = nested_package_data.copy()
     
@@ -194,6 +200,11 @@ def test_filter_package_nested_fields(nested_package_data, metadata_map):
 
 def test_filter_package_missing_required_fields(nested_package_data, metadata_map):
     """Test filtering of packages with missing required fields."""
+    # This test verifies that:
+    # 1. Packages missing required fields are correctly rejected
+    # 2. The filter correctly identifies which required fields are missing
+    # 3. The package's keep attribute is set to False when required fields are missing
+    
     # Remove required field
     package_data = nested_package_data.copy()
     del package_data["scientific_name"]
@@ -211,6 +222,12 @@ def test_filter_package_missing_required_fields(nested_package_data, metadata_ma
 
 def test_filter_package_invalid_values(nested_package_data, metadata_map):
     """Test filtering of packages with invalid field values."""
+    # This test verifies that:
+    # 1. Packages with values not in the controlled vocabulary are correctly rejected
+    # 2. The filter correctly identifies which values are invalid
+    # 3. The package's keep attribute is set to False when field values are invalid
+    # 4. The original invalid values are preserved in the package's bpa_values
+    
     # Set invalid value that isn't in the mapping
     package_data = nested_package_data.copy()
     package_data["scientific_name"] = "Invalid Species"
@@ -231,6 +248,12 @@ def test_filter_package_invalid_values(nested_package_data, metadata_map):
 
 def test_filter_package_genome_data_override_invalid(genome_data_override_package_invalid, metadata_map):
     """Test filtering with genome_data override but invalid platform."""
+    # This test verifies that:
+    # 1. The genome_data="yes" field is correctly processed as an override for data_context
+    # 2. Even with genome_data="yes", packages with invalid platform values are still rejected
+    # 3. The data_context field is accepted but the package is rejected due to invalid platform
+    # 4. The package's keep attribute is set to False despite the genome_data override
+    
     # Create a modified package with parent-level fields
     modified_package_data = genome_data_override_package_invalid.copy()
     
@@ -268,6 +291,12 @@ def test_filter_package_genome_data_override_invalid(genome_data_override_packag
 
 def test_filter_package_genome_data_override_valid(genome_data_override_package_valid, metadata_map):
     """Test filtering with genome_data override and valid platform."""
+    # This test verifies that:
+    # 1. The genome_data="yes" field is correctly processed as an override for data_context
+    # 2. With genome_data="yes" and valid platform values, packages are accepted
+    # 3. All required fields are correctly validated and accepted
+    # 4. The package's keep attribute is set to True when all criteria are met
+    
     # Create a modified package with parent-level fields
     modified_package_data = genome_data_override_package_valid.copy()
     
@@ -305,6 +334,12 @@ def test_filter_package_genome_data_override_valid(genome_data_override_package_
 
 def test_filter_package_decision_tracking(nested_package_data, metadata_map):
     """Test tracking of decisions during filtering."""
+    # This test verifies that:
+    # 1. The filter correctly tracks all decisions made during filtering
+    # 2. The decisions dictionary contains entries for all required fields
+    # 3. Each decision includes the field value and whether it was accepted
+    # 4. The decision log accurately reflects the filtering process
+    
     # Create a modified package with parent-level fields
     modified_package_data = nested_package_data.copy()
     
@@ -343,6 +378,12 @@ def test_filter_package_decision_tracking(nested_package_data, metadata_map):
 
 def test_filter_package_resource_fields(nested_package_data, metadata_map):
     """Test filtering of resource-level fields."""
+    # This test verifies that:
+    # 1. The filter correctly processes resource-level fields
+    # 2. Resource fields are correctly extracted and used for filtering decisions
+    # 3. The filter correctly maps resource field values to their AToL equivalents
+    # 4. The package's keep attribute is set to True when all resource fields pass validation
+    
     # Create a modified package with parent-level fields
     modified_package_data = nested_package_data.copy()
     

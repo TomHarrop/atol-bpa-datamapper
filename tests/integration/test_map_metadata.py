@@ -213,6 +213,12 @@ def metadata_map(tmp_path, field_mapping_data, value_mapping_data):
 
 def test_map_metadata_nested_fields(nested_package_data, metadata_map):
     """Test mapping of metadata with nested fields."""
+    # This test verifies that:
+    # 1. The map_metadata function correctly processes packages with nested fields
+    # 2. Field values are correctly extracted from nested structures using dot notation
+    # 3. The extracted values are correctly mapped to the appropriate AToL sections
+    # 4. The mapped metadata has the expected structure and values
+    
     # Create a modified package with parent-level fields
     modified_package_data = nested_package_data.copy()
     
@@ -268,6 +274,12 @@ def test_map_metadata_nested_fields(nested_package_data, metadata_map):
 
 def test_map_metadata_multiple_resources(multiple_resources_package_data, metadata_map):
     """Test mapping of metadata with multiple resources."""
+    # This test verifies that:
+    # 1. The map_metadata function correctly processes packages with multiple resources
+    # 2. Each resource is mapped to a separate entry in the appropriate section (runs)
+    # 3. Resource-specific fields are correctly mapped for each resource
+    # 4. The mapped metadata contains all resources with their respective fields
+    
     # Create a modified package with parent-level fields
     modified_package_data = multiple_resources_package_data.copy()
     
@@ -317,6 +329,12 @@ def test_map_metadata_multiple_resources(multiple_resources_package_data, metada
 
 def test_map_metadata_empty_resources(empty_resources_package_data, metadata_map):
     """Test mapping of metadata with empty resources array."""
+    # This test verifies that:
+    # 1. The map_metadata function correctly handles packages with empty resources
+    # 2. Non-resource sections are still mapped correctly
+    # 3. Resource sections are initialized as empty lists
+    # 4. The mapped metadata contains the expected structure despite missing resources
+    
     package = BpaPackage(empty_resources_package_data)
     
     # Map metadata
@@ -344,6 +362,12 @@ def test_map_metadata_empty_resources(empty_resources_package_data, metadata_map
 
 def test_map_metadata_parent_fields_to_resources(parent_field_override_package_data, metadata_map):
     """Test mapping of parent-level fields to resource objects in the runs section."""
+    # This test verifies that:
+    # 1. The map_metadata function correctly maps parent-level fields to resource objects
+    # 2. Parent-level fields override resource-level fields when specified in the mapping
+    # 3. The mapped metadata contains resource entries with fields from both parent and resource levels
+    # 4. The field priority is correctly applied during mapping
+    
     package = BpaPackage(parent_field_override_package_data)
     
     # Map metadata
@@ -388,6 +412,12 @@ def test_map_metadata_parent_fields_to_resources(parent_field_override_package_d
 
 def test_map_metadata_skip_empty_strings(empty_string_package_data, metadata_map):
     """Test that empty strings are skipped in favor of non-empty values lower in the field list."""
+    # This test verifies that:
+    # 1. The map_metadata function correctly handles empty strings in field values
+    # 2. Empty strings are skipped in favor of non-empty values lower in the field priority list
+    # 3. The field selection logic correctly identifies and skips empty strings
+    # 4. The mapped metadata contains the expected non-empty values
+    
     # Create a modified package with parent-level fields
     modified_package_data = empty_string_package_data.copy()
     
@@ -420,6 +450,12 @@ def test_map_metadata_skip_empty_strings(empty_string_package_data, metadata_map
 
 def test_map_metadata_invalid_values(nested_package_data, metadata_map):
     """Test handling of invalid values during metadata mapping."""
+    # This test verifies that:
+    # 1. The map_metadata function correctly handles invalid values in the package data
+    # 2. Values not in the controlled vocabulary are excluded from the mapped metadata
+    # 3. The mapping process continues despite encountering invalid values
+    # 4. The mapped metadata contains only valid values according to the controlled vocabulary
+    
     # Create a modified package with parent-level fields and an invalid scientific_name
     modified_package_data = nested_package_data.copy()
     
@@ -456,6 +492,12 @@ def test_map_metadata_invalid_values(nested_package_data, metadata_map):
 
 def test_map_metadata_missing_values(nested_package_data, metadata_map):
     """Test handling of missing values during metadata mapping."""
+    # This test verifies that:
+    # 1. The map_metadata function correctly handles missing values in the package data
+    # 2. Fields with missing values are not included in the mapped metadata
+    # 3. The mapping process continues despite encountering missing values
+    # 4. The mapped metadata contains only fields with valid values
+    
     # Create a modified package with parent-level fields but missing scientific_name
     modified_package_data = nested_package_data.copy()
     

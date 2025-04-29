@@ -7,6 +7,11 @@ from atol_bpa_datamapper.package_handler import BpaPackage, get_nested_value
 
 def test_bpa_package_initialization():
     """Test BpaPackage initialization."""
+    # This test verifies that:
+    # 1. The BpaPackage class initializes correctly with package data
+    # 2. The fields attribute is populated with all field names from the package
+    # 3. The resource_ids attribute is populated with the IDs of all resources
+    
     # Create a simple package
     package_data = {
         "id": "test-package-123",
@@ -29,6 +34,10 @@ def test_bpa_package_initialization():
 
 def test_choose_value_with_no_fields():
     """Test choose_value with no fields to check."""
+    # This test verifies that:
+    # 1. When no fields are provided to check, the method returns (None, None, False)
+    # 2. The keep decision is False when no fields are provided
+    
     package = BpaPackage({"id": "test-package-123"})
     value, bpa_field, keep = package.choose_value([], None)
     assert value is None
@@ -38,6 +47,10 @@ def test_choose_value_with_no_fields():
 
 def test_choose_value_with_missing_fields():
     """Test choose_value with fields that don't exist in the package."""
+    # This test verifies that:
+    # 1. When the specified fields don't exist in the package, the method returns (None, None, False)
+    # 2. The keep decision is False when no matching fields are found
+    
     package = BpaPackage({"id": "test-package-123"})
     value, bpa_field, keep = package.choose_value(["field1", "field2"], None)
     assert value is None
@@ -47,6 +60,11 @@ def test_choose_value_with_missing_fields():
 
 def test_choose_value_with_no_controlled_vocabulary():
     """Test choose_value with no controlled vocabulary."""
+    # This test verifies that:
+    # 1. When a field exists in the package and no controlled vocabulary is provided,
+    #    the method returns the value, field name, and True
+    # 2. The keep decision is True when no controlled vocabulary constraints are applied
+    
     package = BpaPackage({"id": "test-package-123", "field1": "value1"})
     value, bpa_field, keep = package.choose_value(["field1"], None)
     assert value == "value1"
@@ -56,6 +74,11 @@ def test_choose_value_with_no_controlled_vocabulary():
 
 def test_choose_value_with_controlled_vocabulary_match():
     """Test choose_value with a controlled vocabulary that matches."""
+    # This test verifies that:
+    # 1. When a field value matches an entry in the controlled vocabulary,
+    #    the method returns the value, field name, and True
+    # 2. The keep decision is True when the value is in the controlled vocabulary
+    
     package = BpaPackage({"id": "test-package-123", "field1": "value1"})
     value, bpa_field, keep = package.choose_value(["field1"], ["value1", "value2"])
     assert value == "value1"
@@ -65,6 +88,11 @@ def test_choose_value_with_controlled_vocabulary_match():
 
 def test_choose_value_with_controlled_vocabulary_no_match():
     """Test choose_value with a controlled vocabulary that doesn't match."""
+    # This test verifies that:
+    # 1. When a field value does not match any entry in the controlled vocabulary,
+    #    the method returns the value, field name, and False
+    # 2. The keep decision is False when the value is not in the controlled vocabulary
+    
     package = BpaPackage({"id": "test-package-123", "field1": "value1"})
     value, bpa_field, keep = package.choose_value(["field1"], ["value2", "value3"])
     assert value == "value1"
@@ -74,6 +102,11 @@ def test_choose_value_with_controlled_vocabulary_no_match():
 
 def test_choose_value_with_multiple_fields():
     """Test choose_value with multiple fields to check."""
+    # This test verifies that:
+    # 1. When multiple fields are provided, the method checks them in order
+    # 2. The first field with a value is used, regardless of subsequent fields
+    # 3. The keep decision is True when no controlled vocabulary is provided
+    
     package = BpaPackage({
         "id": "test-package-123", 
         "field1": "value1",
@@ -87,6 +120,12 @@ def test_choose_value_with_multiple_fields():
 
 def test_map_metadata_multiple_resources():
     """Test mapping metadata with multiple resources."""
+    # This test verifies that:
+    # 1. The map_metadata method correctly processes packages with multiple resources
+    # 2. Each resource is mapped to the appropriate section in the output
+    # 3. Resource-level fields are correctly extracted and mapped
+    # 4. The mapping log correctly records all mapping decisions
+    
     # Create a package with multiple resources
     package_data = {
         "id": "test-package-123",
@@ -154,6 +193,12 @@ def test_map_metadata_multiple_resources():
 
 def test_map_metadata_with_controlled_vocabulary():
     """Test mapping metadata with a controlled vocabulary."""
+    # This test verifies that:
+    # 1. The map_metadata method correctly applies controlled vocabulary constraints
+    # 2. Values are correctly mapped according to the value mapping configuration
+    # 3. Fields with values in the controlled vocabulary are included in the output
+    # 4. The mapping process correctly transforms values based on the mapping rules
+    
     # Create a package
     package_data = {
         "id": "test-package-123",
@@ -210,6 +255,12 @@ def test_map_metadata_with_controlled_vocabulary():
 
 def test_map_metadata_with_empty_resources():
     """Test mapping metadata with no resources."""
+    # This test verifies that:
+    # 1. The map_metadata method correctly handles packages with empty resources
+    # 2. Non-resource sections are still mapped correctly
+    # 3. Resource sections are initialized as empty lists
+    # 4. The mapping process works correctly even without resource data
+    
     # Create a package with no resources
     package_data = {
         "id": "test-package-123",
@@ -266,6 +317,11 @@ def test_map_metadata_with_empty_resources():
 
 def test_map_metadata_with_nested_fields():
     """Test mapping metadata with nested fields."""
+    # This test verifies that:
+    # 1. The map_metadata method correctly extracts values from nested fields
+    # 2. Dot notation is correctly interpreted to access nested dictionary values
+    # 3. The extracted values are correctly mapped to the output fields
+    
     # Create a package with nested fields
     package_data = {
         "id": "test-package-123",
@@ -315,6 +371,11 @@ def test_map_metadata_with_nested_fields():
 
 def test_map_metadata_with_null_values():
     """Test mapping metadata with null values."""
+    # This test verifies that:
+    # 1. The map_metadata method correctly handles null values in the package data
+    # 2. Null values are not included in the mapped metadata
+    # 3. The field mapping is correctly recorded even for fields with null values
+    
     # Create a package with null values
     package = BpaPackage({
         "id": "test-package-123",
@@ -369,6 +430,11 @@ def test_map_metadata_with_null_values():
 
 def test_map_metadata_with_fallback_fields():
     """Test mapping metadata with fallback fields."""
+    # This test verifies that:
+    # 1. The map_metadata method correctly uses fallback fields when primary fields are missing
+    # 2. The method prioritizes fields in the order they are specified in the mapping
+    # 3. When a primary field has a null value, the fallback field is used instead
+    
     # Create a package with multiple possible fields
     package_data = {
         "id": "test-package-123",
@@ -428,6 +494,12 @@ def test_map_metadata_with_fallback_fields():
 
 def test_get_nested_value():
     """Test get_nested_value function."""
+    # This test verifies that:
+    # 1. The get_nested_value function correctly extracts values from nested dictionaries
+    # 2. Dot notation is correctly interpreted to access nested dictionary values
+    # 3. The function returns None when the specified path doesn't exist
+    # 4. The function handles edge cases like None inputs gracefully
+    
     # Create a dictionary with nested values
     data = {
         "field1": "value1",

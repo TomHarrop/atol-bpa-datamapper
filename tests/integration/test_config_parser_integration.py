@@ -16,6 +16,12 @@ def metadata_map(field_mapping_file, value_mapping_file):
 
 def test_metadata_map_initialization(metadata_map):
     """Test that the MetadataMap is initialized correctly."""
+    # This test verifies that:
+    # 1. The MetadataMap object is correctly initialized from the mapping files
+    # 2. The expected fields are loaded from the field mapping file
+    # 3. The metadata sections are correctly identified
+    # 4. The controlled vocabularies are correctly loaded
+    
     # Check that the metadata map is not None
     assert metadata_map is not None
     
@@ -44,6 +50,12 @@ def test_metadata_map_initialization(metadata_map):
 ])
 def test_get_allowed_values_parameterized(metadata_map, field, expected_values, has_values):
     """Test the get_allowed_values method with parameterized inputs."""
+    # This test verifies that:
+    # 1. The get_allowed_values method returns the correct allowed values for each field
+    # 2. Fields with controlled vocabularies return the expected list of values
+    # 3. Fields without controlled vocabularies return None
+    # 4. The method works correctly with a variety of field types
+    
     allowed_values = metadata_map.get_allowed_values(field)
     
     if has_values:
@@ -57,6 +69,11 @@ def test_get_allowed_values_parameterized(metadata_map, field, expected_values, 
 
 def test_get_bpa_fields(metadata_map):
     """Test the get_bpa_fields method."""
+    # This test verifies that:
+    # 1. The get_bpa_fields method returns the correct BPA fields for each AToL field
+    # 2. The method correctly handles fields with multiple possible BPA sources
+    # 3. The returned fields match the configuration in the field mapping file
+    
     # Test a field with multiple BPA fields
     bpa_fields = metadata_map.get_bpa_fields("scientific_name")
     assert bpa_fields is not None
@@ -78,6 +95,11 @@ def test_get_bpa_fields(metadata_map):
 ])
 def test_get_atol_section(metadata_map, field, expected_section):
     """Test the get_atol_section method with parameterized inputs."""
+    # This test verifies that:
+    # 1. The get_atol_section method returns the correct section for each field
+    # 2. The method works correctly with fields from different sections
+    # 3. The returned sections match the configuration in the field mapping file
+    
     section = metadata_map.get_atol_section(field)
     assert section == expected_section
 
@@ -91,6 +113,12 @@ def test_get_atol_section(metadata_map, field, expected_section):
 ])
 def test_keep_value(metadata_map, field, value, expected_result):
     """Test the keep_value method with parameterized inputs."""
+    # This test verifies that:
+    # 1. The keep_value method correctly determines whether a value is in the controlled vocabulary
+    # 2. Values in the controlled vocabulary return True
+    # 3. Values not in the controlled vocabulary return False
+    # 4. The method works correctly with a variety of field types and values
+    
     result = metadata_map.keep_value(field, value)
     assert result == expected_result
 
@@ -103,13 +131,25 @@ def test_keep_value(metadata_map, field, value, expected_result):
 ])
 def test_map_value(metadata_map, field, value, expected_result):
     """Test the map_value method with parameterized inputs."""
+    # This test verifies that:
+    # 1. The map_value method correctly maps input values to their AToL equivalents
+    # 2. Case-insensitive matching works correctly
+    # 3. Values are correctly transformed according to the value mapping configuration
+    # 4. The method works correctly with a variety of field types and values
+    
     result = metadata_map.map_value(field, value)
     assert result == expected_result
 
 
 def test_sanitize_value(test_fixtures_dir):
     """Test the _sanitize_value method using a temporary sanitization config."""
-    # Create a temporary sanitization config file
+    # This test verifies that:
+    # 1. The _sanitize_value method correctly applies sanitization rules to values
+    # 2. Different types of sanitization rules (regex, case, etc.) are correctly applied
+    # 3. The method returns both the sanitized value and the list of applied rules
+    # 4. The sanitization process works correctly for different field types and values
+    
+    # Create a temporary sanitization config
     sanitization_config = {
         "organism": {
             "scientific_name": ["text_sanitization", "empty_string_sanitization"]
@@ -180,6 +220,11 @@ def test_sanitize_value(test_fixtures_dir):
 
 def test_invalid_json_format(invalid_json_file, field_mapping_file, value_mapping_file):
     """Test that the MetadataMap constructor raises an error when given invalid JSON."""
+    # This test verifies that:
+    # 1. The MetadataMap constructor validates the JSON format of mapping files
+    # 2. An appropriate error is raised when invalid JSON is provided
+    # 3. The error message clearly indicates the issue with the file
+    
     # Test with invalid field mapping
     with pytest.raises(json.JSONDecodeError):
         MetadataMap(invalid_json_file, value_mapping_file)
@@ -191,6 +236,11 @@ def test_invalid_json_format(invalid_json_file, field_mapping_file, value_mappin
 
 def test_file_io_errors():
     """Test that the MetadataMap constructor handles file I/O errors gracefully."""
+    # This test verifies that:
+    # 1. The MetadataMap constructor handles file I/O errors gracefully
+    # 2. An appropriate error is raised when a file cannot be read
+    # 3. The error message clearly indicates the issue with the file
+    
     # Test with non-existent field mapping file
     with pytest.raises(FileNotFoundError):
         MetadataMap("non_existent_file.json", "tests/fixtures/test_value_mapping.json")
@@ -202,6 +252,11 @@ def test_file_io_errors():
 
 def test_invalid_mapping_structure(invalid_structure_file, value_mapping_file):
     """Test that the MetadataMap constructor validates the structure of mapping files."""
+    # This test verifies that:
+    # 1. The MetadataMap constructor validates the structure of mapping files
+    # 2. An appropriate error is raised when a mapping file has an invalid structure
+    # 3. The error message clearly indicates the issue with the file structure
+    
     # The current implementation might not validate structure strictly
     # This test documents the current behavior and can be updated if validation is added
     try:
@@ -220,6 +275,12 @@ def test_invalid_mapping_structure(invalid_structure_file, value_mapping_file):
 
 def test_logging_output(test_fixtures_dir, caplog):
     """Test that the MetadataMap logs important information."""
+    # This test verifies that:
+    # 1. The MetadataMap logs important information during initialization and operation
+    # 2. Appropriate log messages are generated for different events
+    # 3. The log messages contain useful information for debugging
+    # 4. The logging level is correctly set based on configuration
+    
     # Set the log level to capture all logs
     caplog.set_level(logging.INFO)
     

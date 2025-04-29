@@ -52,7 +52,13 @@ def metadata_map(field_mapping_file, value_mapping_file):
 
 def test_bpa_package_initialization(bpa_package, package_data):
     """Test that the BpaPackage is initialized correctly."""
-    # Check that the package data is stored correctly
+    # This test verifies that:
+    # 1. The BpaPackage class initializes correctly with package data from a fixture
+    # 2. The id attribute is correctly set from the package data
+    # 3. The fields attribute contains all field names from the package
+    # 4. The resource_ids attribute contains the IDs of all resources
+    
+    # Check that the package ID is set correctly
     assert bpa_package["id"] == package_data["id"]
     
     # Check that the fields are extracted
@@ -68,6 +74,13 @@ def test_bpa_package_initialization(bpa_package, package_data):
 
 def test_filter_package(bpa_package, metadata_map):
     """Test the filter method of BpaPackage with deterministic assertions."""
+    # This test verifies that:
+    # 1. The filter method correctly applies filtering rules from the metadata map
+    # 2. The package's keep attribute is set correctly based on the filtering rules
+    # 3. The bpa_fields dictionary is populated with the fields used for filtering
+    # 4. The bpa_values dictionary is populated with the values used for filtering
+    # 5. The decisions dictionary records all filtering decisions
+    
     # Filter the package
     bpa_package.filter(metadata_map)
     
@@ -99,6 +112,13 @@ def test_filter_package(bpa_package, metadata_map):
 
 def test_map_metadata(bpa_package, metadata_map, package_data, value_mapping_file):
     """Test the map_metadata method of BpaPackage with values derived from fixtures."""
+    # This test verifies that:
+    # 1. The map_metadata method correctly maps package data to AToL metadata format
+    # 2. The mapped metadata has the expected structure with appropriate sections
+    # 3. Field values are correctly mapped according to the mapping configuration
+    # 4. Resource-level fields are correctly mapped to the runs section
+    # 5. The mapping_log records all mapping decisions
+    
     # Load the value mapping to derive expected values
     with open(value_mapping_file, "r") as f:
         value_mapping = json.load(f)
@@ -183,6 +203,13 @@ def test_map_metadata(bpa_package, metadata_map, package_data, value_mapping_fil
 ])
 def test_choose_value(bpa_package, fields_to_check, accepted_values, expected_value, expected_field, expected_keep):
     """Test the choose_value method with parameterized inputs."""
+    # This test verifies that:
+    # 1. The choose_value method correctly selects values based on field priority
+    # 2. The method correctly applies controlled vocabulary constraints
+    # 3. The method returns the expected value, field name, and keep decision
+    # 4. The method handles missing fields and non-matching values correctly
+    
+    # Call the choose_value method
     value, field, keep = bpa_package.choose_value(fields_to_check, accepted_values)
     assert value == expected_value
     assert field == expected_field
@@ -198,6 +225,13 @@ def test_choose_value(bpa_package, fields_to_check, accepted_values, expected_va
 ])
 def test_choose_value_from_resource(bpa_package, fields_to_check, accepted_values, resource_index, expected_value, expected_field, expected_keep):
     """Test the choose_value_from_resource method with parameterized inputs."""
+    # This test verifies that:
+    # 1. The choose_value_from_resource method correctly selects values from a specific resource
+    # 2. The method correctly applies controlled vocabulary constraints
+    # 3. The method returns the expected value, field name, and keep decision
+    # 4. The method handles missing fields and non-matching values correctly
+    
+    # Get the resource
     resource = bpa_package["resources"][resource_index]
     value, field, keep = bpa_package.choose_value_from_resource(fields_to_check, accepted_values, resource)
     assert value == expected_value
@@ -215,12 +249,27 @@ def test_choose_value_from_resource(bpa_package, fields_to_check, accepted_value
 ])
 def test_get_nested_value(data, path, expected_value):
     """Test the get_nested_value function with parameterized inputs."""
+    # This test verifies that:
+    # 1. The get_nested_value function correctly extracts values from nested dictionaries
+    # 2. The function correctly handles dot notation for nested paths
+    # 3. The function returns None for non-existent paths
+    # 4. The function handles edge cases like None inputs gracefully
+    
+    # Call the get_nested_value function
     value = get_nested_value(data, path)
     assert value == expected_value
 
 
 def test_large_dataset_performance(metadata_map):
     """Test that the BpaPackage can handle large datasets efficiently."""
+    # This test verifies that:
+    # 1. The BpaPackage class can handle large datasets efficiently
+    # 2. The processing time scales reasonably with dataset size
+    # 3. The memory usage remains within acceptable limits
+    # 4. The filter and map_metadata methods complete within a reasonable time
+    # 5. Performance remains acceptable even with many resources and fields
+    
+    # Generate a large dataset
     import time
     
     # Create a large package with many resources
