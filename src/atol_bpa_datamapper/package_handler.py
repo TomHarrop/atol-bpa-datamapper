@@ -20,10 +20,24 @@ class BpaPackage(dict):
         self.decisions = {}
         self.bpa_fields = {}
         self.bpa_values = {}
+        self.resource_decisions = {}  # Track decisions for each resource
+        
+        # Process package-level fields
+        package_level_decisions = []
+        
         for atol_field in metadata_map.controlled_vocabularies:
             logger.debug(f"Checking field {atol_field}")
             bpa_field_list = metadata_map[atol_field]["bpa_fields"]
             accepted_values = metadata_map.get_allowed_values(atol_field)
+            
+            # Check if this is a resource field (has resources. prefix in any field)
+            is_resource_field = any(field.startswith("resources.") for field in bpa_field_list)
+            
+            # Skip resource fields for package-level decisions
+            if is_resource_field:
+                continue
+                
+            # For backward compatibility, still process all fields at package level
             value, bpa_field, keep = self.choose_value(bpa_field_list, accepted_values)
 
             # This is a manual override for the pesky genome_data key. If the
@@ -48,10 +62,56 @@ class BpaPackage(dict):
             decision_key = f"{atol_field}_accepted"
             self.decisions[decision_key] = keep
             self.decisions[atol_field] = value
+            
+            # Track package-level decisions
+            if isinstance(keep, bool):
+                package_level_decisions.append(keep)
 
+        # Now handle resource-level fields separately
+        if "resources" in self and self["resources"]:
+            # Identify resource-level controlled vocabularies
+            resource_fields = {}
+            for atol_field in metadata_map.controlled_vocabularies:
+                bpa_field_list = metadata_map[atol_field]["bpa_fields"]
+                if any(field.startswith("resources.") for field in bpa_field_list):
+                    resource_fields[atol_field] = [
+                        field.replace("resources.", "") 
+                        for field in bpa_field_list 
+                        if field.startswith("resources.")
+                    ]
+            
+            # Process each resource
+            for resource in self["resources"]:
+                resource_id = resource.get("id")
+                if not resource_id:
+                    continue
+                    
+                self.resource_decisions[resource_id] = {}
+                resource_keep_decisions = []
+                
+                for atol_field, field_list in resource_fields.items():
+                    accepted_values = metadata_map.get_allowed_values(atol_field)
+                    value, bpa_field, keep = self.choose_value(field_list, accepted_values, resource)
+                    
+                    # Record decision for this resource field
+                    self.resource_decisions[resource_id][atol_field] = value
+                    self.resource_decisions[resource_id][f"{atol_field}_accepted"] = keep
+                    
+                    if isinstance(keep, bool):
+                        resource_keep_decisions.append(keep)
+                
+                # Determine if this resource should be kept
+                resource_keep = all(resource_keep_decisions) if resource_keep_decisions else True
+                self.resource_decisions[resource_id]["keep"] = resource_keep
+                logger.debug(f"Resource {resource_id} keep decision: {resource_keep}")
+        
         # summarise the decision for this package
         logger.debug(f"Decisions: {self.decisions}")
+        
+        # Package is kept if all package-level fields pass validation
+        # Resource-level fields should NOT affect package-level keep decision
         self.keep = all(x for x in self.decisions.values() if isinstance(x, bool))
+        
         logger.debug(f"Keep: {self.keep}")
 
     def map_metadata(self, metadata_map: "MetadataMap"):
@@ -112,10 +172,21 @@ class BpaPackage(dict):
         # Handle resource-level sections - map each resource to an entry in the appropriate list
         if "resources" in self and self["resources"]:
             for resource in self["resources"]:
-                resource_id = resource["id"]
+                resource_id = resource.get("id")
+                if not resource_id:
+                    continue
+                    
+                # Skip resources that didn't pass filtering (if we have filtering decisions)
+                if hasattr(self, 'resource_decisions') and resource_id in self.resource_decisions:
+                    if not self.resource_decisions[resource_id].get('keep', True):
+                        logger.debug(f"Skipping resource {resource_id} as it didn't pass filtering")
+                        continue
                 
                 # Create a dictionary for each resource section
                 resource_metadata = {section: {} for section in resource_sections}
+                
+                # Track if this resource has any invalid controlled vocabulary values
+                has_invalid_cv_value = False
                 
                 # Process each field for this resource
                 for atol_field in metadata_map.expected_fields:
@@ -156,6 +227,9 @@ class BpaPackage(dict):
                             # Get the original value directly from resource
                             original_value = get_nested_value(resource, bpa_field) if bpa_field else None
                         
+                        # Check if this is a controlled vocabulary field
+                        is_cv_field = metadata_map.get_allowed_values(atol_field) is not None
+                        
                         # Map the value if found
                         if value is not None and bpa_field is not None:
                             # Apply sanitization rules
@@ -168,6 +242,10 @@ class BpaPackage(dict):
                                 # Handle invalid values gracefully
                                 logger.warning(f"Invalid value '{sanitized_value}' for field '{atol_field}': {e}")
                                 mapped_value = sanitized_value
+                                # If this is a controlled vocabulary field and the value is invalid,
+                                # mark this resource as having an invalid CV value
+                                if is_cv_field:
+                                    has_invalid_cv_value = True
                                 
                             resource_metadata[section][atol_field] = mapped_value
                             
@@ -189,6 +267,11 @@ class BpaPackage(dict):
                                     "source": source,
                                 }
                             )
+                
+                # Skip resources with invalid controlled vocabulary values
+                if has_invalid_cv_value:
+                    logger.debug(f"Skipping resource {resource_id} as it has invalid controlled vocabulary values")
+                    continue
                 
                 # Add the resource metadata to the appropriate section lists if not empty
                 for section in resource_sections:

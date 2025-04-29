@@ -158,9 +158,7 @@
             "bioplatforms_sample_id",
             "sample_id",
             "bpa_sample_id",
-            "bpa_sample_ids",
-            "resources.sample_id",
-            "resources.bioplatforms_sample_id"
+            "bpa_sample_ids"
         ],
         "specimen_id": [
             "specimen_id"
@@ -193,10 +191,7 @@
             "sequencing_platform",
             "Sequence",
             "Data",
-            "Type",
-            "resources.resource_type",
-            "tags.display_name",
-            "tags.name"
+            "Type"
         ],
         "sample": [
             "ncbi_biosample_accession",
@@ -213,9 +208,7 @@
             "bioplatforms_library_id",
             "library_id",
             "bpa_library_id",
-            "bpa_library_ids",
-            "resources.library_id",
-            "resources.bioplatforms_library_id"
+            "bpa_library_ids"
         ],
         "library_strategy": [
             "library_strategy",
@@ -292,6 +285,17 @@
             "bpa_dataset_id",
             "bpa_dataset_ids",
             "resources.dataset_id"
+        ],
+        "run_library_name": [
+            "resources.library_id",
+            "resources.bioplatforms_library_id"
+        ],
+        "run_sample_name": [
+            "resources.sample_id",
+            "resources.bioplatforms_sample_id"
+        ],
+        "run_platform": [
+            "resources.resource_type"
         ]
     },
     "dataset": {

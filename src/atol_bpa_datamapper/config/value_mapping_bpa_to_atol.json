@@ -93,5 +93,39 @@
                 "omg-10x-raw"
             ]
         }
+    },
+    "runs": {
+        "file_format": {
+            "BZ2": [
+                "BZ2"
+            ],
+            "GZ": [
+                "GZ",
+                ".fastq.gz",
+                "fastq.qz",
+                ".fast.gz"
+            ],
+            "FASTA": [
+                "FASTA",
+                "fasta"
+            ],
+            "TAR": [
+                "TAR"
+            ],
+            "ZIP": [
+                "ZIP"
+
+            ],
+            "FASTQ": [
+                "fastq",
+                "FASTQ",
+                "FastQ",
+                "fastq, fast5"
+            ],
+            "BAM": [
+                "bam",
+                "BAM"
+            ]
+        }
     }
 }
