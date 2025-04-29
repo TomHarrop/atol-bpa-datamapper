@@ -59,7 +59,7 @@ class BpaPackage(dict):
         logger.debug(f"Mapping BpaPackage {self.id}")
         
         # Define sections that should be treated as resource-level (list type)
-        resource_sections = [ "runs"]
+        resource_sections = ["runs"]
         
         # Initialize metadata sections
         # Use a list for resource-level sections, dictionaries for other sections
@@ -134,7 +134,7 @@ class BpaPackage(dict):
                         ]
                         
                         # First try to get value from resource fields
-                        value, bpa_field, keep = self.choose_value_from_resource(
+                        value, bpa_field, keep = self.choose_value(
                             resource_fields,
                             metadata_map.get_allowed_values(atol_field),
                             resource
@@ -245,7 +245,7 @@ class BpaPackage(dict):
             
         return sanitized_value
 
-    def choose_value(self, fields_to_check, accepted_values):
+    def choose_value(self, fields_to_check, accepted_values, resource=None):
         """
         Returns a tuple of (value, bpa_field, keep).
 
@@ -266,31 +266,7 @@ class BpaPackage(dict):
         If the package has no bpa_fields matching fields_to_check, the value
         and bpa_field is None.
         """
-        values = {key: get_nested_value(self, key) for key in fields_to_check}
-
-        first_value = None
-        first_key = None
-
-        for key, value in values.items():
-            # Skip None values and empty strings
-            if value is None or (isinstance(value, str) and value.strip() == ""):
-                continue
-                
-            if not accepted_values or value in accepted_values:
-                return (value, key, True)
-            if first_value is None:
-                first_value = value
-                first_key = key
-
-        return (first_value, first_key, False)
-        
-    def choose_value_from_resource(self, fields_to_check, accepted_values, resource):
-        """
-        Returns a tuple of (value, bpa_field, keep) from a specific resource.
-        
-        Similar to choose_value but operates on a specific resource rather than the package.
-        """
-        values = {key: get_nested_value(resource, key) for key in fields_to_check}
+        values = {key: get_nested_value(self, key) for key in fields_to_check} if resource is None else {key: get_nested_value(resource, key) for key in fields_to_check}
 
         first_value = None
         first_key = None

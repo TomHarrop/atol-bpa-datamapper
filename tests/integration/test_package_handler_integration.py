@@ -224,16 +224,16 @@ def test_choose_value(bpa_package, fields_to_check, accepted_values, expected_va
     (["type"], ["pacbio-hifi"], 0, "illumina-shortread", "type", False),
 ])
 def test_choose_value_from_resource(bpa_package, fields_to_check, accepted_values, resource_index, expected_value, expected_field, expected_keep):
-    """Test the choose_value_from_resource method with parameterized inputs."""
+    """Test the choose_value method with resource parameter."""
     # This test verifies that:
-    # 1. The choose_value_from_resource method correctly selects values from a specific resource
+    # 1. The choose_value method correctly selects values from a specific resource
     # 2. The method correctly applies controlled vocabulary constraints
     # 3. The method returns the expected value, field name, and keep decision
     # 4. The method handles missing fields and non-matching values correctly
     
     # Get the resource
     resource = bpa_package["resources"][resource_index]
-    value, field, keep = bpa_package.choose_value_from_resource(fields_to_check, accepted_values, resource)
+    value, field, keep = bpa_package.choose_value(fields_to_check, accepted_values, resource)
     assert value == expected_value
     assert field == expected_field
     assert keep == expected_keep
