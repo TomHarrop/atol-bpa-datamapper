@@ -165,38 +165,29 @@ def test_filter_package_nested_fields(nested_package_data, metadata_map):
     # 2. Field values are correctly extracted from nested structures
     # 3. Packages that meet all filter criteria are accepted
     # 4. The correct fields and values are used for filtering decisions
-    
+
     # Create a modified package with parent-level fields
     modified_package_data = nested_package_data.copy()
-    
-    # Add parent-level fields that match the resource fields
-    # This is needed because BpaPackage.filter() only processes parent-level fields
-    modified_package_data["type"] = "test-illumina-shortread"
-    modified_package_data["library_type"] = "Paired"
-    modified_package_data["library_size"] = "350.0"
+
+    # Add parent-level fields for package-level decisions
+    modified_package_data["scientific_name"] = "Homo sapiens"
     
     package = BpaPackage(modified_package_data)
-    
+
     # Filter package
     package.filter(metadata_map)
-    
+
     # Verify package is kept
     assert package.keep is True
-    
-    # Verify field usage
+
+    # Verify field usage for package-level fields
     assert package.bpa_fields["scientific_name"] == "scientific_name"
     assert package.bpa_fields["data_context"] == "project_aim"
-    assert package.bpa_fields["platform"] == "type"
-    assert package.bpa_fields["library_type"] == "library_type"
-    assert package.bpa_fields["library_size"] == "library_size"
     
-    # Verify value usage and mapping
-    assert package.bpa_values["scientific_name"] == "Homo sapiens"
-    assert package.decisions["scientific_name"] == "Homo sapiens"
-    assert package.decisions["scientific_name_accepted"] is True
-    assert package.bpa_values["platform"] == "test-illumina-shortread"
-    assert package.decisions["platform"] == "test-illumina-shortread"
-    assert package.decisions["platform_accepted"] is True
+    # Verify that resource-level fields are NOT processed during filtering
+    assert "platform" not in package.bpa_fields
+    assert "library_type" not in package.bpa_fields
+    assert "library_size" not in package.bpa_fields
 
 def test_filter_package_missing_required_fields(nested_package_data, metadata_map):
     """Test filtering of packages with missing required fields."""
@@ -247,64 +238,53 @@ def test_filter_package_invalid_values(nested_package_data, metadata_map):
     assert package.bpa_values["scientific_name"] == "Invalid Species"
 
 def test_filter_package_genome_data_override_invalid(genome_data_override_package_invalid, metadata_map):
-    """Test filtering with genome_data override but invalid platform."""
+    """Test filtering with genome_data override."""
     # This test verifies that:
     # 1. The genome_data="yes" field is correctly processed as an override for data_context
-    # 2. Even with genome_data="yes", packages with invalid platform values are still rejected
-    # 3. The data_context field is accepted but the package is rejected due to invalid platform
-    # 4. The package's keep attribute is set to False despite the genome_data override
+    # 2. With genome_data="yes", packages are accepted
+    # 3. The package's keep attribute is set to True with the genome_data override
     
     # Create a modified package with parent-level fields
     modified_package_data = genome_data_override_package_invalid.copy()
-    
-    # Add parent-level fields that match the resource fields
-    # This is needed because BpaPackage.filter() only processes parent-level fields
-    modified_package_data["type"] = "invalid option"  # Invalid platform
-    modified_package_data["library_type"] = "Paired"
-    modified_package_data["library_size"] = "350.0"
     
     package = BpaPackage(modified_package_data)
     
     # Filter package
     package.filter(metadata_map)
     
-    # Verify package is rejected due to invalid platform, despite genome_data override
-    assert package.keep is False
+    # Verify package is kept due to genome_data override
+    # Note: In our new approach, resource-level fields like platform don't affect package-level decisions
+    assert package.keep is True
     
     # Verify field usage
     assert package.bpa_fields["scientific_name"] == "scientific_name"
     assert package.bpa_fields["data_context"] == "genome_data"
-    assert package.bpa_fields["platform"] == "type"
     
     # Verify value usage
     assert package.bpa_values["scientific_name"] == "Homo sapiens"
     assert package.bpa_values["data_context"] == "yes"
-    assert package.bpa_values["platform"] == "invalid option"
     
     # Verify decisions
     assert package.decisions["scientific_name"] == "Homo sapiens"
     assert package.decisions["scientific_name_accepted"] is True
     assert package.decisions["data_context"] == "yes"
     assert package.decisions["data_context_accepted"] is True
-    assert package.decisions["platform"] == "invalid option"
-    assert package.decisions["platform_accepted"] is False  # Rejected due to invalid platform
+    
+    # Verify that resource-level fields are NOT processed during filtering
+    assert "platform" not in package.bpa_fields
+    assert "library_type" not in package.bpa_fields
+    assert "library_size" not in package.bpa_fields
 
 def test_filter_package_genome_data_override_valid(genome_data_override_package_valid, metadata_map):
     """Test filtering with genome_data override and valid platform."""
     # This test verifies that:
     # 1. The genome_data="yes" field is correctly processed as an override for data_context
-    # 2. With genome_data="yes" and valid platform values, packages are accepted
-    # 3. All required fields are correctly validated and accepted
+    # 2. With genome_data="yes", packages are accepted
+    # 3. Package-level fields are correctly validated and accepted
     # 4. The package's keep attribute is set to True when all criteria are met
     
     # Create a modified package with parent-level fields
     modified_package_data = genome_data_override_package_valid.copy()
-    
-    # Add parent-level fields that match the resource fields
-    # This is needed because BpaPackage.filter() only processes parent-level fields
-    modified_package_data["type"] = "test-illumina-shortread"
-    modified_package_data["library_type"] = "Paired"
-    modified_package_data["library_size"] = "350.0"
     
     package = BpaPackage(modified_package_data)
     
@@ -317,37 +297,36 @@ def test_filter_package_genome_data_override_valid(genome_data_override_package_
     # Verify field usage
     assert package.bpa_fields["scientific_name"] == "scientific_name"
     assert package.bpa_fields["data_context"] == "genome_data"
-    assert package.bpa_fields["platform"] == "type"
     
     # Verify value usage
     assert package.bpa_values["scientific_name"] == "Homo sapiens"
     assert package.bpa_values["data_context"] == "yes"
-    assert package.bpa_values["platform"] == "test-illumina-shortread"
     
     # Verify decisions
     assert package.decisions["scientific_name"] == "Homo sapiens"
     assert package.decisions["scientific_name_accepted"] is True
     assert package.decisions["data_context"] == "yes"
     assert package.decisions["data_context_accepted"] is True
-    assert package.decisions["platform"] == "test-illumina-shortread"
-    assert package.decisions["platform_accepted"] is True
+    
+    # Verify that resource-level fields are NOT processed during filtering
+    assert "platform" not in package.bpa_fields
+    assert "library_type" not in package.bpa_fields
+    assert "library_size" not in package.bpa_fields
 
 def test_filter_package_decision_tracking(nested_package_data, metadata_map):
     """Test tracking of decisions during filtering."""
     # This test verifies that:
     # 1. The filter correctly tracks all decisions made during filtering
-    # 2. The decisions dictionary contains entries for all required fields
+    # 2. The decisions dictionary contains entries for all package-level fields
     # 3. Each decision includes the field value and whether it was accepted
     # 4. The decision log accurately reflects the filtering process
     
     # Create a modified package with parent-level fields
     modified_package_data = nested_package_data.copy()
     
-    # Add parent-level fields that match the resource fields
-    # This is needed because BpaPackage.filter() only processes parent-level fields
-    modified_package_data["type"] = "test-illumina-shortread"
-    modified_package_data["library_type"] = "Paired"
-    modified_package_data["library_size"] = "350.0"
+    # Add parent-level fields for package-level decisions
+    modified_package_data["scientific_name"] = "Homo sapiens"
+    modified_package_data["project_aim"] = "Genome resequencing"
     
     package = BpaPackage(modified_package_data)
     
@@ -357,41 +336,30 @@ def test_filter_package_decision_tracking(nested_package_data, metadata_map):
     # Verify package is kept
     assert package.keep is True
     
-    # Verify decisions are tracked
+    # Verify decisions are tracked for package-level fields
     assert "scientific_name" in package.decisions
     assert "scientific_name_accepted" in package.decisions
     assert "data_context" in package.decisions
     assert "data_context_accepted" in package.decisions
-    assert "platform" in package.decisions
-    assert "platform_accepted" in package.decisions
-    assert "library_type" in package.decisions
-    assert "library_type_accepted" in package.decisions
-    assert "library_size" in package.decisions
-    assert "library_size_accepted" in package.decisions
     
-    # Verify all decisions are True
-    assert package.decisions["scientific_name_accepted"] is True
-    assert package.decisions["data_context_accepted"] is True
-    assert package.decisions["platform_accepted"] is True
-    assert package.decisions["library_type_accepted"] is True
-    assert package.decisions["library_size_accepted"] is True
+    # Verify that resource-level fields are NOT processed during filtering
+    assert "platform" not in package.decisions
+    assert "library_type" not in package.decisions
+    assert "library_size" not in package.decisions
 
 def test_filter_package_resource_fields(nested_package_data, metadata_map):
     """Test filtering of resource-level fields."""
-    # This test verifies that:
-    # 1. The filter correctly processes resource-level fields
-    # 2. Resource fields are correctly extracted and used for filtering decisions
-    # 3. The filter correctly maps resource field values to their AToL equivalents
-    # 4. The package's keep attribute is set to True when all resource fields pass validation
+    # This test now verifies that:
+    # 1. Resource-level fields (in the "runs" section) are skipped during package filtering
+    # 2. Only package-level fields are used for filtering decisions
+    # 3. The package's keep attribute is set to True when all package-level fields pass validation
     
     # Create a modified package with parent-level fields
     modified_package_data = nested_package_data.copy()
     
-    # Add parent-level fields that match the resource fields
-    # This is needed because BpaPackage.filter() only processes parent-level fields
-    modified_package_data["type"] = "test-illumina-shortread"
-    modified_package_data["library_type"] = "Paired"
-    modified_package_data["library_size"] = "350.0"
+    # Add parent-level fields that would pass filtering
+    modified_package_data["scientific_name"] = "Homo sapiens"
+    modified_package_data["project_aim"] = "Genome resequencing"
     
     package = BpaPackage(modified_package_data)
     
@@ -401,20 +369,11 @@ def test_filter_package_resource_fields(nested_package_data, metadata_map):
     # Verify package is kept
     assert package.keep is True
     
-    # Verify field usage - should be parent-level fields, not resource fields
-    assert package.bpa_fields["platform"] == "type"
-    assert package.bpa_fields["library_type"] == "library_type"
-    assert package.bpa_fields["library_size"] == "library_size"
+    # Verify that only package-level fields are processed
+    assert "scientific_name" in package.bpa_fields
+    assert "data_context" in package.bpa_fields
     
-    # Verify value usage
-    assert package.bpa_values["platform"] == "test-illumina-shortread"
-    assert package.bpa_values["library_type"] == "Paired"
-    assert package.bpa_values["library_size"] == "350.0"
-    
-    # Verify decisions
-    assert package.decisions["platform"] == "test-illumina-shortread"
-    assert package.decisions["platform_accepted"] is True
-    assert package.decisions["library_type"] == "Paired"
-    assert package.decisions["library_type_accepted"] is True
-    assert package.decisions["library_size"] == "350.0"
-    assert package.decisions["library_size_accepted"] is True
+    # Verify that resource-level fields are NOT processed during filtering
+    assert "platform" not in package.bpa_fields
+    assert "library_type" not in package.bpa_fields
+    assert "library_size" not in package.bpa_fields

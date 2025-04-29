@@ -105,6 +105,11 @@ def test_filter_package(bpa_package, metadata_map):
     
     # Verify that decisions dictionary contains entries for all controlled vocabulary fields
     for field in metadata_map.controlled_vocabularies:
+        # Skip resource-level fields (in the "runs" section)
+        section = metadata_map.get_atol_section(field)
+        if section == "runs":
+            continue
+            
         decision_key = f"{field}_accepted"
         assert decision_key in bpa_package.decisions, f"Missing decision for {field}"
         assert field in bpa_package.bpa_values, f"Missing value for {field}"
