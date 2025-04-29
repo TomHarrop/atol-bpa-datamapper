@@ -160,7 +160,7 @@ General options:
 
 The package comes with metadata mapping specifications in
 [`src/atol_bpa_datamapper/config`](src/atol_bpa_datamapper/config). The field
-mapping spec is automatically generated from [AToL's metadata
+mapping spec can be generated from [AToL's metadata
 schema](https://docs.google.com/spreadsheets/d/1ml5hASZ-qlAuuTrwHeGzNVqqe1mXsmmoDTekd6d9pto)
 using the script at
 [`dev/scripts/read_atol_schemas.py`](dev/scripts/read_atol_schemas.py).
