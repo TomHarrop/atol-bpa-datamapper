@@ -1,0 +1,48 @@
+{
+    "organism": {
+        "scientific_name": {
+            "Homo sapiens": [
+                "Homo sapiens",
+                "homo sapiens"
+            ],
+            "Undetermined sp": [
+                "Undetermined sp.",
+                "Undetermined species"
+            ]
+        }
+    },
+    "runs": {
+        "platform": {
+            "illumina_genomic": [
+                "illumina",
+                "illumina genomic",
+                "illumina-shortread"
+            ],
+            "pacbio_hifi": [
+                "pacbio",
+                "pacbio-hifi"
+            ]
+        },
+        "library_source": {
+            "DNA": [
+                "genomic dna",
+                "genomic DNA"
+            ]
+        },
+        "file_format": {
+            "FASTQ": [
+                "fastq",
+                "FASTQ"
+            ]
+        }
+    },
+    "sample": {
+        "data_context": {
+            "genome_assembly": [
+                "genome_assembly",
+                "yes",
+                "Genome resequencing"
+            ]
+        }
+    }
+}

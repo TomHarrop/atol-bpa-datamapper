@@ -1,0 +1,40 @@
+{
+  "organism": {
+    "scientific_name": [
+      {
+        "name": "trim_whitespace",
+        "description": "Remove leading and trailing whitespace"
+      },
+      {
+        "name": "normalize_spaces",
+        "description": "Replace multiple spaces with a single space"
+      }
+    ]
+  },
+  "sample": {
+    "data_context": [
+      {
+        "name": "lowercase",
+        "description": "Convert to lowercase"
+      }
+    ]
+  },
+  "runs": {
+    "platform": [
+      {
+        "name": "trim_whitespace",
+        "description": "Remove leading and trailing whitespace"
+      },
+      {
+        "name": "normalize_spaces",
+        "description": "Replace multiple spaces with a single space"
+      }
+    ],
+    "file_format": [
+      {
+        "name": "uppercase",
+        "description": "Convert to uppercase"
+      }
+    ]
+  }
+}

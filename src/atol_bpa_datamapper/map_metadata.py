@@ -30,6 +30,9 @@ def main():
 
     # set up mapping log
     mapping_log = {}
+    
+    # set up sanitization changes log
+    sanitization_changes = {}
 
     n_packages = 0
 
@@ -49,15 +52,29 @@ def main():
             package.map_metadata(bpa_to_atol_map)
             output_writer.write_data(package.mapped_metadata)
             mapping_log[package.id] = package.mapping_log
+            
+            # Store sanitization changes if any were made
+            if hasattr(package, 'sanitization_changes') and package.sanitization_changes:
+                sanitization_changes[package.id] = package.sanitization_changes
 
             # update counts
             counters["unused_field_counts"].update(package.unused_fields)
 
-            for section in package.mapped_metadata.values():
-                for atol_field, mapped_value in section.items():
-                    bpa_field = package.field_mapping[atol_field]
-                    counters["mapped_field_usage"][atol_field].update([bpa_field])
-                    counters["mapped_value_usage"][atol_field].update([mapped_value])
+            for section_name, section in package.mapped_metadata.items():
+                if isinstance(section, dict):
+                    # Handle dictionary sections (organism, sample, etc.)
+                    for atol_field, mapped_value in section.items():
+                        bpa_field = package.field_mapping[atol_field]
+                        counters["mapped_field_usage"][atol_field].update([bpa_field])
+                        counters["mapped_value_usage"][atol_field].update([mapped_value])
+                elif isinstance(section, list) and section_name == "runs":
+                    # Handle list section (reads)
+                    for resource_entry in section:
+                        for atol_field, mapped_value in resource_entry.items():
+                            # For reads section, the field mapping might not be in package.field_mapping
+                            # It's recorded in the mapping_log with resource_id
+                            # For simplicity, we'll just count the mapped values
+                            counters["mapped_value_usage"][atol_field].update([mapped_value])
 
             if max_iterations and n_packages >= max_iterations:
                 break
@@ -80,9 +97,12 @@ def main():
         if args.mapped_value_usage:
             logger.info(f"Writing BPA value usage counts to {args.mapped_value_usage}")
             write_json(counters["mapped_value_usage"], args.mapped_value_usage)
-        if args.mapped_value_usage:
+        if args.unused_field_counts:
             logger.info(f"Writing unused field counts to {args.unused_field_counts}")
             write_json(counters["unused_field_counts"], args.unused_field_counts)
+        if args.sanitization_changes and sanitization_changes:
+            logger.info(f"Writing sanitization changes to {args.sanitization_changes}")
+            write_json(sanitization_changes, args.sanitization_changes)
 
 
 if __name__ == "__main__":

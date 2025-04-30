@@ -102,6 +102,12 @@ def parse_args_for_mapping():
         "--mapping_log",
         help="Compressed CSV file to record the mapping used for each package",
     )
+    
+    # Add an option to specify where to save sanitization changes
+    mapping_group.add_argument(
+        "--sanitization_changes",
+        help="File to record the sanitization changes made during mapping",
+    )
 
     return parser.parse_args()
 
