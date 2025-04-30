@@ -78,7 +78,7 @@ usage: map-metadata [-h] [-i INPUT] [-o OUTPUT] [-f FIELD_MAPPING_FILE] [-v VALU
                     [-l {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [-n] [--raw_field_usage RAW_FIELD_USAGE]
                     [--raw_value_usage RAW_VALUE_USAGE] [--mapped_field_usage MAPPED_FIELD_USAGE]
                     [--mapped_value_usage MAPPED_VALUE_USAGE] [--unused_field_counts UNUSED_FIELD_COUNTS]
-                    [--mapping_log MAPPING_LOG]
+                    [--mapping_log MAPPING_LOG] [--sanitization_changes SANITIZATION_CHANGES]
 
 Map metadata in filtered jsonlines.gz
 
@@ -117,6 +117,8 @@ Counters:
 Mapping options:
   --mapping_log MAPPING_LOG
                         Compressed CSV file to record the mapping used for each package
+  --sanitization_changes SANITIZATION_CHANGES
+                        File to record the sanitization changes made during mapping
 ```
 ### resolve-organism
 

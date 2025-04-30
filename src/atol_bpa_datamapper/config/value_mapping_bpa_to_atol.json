@@ -48,7 +48,7 @@
             ]
         }
     },
-    "reads": {
+    "experiment": {
         "platform": {
             "pacbio_hifi": [
                 "ausarg-pacbio-hifi",
@@ -91,6 +91,40 @@
                 "omg-10x-processed-illumina",
                 "omg-10x-raw-illumina",
                 "omg-10x-raw"
+            ]
+        }
+    },
+    "runs": {
+        "file_format": {
+            "BZ2": [
+                "BZ2"
+            ],
+            "GZ": [
+                "GZ",
+                ".fastq.gz",
+                "fastq.qz",
+                ".fast.gz"
+            ],
+            "FASTA": [
+                "FASTA",
+                "fasta"
+            ],
+            "TAR": [
+                "TAR"
+            ],
+            "ZIP": [
+                "ZIP"
+
+            ],
+            "FASTQ": [
+                "fastq",
+                "FASTQ",
+                "FastQ",
+                "fastq, fast5"
+            ],
+            "BAM": [
+                "bam",
+                "BAM"
             ]
         }
     }

@@ -152,9 +152,7 @@
             "bioplatforms_sample_id",
             "sample_id",
             "bpa_sample_id",
-            "bpa_sample_ids",
-            "resources.sample_id",
-            "resources.bioplatforms_sample_id"
+            "bpa_sample_ids"
         ],
         "specimen_id": [
             "specimen_id",
@@ -247,9 +245,6 @@
             "material_extraction_type",
             "sample_material_preparation_type"
         ],
-        "insert_size": [
-            "insert_size_range"
-        ],
         "library_construction_protocol": [
             "library_construction_protocol",
             "library_prep_method",
@@ -326,11 +321,22 @@
             "resources.created",
             "date_submission"
         ],
-        "bioplatforms_url": [
+        "package_id": [
+            "resources.package_id",
+            "id"
+        ],
+        "resource_id": [
+            "resources.id"
+        ],
+        "bioplatforms_resource_url": [
             "resources.url"
         ],
         "reads_access_date": [
             "access_control_date"
         ]
+    },
+    "dataset": {
+        "bpa_id": ["id"]
     }
 }
+
