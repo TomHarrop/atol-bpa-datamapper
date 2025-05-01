@@ -212,7 +212,7 @@
         "sample_derived_from": [],
         "tolid": []
     },
-    "reads": {
+    "experiment": {
         "sample": [
             "ncbi_biosample_accession",
             "ncbi_biosample_accession_number"
@@ -298,7 +298,9 @@
         ],
         "flowcell_type": [
             "flowcell_type"
-        ],
+        ]
+    },
+    "runs": {
         "dataset_name": [
             "bioplatforms_dataset_id",
             "bpa_dataset_id",
