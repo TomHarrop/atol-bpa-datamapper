@@ -48,7 +48,7 @@
             ]
         }
     },
-    "experiment": {
+    "reads": {
         "platform": {
             "pacbio_hifi": [
                 "ausarg-pacbio-hifi",
@@ -92,9 +92,7 @@
                 "omg-10x-raw-illumina",
                 "omg-10x-raw"
             ]
-        }
-    },
-    "runs": {
+        },
         "file_format": {
             "BZ2": [
                 "BZ2"
@@ -114,7 +112,6 @@
             ],
             "ZIP": [
                 "ZIP"
-
             ],
             "FASTQ": [
                 "fastq",

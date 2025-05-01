@@ -28,7 +28,7 @@ class BpaPackage(dict):
             section = metadata_map.get_atol_section(atol_field)
             
             # Skip resource-level fields (in the "runs" section)
-            if section == "runs":
+            if section not in ["sample", "organism"]:
                 continue
                 
             bpa_field_list = metadata_map[atol_field]["bpa_fields"]
