@@ -39,12 +39,12 @@
                 "Genome resequencing",
                 "Genomics",
                 "Pangenome",
+                "Reference Genome",
+                "Reference genome",
                 "Reference genome (HiC)",
                 "Reference genome for Rhodomyrtus psidioides",
-                "reference genome",
-                "Reference genome",
-                "Reference Genome",
-                "Reference genomes"
+                "Reference genomes",
+                "reference genome"
             ]
         }
     },
@@ -56,9 +56,9 @@
                 "cipps-pacbio-hifi",
                 "gap-pacbio-hifi",
                 "grasslands-pacbio-hifi",
+                "omg-pacbio",
                 "pp-pacbio-hifi",
-                "tsi-pacbio-hifi",
-                "omg-pacbio"
+                "tsi-pacbio-hifi"
             ],
             "proximo_hic": [
                 "ausarg-hi-c",
@@ -68,29 +68,29 @@
             ],
             "illumina_genomic": [
                 "ausarg-illumina-fastq",
-                "gap-illumina-shortread",
                 "fungi-illumina-shortread",
+                "gap-illumina-shortread",
                 "grasslands-illumina-shortread",
-                "pp-illumina-shortread",
-                "tsi-illumina-shortread",
                 "omg-genomics-hiseq",
-                "omg-novaseq-whole-genome",
                 "omg-novaseq",
-                "tsi-illumina-fastq"
+                "omg-novaseq-whole-genome",
+                "pp-illumina-shortread",
+                "tsi-illumina-fastq",
+                "tsi-illumina-shortread"
             ],
             "ont_genomic": [
                 "ausarg-ont-promethion",
                 "fungi-ont-promethion",
                 "gap-ont-minion",
                 "gap-ont-promethion",
-                "pp-ont-promethion",
-                "omg-ont-promethion"
+                "omg-ont-promethion",
+                "pp-ont-promethion"
             ],
             "10x": [
                 "gap-genomics-10x",
                 "omg-10x-processed-illumina",
-                "omg-10x-raw-illumina",
-                "omg-10x-raw"
+                "omg-10x-raw",
+                "omg-10x-raw-illumina"
             ]
         }
     },
@@ -100,10 +100,10 @@
                 "BZ2"
             ],
             "GZ": [
-                "GZ",
+                ".fast.gz",
                 ".fastq.gz",
-                "fastq.qz",
-                ".fast.gz"
+                "GZ",
+                "fastq.qz"
             ],
             "FASTA": [
                 "FASTA",
@@ -114,17 +114,16 @@
             ],
             "ZIP": [
                 "ZIP"
-
             ],
             "FASTQ": [
-                "fastq",
                 "FASTQ",
                 "FastQ",
+                "fastq",
                 "fastq, fast5"
             ],
             "BAM": [
-                "bam",
-                "BAM"
+                "BAM",
+                "bam"
             ]
         }
     }
