@@ -100,9 +100,14 @@
                 "BZ2"
             ],
             "GZ": [
+                "GZ"
+            ],
+            "FASTQ": [
                 ".fast.gz",
                 ".fastq.gz",
-                "GZ",
+                "FASTQ",
+                "FastQ",
+                "fastq",
                 "fastq.qz"
             ],
             "FASTA": [
@@ -114,12 +119,6 @@
             ],
             "ZIP": [
                 "ZIP"
-            ],
-            "FASTQ": [
-                "FASTQ",
-                "FastQ",
-                "fastq",
-                "fastq, fast5"
             ],
             "BAM": [
                 "BAM",
