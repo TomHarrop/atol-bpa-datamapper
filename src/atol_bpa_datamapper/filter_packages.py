@@ -7,6 +7,8 @@ from collections import Counter
 
 def main():
 
+    max_iterations = None
+
     args = parse_args_for_filtering()
     setup_logger(args.log_level)
 
@@ -50,6 +52,9 @@ def main():
             if package.keep:
                 n_kept += 1
                 output_writer.write_data(package)
+
+            if max_iterations and n_packages >= max_iterations:
+                break
 
     logger.info(f"Processed {n_packages} packages")
     logger.info(f"Kept {n_kept} packages")
