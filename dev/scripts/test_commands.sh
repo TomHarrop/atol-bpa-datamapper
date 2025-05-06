@@ -20,5 +20,6 @@ map-metadata \
     --mapped_value_usage "results/${RESULT_DIR}/mapped_value_usage.jsonl.gz" \
     --unused_field_counts "results/${RESULT_DIR}/unused_field_counts.jsonl.gz" \
     --mapping_log "results/${RESULT_DIR}/decision_log.csv.gz" \
+    --sanitization_changes "results/${RESULT_DIR}/sanitization_changes.jsonl.gz" \
     <"results/${RESULT_DIR}/f.jsonl.gz" \
     >"results/${RESULT_DIR}/m.jsonl.gz"

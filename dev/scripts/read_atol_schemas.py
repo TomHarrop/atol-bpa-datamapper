@@ -16,11 +16,18 @@ sample_schema = (
     "/export?gid=2142397762&format=tsv"
 )
 
-reads_scema = (
+experiment_schema = (
     "https://docs.google.com/spreadsheets/d/"
     "1ml5hASZ-qlAuuTrwHeGzNVqqe1mXsmmoDTekd6d9pto"
     "/export?gid=1743767073&format=tsv"
 )
+
+reads_schema = (
+    "https://docs.google.com/spreadsheets/d/"
+    "1ml5hASZ-qlAuuTrwHeGzNVqqe1mXsmmoDTekd6d9pto"
+    "/export?gid=1596363671&format=tsv"
+)
+
 
 vocabulary_file = (
     "https://docs.google.com/spreadsheets/d/"
@@ -79,15 +86,8 @@ def sanitise_field_name(field_string):
     return field_string
 
 
-def main():
-
-    # the field mappings
-    sample_data = read_schema(sample_schema)
-    reads_data = read_schema(reads_scema)
-
-    df = pd.concat([sample_data, reads_data])
-
-    # Initialize the structure for the JSON output
+def df_to_dict(df):
+    # dict of dicts, values of inner dict are lists
     output_data = defaultdict(lambda: defaultdict(list))
 
     # Iterate through the DataFrame rows
@@ -102,8 +102,39 @@ def main():
             print(f"Empty mapping for {atol_field}")
             output_data[category][atol_field] = []
 
-    # Convert defaultdict to a regular dict for JSON serialization
     output_data = {k: dict(v) for k, v in output_data.items()}
+
+    return(output_data)
+
+def write_output(output_data, json_output_file):
+    Path(json_output_file.parent).mkdir(parents=True, exist_ok=True)
+    with open(json_output_file, mode="w", encoding="utf-8") as json_file:
+        json.dump(output_data, json_file, indent=4)
+
+
+def main():
+
+    # the field mappings
+    sample_data = read_schema(sample_schema)
+    experiment_data = read_schema(experiment_schema)
+
+    package_level_data = pd.concat([sample_data, experiment_data])
+    resource_level_data = read_schema(reads_schema)
+
+    package_level_dict = df_to_dict(package_level_data)
+    resource_level_dict = df_to_dict(resource_level_data)
+
+    package_mapping_file = Path("results", outdir, "field_mapping_bpa_to_atol_packages.json")
+    write_output(package_level_dict, package_mapping_file)
+    print(package_mapping_file)
+
+    resource_mapping_file = Path(
+        "results", outdir, "field_mapping_bpa_to_atol_resources.json"
+    )
+    write_output(resource_level_dict, resource_mapping_file)
+    print(resource_mapping_file)
+
+    raise NotImplementedError()
 
     # Write the JSON output
     json_output_file = Path("results", outdir, "field_mapping_bpa_to_atol.json")
