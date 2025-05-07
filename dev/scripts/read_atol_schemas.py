@@ -104,7 +104,8 @@ def df_to_dict(df):
 
     output_data = {k: dict(v) for k, v in output_data.items()}
 
-    return(output_data)
+    return output_data
+
 
 def write_output(output_data, json_output_file):
     Path(json_output_file.parent).mkdir(parents=True, exist_ok=True)
@@ -124,36 +125,29 @@ def main():
     package_level_dict = df_to_dict(package_level_data)
     resource_level_dict = df_to_dict(resource_level_data)
 
-    package_mapping_file = Path("results", outdir, "field_mapping_bpa_to_atol_packages.json")
+    package_mapping_file = Path(
+        "results", outdir, "field_mapping_bpa_to_atol_packages.json"
+    )
     write_output(package_level_dict, package_mapping_file)
-    print(package_mapping_file)
 
     resource_mapping_file = Path(
         "results", outdir, "field_mapping_bpa_to_atol_resources.json"
     )
     write_output(resource_level_dict, resource_mapping_file)
-    print(resource_mapping_file)
-
-    raise NotImplementedError()
-
-    # Write the JSON output
-    json_output_file = Path("results", outdir, "field_mapping_bpa_to_atol.json")
-    Path(json_output_file.parent).mkdir(parents=True, exist_ok=True)
-    with open(json_output_file, mode="w", encoding="utf-8") as json_file:
-        json.dump(output_data, json_file, indent=4)
 
     # the controlled vocabs
     vocabulary = read_vocabulary(vocabulary_file)
-    vocab_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(set)))
+    # dict of dict of dicts, values of innermost dict are vocab sets
+    vocab_data = defaultdict(lambda: defaultdict(lambda: defaultdict(set)))
     for _, row in vocabulary.iterrows():
         atol_field = row["atol_field"].strip()
         category = row["category"].strip()
         atol_value = row["atol_value"].strip()
         allowed_value = row["allowed_value"].strip()
-        # print(category, atol_field, atol_value, allowed_value)
-        vocab_dict[category][atol_field][atol_value].update([allowed_value])
+        vocab_data[category][atol_field][atol_value].update([allowed_value])
 
-    vocab_output = {
+    # coerce vocab sets to list during conversion
+    vocab_dict = {
         category: {
             atol_field: {
                 atol_value: list(sorted(allowed_values))
@@ -161,14 +155,11 @@ def main():
             }
             for atol_field, atol_values in fields.items()
         }
-        for category, fields in vocab_dict.items()
+        for category, fields in vocab_data.items()
     }
 
-    # Write the JSON output
     vocab_output_file = Path("results", outdir, "value_mapping_bpa_to_atol.json")
-    Path(vocab_output_file.parent).mkdir(parents=True, exist_ok=True)
-    with open(vocab_output_file, mode="w", encoding="utf-8") as json_file:
-        json.dump(vocab_output, json_file, indent=4)
+    write_output(vocab_dict, vocab_output_file)
 
 
 if __name__ == "__main__":
