@@ -299,40 +299,5 @@
         "flowcell_type": [
             "flowcell_type"
         ]
-    },
-    "runs": {
-        "dataset_name": [
-            "bioplatforms_dataset_id",
-            "bpa_dataset_id",
-            "dataset_id",
-            "resources.dataset_id",
-            "bpa_dataset_ids"
-        ],
-        "package_id": [
-            "resources.package_id"
-        ],
-        "resource_id": [
-            "resources.id"
-        ],
-        "file_name": [
-            "resources.name"
-        ],
-        "file_checksum": [
-            "resources.md5"
-        ],
-        "file_format": [
-            "file_type",
-            "resources.format"
-        ],
-        "file_submission_date": [
-            "resources.created",
-            "date_submission"
-        ],
-        "bioplatforms_url": [
-            "resources.url"
-        ],
-        "reads_access_date": [
-            "access_control_date"
-        ]
     }
 }

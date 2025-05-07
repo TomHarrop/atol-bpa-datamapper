@@ -12,7 +12,9 @@ def main():
     args = parse_args_for_filtering()
     setup_logger(args.log_level)
 
-    bpa_to_atol_map = MetadataMap(args.field_mapping_file, args.value_mapping_file)
+    bpa_to_atol_map = MetadataMap(
+        args.package_field_mapping_file, args.value_mapping_file
+    )
     input_data = read_input(args.input)
 
     # set up counters
