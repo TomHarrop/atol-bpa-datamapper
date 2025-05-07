@@ -12,21 +12,30 @@ def main():
     args = parse_args_for_filtering()
     setup_logger(args.log_level)
 
-    bpa_to_atol_map = MetadataMap(
+    package_level_map = MetadataMap(
         args.package_field_mapping_file, args.value_mapping_file
     )
+
+    resource_level_map = MetadataMap(
+        args.resource_field_mapping_file, args.value_mapping_file
+    )
+
     input_data = read_input(args.input)
 
     # set up counters
+    all_controlled_vocabularies = sorted(
+        set(
+            package_level_map.controlled_vocabularies
+            + resource_level_map.controlled_vocabularies
+        )
+    )
     counters = {
         "raw_field_usage": Counter(),
         "bpa_field_usage": {
-            atol_field: Counter()
-            for atol_field in bpa_to_atol_map.controlled_vocabularies
+            atol_field: Counter() for atol_field in all_controlled_vocabularies
         },
         "bpa_value_usage": {
-            atol_field: Counter()
-            for atol_field in bpa_to_atol_map.controlled_vocabularies
+            atol_field: Counter() for atol_field in all_controlled_vocabularies
         },
     }
 
@@ -42,7 +51,7 @@ def main():
             logger.debug(f"Processing package {package.id}")
             counters["raw_field_usage"].update(package.fields)
 
-            package.filter(bpa_to_atol_map)
+            package.filter(package_level_map)
             for atol_field, bpa_field in package.bpa_fields.items():
                 counters["bpa_field_usage"][atol_field].update([bpa_field])
             for atol_field, bpa_value in package.bpa_values.items():
@@ -50,7 +59,6 @@ def main():
 
             decision_log[package.id] = package.decisions
 
-            # Process each item
             if package.keep:
                 n_kept += 1
                 output_writer.write_data(package)

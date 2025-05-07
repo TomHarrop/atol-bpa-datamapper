@@ -10,10 +10,9 @@ filter-packages \
     --bpa_field_usage results/${RESULT_DIR}/bpa_field_usage.jsonl.gz \
     --bpa_value_usage "results/${RESULT_DIR}/bpa_value_usage.jsonl.gz" \
     --decision_log "results/${RESULT_DIR}/decision_log.csv.gz" \
-    <"${INPUT_DATA}" \
-    >"results/${RESULT_DIR}/f.jsonl.gz"
-
-exit 0
+    -n > /dev/null \
+    <"${INPUT_DATA}" 
+    # >"results/${RESULT_DIR}/f.jsonl.gz"
 
 map-metadata \
     --raw_field_usage "results/${RESULT_DIR}/raw_field_usage_mapping.jsonl.gz" \

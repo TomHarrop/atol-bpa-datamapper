@@ -49,7 +49,7 @@ class MetadataMap(dict):
             if atol_section not in field_mapping.keys():
                 logger.debug(
                     (
-                        f"Skipping value mapping section {atol_section} "
+                        f"Skipping value_mapping section {atol_section} "
                         "because it's not a section in the field_mapping"
                     )
                 )
@@ -63,7 +63,7 @@ class MetadataMap(dict):
                             bpa_value_to_atol_value[value] = atol_value
                     self[atol_field]["value_mapping"] = bpa_value_to_atol_value
                 except KeyError as e:
-                    print(
+                    logger.error(
                         "\n".join(
                             [
                                 f"Field {atol_field} isn't defined in field_mapping.",
@@ -73,6 +73,7 @@ class MetadataMap(dict):
                         )
                     )
                     raise e
+
         # We iterate over the expected keys during mapping
         setattr(self, "expected_fields", list(self.keys()))
         logger.debug(f"expected_fields:\n{self.expected_fields}")
