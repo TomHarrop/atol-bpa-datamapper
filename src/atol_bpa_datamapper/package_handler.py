@@ -10,11 +10,111 @@ class BpaBase(dict):
         # add bpa_id as a field
         self["bpa_id"] = self.id
 
+    def filter(self, metadata_map: "MetadataMap"):
+        logger.debug(f"Filtering {type(self).__name__} {self.id}")
+        self.decisions = {}
+        self.bpa_fields = {}
+        self.bpa_values = {}
+
+        for atol_field in metadata_map.controlled_vocabularies:
+
+            logger.debug(f"Checking field {atol_field}...")
+
+            bpa_field_list = metadata_map[atol_field]["bpa_fields"]
+            accepted_values = metadata_map.get_allowed_values(atol_field)
+
+            logger.debug(f"  for values {accepted_values}...")
+            logger.debug(f"  in BPA fields {bpa_field_list}.")
+
+            value, bpa_field, keep = self.choose_value(bpa_field_list, accepted_values)
+
+            # This is a manual override for the pesky genome_data key. If the
+            # package has no context_keys whose value is in
+            # accepted_data_context, but it does have a key called
+            # "genome_data" with value "yes", keep_package is True.
+            if (
+                atol_field == "data_context"
+                and "genome_data" in self.fields
+                and not keep
+            ):
+                logger.debug("Checking genome_data field")
+                if self["genome_data"] == "yes":
+                    logger.debug("Setting keep to True")
+                    value, bpa_field, keep = ("yes", "genome_data", True)
+
+            # Summarise the value choice
+            logger.debug(
+                (
+                    f"Found value {value} "
+                    f"for atol_field {atol_field} "
+                    f"in bpa_field {bpa_field}. "
+                    f"Keep is {keep}."
+                )
+            )
+
+            # record the field that was used in the bpa data
+            self.bpa_fields[atol_field] = bpa_field
+            self.bpa_values[atol_field] = value
+
+            # record the decision for this field
+            decision_key = f"{atol_field}_accepted"
+            self.decisions[decision_key] = keep
+            self.decisions[atol_field] = value
+
+        # summarise the decision for this package
+        logger.debug(f"Decisions: {self.decisions}")
+        self.keep = all(x for x in self.decisions.values() if isinstance(x, bool))
+        logger.debug(f"Keep: {self.keep}")
+
+    def choose_value(self, fields_to_check, accepted_values):
+        """
+        Returns a tuple of (value, bpa_field, keep).
+
+        fields_to_check is an ordered list.
+
+        If accepted_values is None, then we don't have a controlled vocabulary
+        for this field, and keep will always be True.
+
+        If accepted_values is a list, then keep will be True if the value of
+        the selected bpa_field is in the list of accepted_values.
+
+        If package has any fields_to_check whose value is in accepted_values,
+        the value and the bpa_field are returned and accept_value is True.
+
+        If the package has no fields_to_check whose value is in
+        accepted_values, the first bpa_field and its value are returned.
+
+        If the package has no bpa_fields matching fields_to_check, the value
+        and bpa_field is None.
+        """
+        values = {key: get_nested_value(self, key) for key in fields_to_check}
+
+        first_value = None
+        first_key = None
+
+        for key, value in values.items():
+            # Skip None values and empty strings
+            if value is None or (isinstance(value, str) and value.strip() == ""):
+                continue
+
+            if not accepted_values or value in accepted_values:
+                return (value, key, True)
+            if first_value is None:
+                first_value = value
+                first_key = key
+
+        return (first_value, first_key, False)
+
 
 class BpaResource(BpaBase):
     def __init__(self, resource_data):
         logger.debug("Initialising BpaResource")
         super().__init__(resource_data)
+
+    # We can handle parent lookups here
+    def filter(self, metadata_map: "MetadataMap"):
+        raise NotImplementedError("Called the BpaResource filter method")
+        super().filter(metadata_map)
 
 
 class BpaPackage(BpaBase):
@@ -32,56 +132,6 @@ class BpaPackage(BpaBase):
         logger.debug(self.id)
         logger.debug(self.fields)
         logger.debug(self.resource_ids)
-
-    def filter(self, metadata_map: "MetadataMap"):
-        logger.debug(f"Filtering BpaPackage {self.id}")
-        self.decisions = {}
-        self.bpa_fields = {}
-        self.bpa_values = {}
-
-        for atol_field in metadata_map.controlled_vocabularies:
-            logger.debug(f"Checking field {atol_field}")
-
-            # Get the section for this field
-            section = metadata_map.get_atol_section(atol_field)
-
-            # Skip resource-level fields (in the "runs" section)
-            if section not in ["organism", "sample", "experiment"]:
-                continue
-
-            bpa_field_list = metadata_map[atol_field]["bpa_fields"]
-            accepted_values = metadata_map.get_allowed_values(atol_field)
-
-            # For backward compatibility, still process all fields at package level
-            value, bpa_field, keep = self.choose_value(bpa_field_list, accepted_values)
-
-            # This is a manual override for the pesky genome_data key. If the
-            # package has no context_keys whose value is in
-            # accepted_data_context, but it does have a key called
-            # "genome_data" with value "yes", keep_package is True.
-            if (
-                atol_field == "data_context"
-                and "genome_data" in self.fields
-                and not keep
-            ):
-                logger.debug("Checking genome_data field")
-                if self["genome_data"] == "yes":
-                    logger.debug("Setting keep to True")
-                    value, bpa_field, keep = ("yes", "genome_data", True)
-
-            # record the field that was used in the bpa data
-            self.bpa_fields[atol_field] = bpa_field
-            self.bpa_values[atol_field] = value
-
-            # record the decision for this field
-            decision_key = f"{atol_field}_accepted"
-            self.decisions[decision_key] = keep
-            self.decisions[atol_field] = value
-
-        # summarise the decision for this package
-        logger.debug(f"Decisions: {self.decisions}")
-        self.keep = all(x for x in self.decisions.values() if isinstance(x, bool))
-        logger.debug(f"Keep: {self.keep}")
 
     def map_metadata(self, metadata_map: "MetadataMap"):
         """Map BPA package metadata to AToL format, handling resources properly."""
@@ -325,49 +375,6 @@ class BpaPackage(BpaBase):
             self.sanitization_changes.append(sanitization_record)
 
         return sanitized_value
-
-    def choose_value(self, fields_to_check, accepted_values, resource=None):
-        """
-        Returns a tuple of (value, bpa_field, keep).
-
-        fields_to_check is an ordered list.
-
-        If accepted_values is None, then we don't have a controlled vocabulary
-        for this field, and keep will always be True.
-
-        If accepted_values is a list, then keep will be True if the value of
-        the selected bpa_field is in the list of accepted_values.
-
-        If package has any fields_to_check whose value is in accepted_values,
-        the value and the bpa_field are returned and accept_value is True.
-
-        If the package has no fields_to_check whose value is in
-        accepted_values, the first bpa_field and its value are returned.
-
-        If the package has no bpa_fields matching fields_to_check, the value
-        and bpa_field is None.
-        """
-        values = (
-            {key: get_nested_value(self, key) for key in fields_to_check}
-            if resource is None
-            else {key: get_nested_value(resource, key) for key in fields_to_check}
-        )
-
-        first_value = None
-        first_key = None
-
-        for key, value in values.items():
-            # Skip None values and empty strings
-            if value is None or (isinstance(value, str) and value.strip() == ""):
-                continue
-
-            if not accepted_values or value in accepted_values:
-                return (value, key, True)
-            if first_value is None:
-                first_value = value
-                first_key = key
-
-        return (first_value, first_key, False)
 
 
 def get_nested_value(d, key):
