@@ -63,6 +63,13 @@ def main():
                 n_kept += 1
                 output_writer.write_data(package)
 
+            if package.resource_ids:
+                for k,v in package.resources.items():
+                    logger.error(k)
+                    logger.error(v)
+                    
+                quit(1)
+
             if max_iterations and n_packages >= max_iterations:
                 break
 

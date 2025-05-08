@@ -1,16 +1,34 @@
 from .logger import logger
 
 
-class BpaPackage(dict):
-    def __init__(self, package_data):
+class BpaBase(dict):
+    def __init__(self, data):
         super().__init__()
-        logger.debug("Initialising BpaPackage")
-        self.update(package_data)
+        self.update(data)
         self.fields = sorted(set(self.keys()))
         self.id = self.get("id")
-        # Add bpa_id to the package data
+        # add bpa_id as a field
         self["bpa_id"] = self.id
-        self.resource_ids = sorted(set(x["id"] for x in self.get("resources", [])))
+
+
+class BpaResource(BpaBase):
+    def __init__(self, resource_data):
+        logger.debug("Initialising BpaResource")
+        super().__init__(resource_data)
+
+
+class BpaPackage(BpaBase):
+    def __init__(self, package_data):
+        logger.debug("Initialising BpaPackage")
+        super().__init__(package_data)
+
+        # Generate a list of Resources for this Package
+        self.resources = {}
+        self.resource_ids = set()
+        for resource in self.get("resources"):
+            self.resources[resource["id"]] = BpaResource(resource)
+            self.resource_ids.add(resource["id"])
+
         logger.debug(self.id)
         logger.debug(self.fields)
         logger.debug(self.resource_ids)

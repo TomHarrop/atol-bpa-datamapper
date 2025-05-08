@@ -6,6 +6,7 @@ RESULT_DIR="$(date -I)_${RANDOM}"
 [ -d "results/${RESULT_DIR}" ] && exit 1 || mkdir -p "results/${RESULT_DIR}"
 
 filter-packages \
+    -l DEBUG \
     --raw_field_usage "results/${RESULT_DIR}/raw_field_usage_filtering.jsonl.gz" \
     --bpa_field_usage results/${RESULT_DIR}/bpa_field_usage.jsonl.gz \
     --bpa_value_usage "results/${RESULT_DIR}/bpa_value_usage.jsonl.gz" \
