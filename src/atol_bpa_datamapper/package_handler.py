@@ -10,7 +10,7 @@ class BpaBase(dict):
         # add bpa_id as a field
         self["bpa_id"] = self.id
 
-    def filter(self, metadata_map: "MetadataMap"):
+    def filter(self, metadata_map: "MetadataMap", parent_package=None):
         logger.debug(f"Filtering {type(self).__name__} {self.id}")
         self.decisions = {}
         self.bpa_fields = {}
@@ -26,7 +26,9 @@ class BpaBase(dict):
             logger.debug(f"  for values {accepted_values}...")
             logger.debug(f"  in BPA fields {bpa_field_list}.")
 
-            value, bpa_field, keep = self.choose_value(bpa_field_list, accepted_values)
+            value, bpa_field, keep = self.choose_value(
+                bpa_field_list, accepted_values, parent_package
+            )
 
             # This is a manual override for the pesky genome_data key. If the
             # package has no context_keys whose value is in
@@ -66,7 +68,7 @@ class BpaBase(dict):
         self.keep = all(x for x in self.decisions.values() if isinstance(x, bool))
         logger.debug(f"Keep: {self.keep}")
 
-    def choose_value(self, fields_to_check, accepted_values):
+    def choose_value(self, fields_to_check, accepted_values, parent_package=None):
         """
         Returns a tuple of (value, bpa_field, keep).
 
@@ -86,8 +88,37 @@ class BpaBase(dict):
 
         If the package has no bpa_fields matching fields_to_check, the value
         and bpa_field is None.
+
+        If the parent_package is not None, this is a Resource (not a Package),
+        and we have to strip the `resource` prefix from the field in the
+        metadata schema. We also have to check the parent object for the
+        required metadata.
         """
+        # if there is a parent package, this is a resource, and we need to strip the prefixes
+        if parent_package is not None:
+            fields_to_check = [x.split(".")[-1] for x in fields_to_check]
+            parent_values = {
+                key: get_nested_value(parent_package, key) for key in fields_to_check
+            }
+
         values = {key: get_nested_value(self, key) for key in fields_to_check}
+
+        # if we have values from the parent, we have to combine them
+        if parent_package is not None and parent_values:
+            my_values = {}
+            for k, v in values.items():
+                my_values[k] = None
+
+                if (v is not None) and not (v.strip == ""):
+                    my_values[k] = v
+                    continue
+
+                if (parent_values[k] is not None) and not (
+                    parent_values[k].strip == ""
+                ):
+                    my_values[k] = parent_values[k]
+
+            values = my_values
 
         first_value = None
         first_key = None
@@ -110,11 +141,6 @@ class BpaResource(BpaBase):
     def __init__(self, resource_data):
         logger.debug("Initialising BpaResource")
         super().__init__(resource_data)
-
-    # We can handle parent lookups here
-    def filter(self, metadata_map: "MetadataMap"):
-        raise NotImplementedError("Called the BpaResource filter method")
-        super().filter(metadata_map)
 
 
 class BpaPackage(BpaBase):

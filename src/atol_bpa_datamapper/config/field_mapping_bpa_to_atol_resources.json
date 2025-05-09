@@ -8,27 +8,27 @@
             "bpa_dataset_ids"
         ],
         "package_id": [
-            "package_id"
+            "resources.package_id"
         ],
         "resource_id": [
-            "id"
+            "resources.id"
         ],
         "file_name": [
-            "name"
+            "resources.name"
         ],
         "file_checksum": [
-            "md5"
+            "resources.md5"
         ],
         "file_format": [
             "file_type",
-            "format"
+            "resources.format"
         ],
         "file_submission_date": [
-            "created",
+            "resources.created",
             "date_submission"
         ],
         "bioplatforms_url": [
-            "url"
+            "resources.url"
         ],
         "reads_access_date": [
             "access_control_date"

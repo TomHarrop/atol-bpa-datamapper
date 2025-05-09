@@ -57,18 +57,24 @@ def main():
             for atol_field, bpa_value in package.bpa_values.items():
                 counters["bpa_value_usage"][atol_field].update([bpa_value])
 
-            decision_log[package.id] = package.decisions
+            dropped_resources = []
+            kept_resources = []
+            for k, v in package.resources.items():
+                # the resource-level filter method is called with the parent object
+                v.filter(resource_level_map, package)
 
+                # the resource-level filter method returns a Keep decision
+                if v.keep is True:
+                    kept_resources.append(v.id)
+                if v.keep is False:
+                    dropped_resources.append(v.id)
+
+            package.decisions["kept_resources"] = len(kept_resources) > 0
+
+            decision_log[package.id] = package.decisions
             if package.keep:
                 n_kept += 1
                 output_writer.write_data(package)
-
-            for k, v in package.resources.items():
-                v.filter(resource_level_map)
-                if v.keep is True:
-                    logger.error(decision_log)
-                    logger.error(v.decisions)
-                    quit(1)
 
             if max_iterations and n_packages >= max_iterations:
                 break
