@@ -57,6 +57,7 @@ def main():
             for atol_field, bpa_value in package.bpa_values.items():
                 counters["bpa_value_usage"][atol_field].update([bpa_value])
 
+            # Check the resources
             dropped_resources = []
             kept_resources = []
             for k, v in package.resources.items():
@@ -69,9 +70,20 @@ def main():
                 if v.keep is False:
                     dropped_resources.append(v.id)
 
-            package.decisions["kept_resources"] = len(kept_resources) > 0
+            # Drop unwanted resources
+            for k in dropped_resources:
+                package.resources.pop(k)
+
+            # Remove packages with no resources
+            if len(kept_resources) > 0:
+                package["resources"] = [package.resources[k] for k in kept_resources]
+                package.decisions["kept_resources"] = True
+            else:
+                package.decisions["kept_resources"] = False
+                package.keep = False
 
             decision_log[package.id] = package.decisions
+
             if package.keep:
                 n_kept += 1
                 output_writer.write_data(package)
