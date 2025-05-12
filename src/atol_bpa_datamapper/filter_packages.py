@@ -15,7 +15,6 @@ def main():
     package_level_map = MetadataMap(
         args.package_field_mapping_file, args.value_mapping_file
     )
-
     resource_level_map = MetadataMap(
         args.resource_field_mapping_file, args.value_mapping_file
     )
@@ -51,20 +50,20 @@ def main():
             logger.debug(f"Processing package {package.id}")
             counters["raw_field_usage"].update(package.fields)
 
+            # Filter on the Package-level fields
             package.filter(package_level_map)
             for atol_field, bpa_field in package.bpa_fields.items():
                 counters["bpa_field_usage"][atol_field].update([bpa_field])
             for atol_field, bpa_value in package.bpa_values.items():
                 counters["bpa_value_usage"][atol_field].update([bpa_value])
 
-            # Check the resources
+            # Check the Resources for this Package
             dropped_resources = []
             kept_resources = []
             for k, v in package.resources.items():
-                # the resource-level filter method is called with the parent object
+                # The Resource-level filter method requires the parent Package
                 v.filter(resource_level_map, package)
 
-                # the resource-level filter method returns a Keep decision
                 if v.keep is True:
                     kept_resources.append(v.id)
                 if v.keep is False:

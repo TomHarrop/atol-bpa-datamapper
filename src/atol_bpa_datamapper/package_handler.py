@@ -163,15 +163,7 @@ class BpaPackage(BpaBase):
         """Map BPA package metadata to AToL format, handling resources properly."""
         logger.debug(f"Mapping BpaPackage {self.id}")
 
-        # Define sections that should be treated as resource-level (list type)
-        resource_sections = ["runs"]
-
-        # Initialize metadata sections
-        # Use a list for resource-level sections, dictionaries for other sections
-        mapped_metadata = {
-            section: [] if section in resource_sections else {}
-            for section in metadata_map.metadata_sections
-        }
+        mapped_metadata = {k: {} for k in metadata_map.metadata_sections}
 
         self.mapping_log = []
         self.field_mapping = {}
@@ -180,171 +172,42 @@ class BpaPackage(BpaBase):
         # First handle non-resource sections
         for atol_field in metadata_map.expected_fields:
             section = metadata_map.get_atol_section(atol_field)
-            if section not in resource_sections:
-                value, bpa_field, keep = self.choose_value(
-                    metadata_map.get_bpa_fields(atol_field),
-                    metadata_map.get_allowed_values(atol_field),
+            value, bpa_field, keep = self.choose_value(
+                metadata_map.get_bpa_fields(atol_field),
+                metadata_map.get_allowed_values(atol_field),
+            )
+
+            if value is not None and bpa_field is not None:
+                # Get the original value directly from package
+                original_value = get_nested_value(self, bpa_field)
+
+                # Apply sanitization rules
+                sanitized_value = self._apply_sanitization(
+                    metadata_map, section, atol_field, original_value
                 )
 
-                if value is not None and bpa_field is not None:
-                    # Get the original value directly from package
-                    original_value = get_nested_value(self, bpa_field)
-
-                    # Apply sanitization rules
-                    sanitized_value = self._apply_sanitization(
-                        metadata_map, section, atol_field, original_value
+                # Map the sanitized value
+                try:
+                    mapped_value = metadata_map.map_value(atol_field, sanitized_value)
+                except KeyError as e:
+                    # Handle invalid values gracefully
+                    logger.warning(
+                        f"Invalid value '{sanitized_value}' for field '{atol_field}': {e}"
                     )
+                    mapped_value = sanitized_value
 
-                    # Map the sanitized value
-                    try:
-                        mapped_value = metadata_map.map_value(
-                            atol_field, sanitized_value
-                        )
-                    except KeyError as e:
-                        # Handle invalid values gracefully
-                        logger.warning(
-                            f"Invalid value '{sanitized_value}' for field '{atol_field}': {e}"
-                        )
-                        mapped_value = sanitized_value
+                mapped_metadata[section][atol_field] = mapped_value
+                self.field_mapping[atol_field] = bpa_field
 
-                    mapped_metadata[section][atol_field] = mapped_value
-                    self.field_mapping[atol_field] = bpa_field
-
-                    self.mapping_log.append(
-                        {
-                            "atol_field": atol_field,
-                            "bpa_field": bpa_field,
-                            "value": original_value,
-                            "sanitized_value": sanitized_value,
-                            "mapped_value": mapped_value,
-                        }
-                    )
-
-        # Handle resource-level sections - map each resource to an entry in the appropriate list
-        if "resources" in self and self["resources"]:
-            for resource in self["resources"]:
-                resource_id = resource.get("id")
-                if not resource_id:
-                    continue
-
-                # Create a dictionary for each resource section
-                resource_metadata = {section: {} for section in resource_sections}
-
-                # Track if this resource has any invalid controlled vocabulary values
-                has_invalid_cv_value = False
-
-                # Process each field for this resource
-                for atol_field in metadata_map.expected_fields:
-                    section = metadata_map.get_atol_section(atol_field)
-                    if section in resource_sections:
-                        # Get the field list and separate resource and parent fields
-                        bpa_field_list = metadata_map.get_bpa_fields(atol_field)
-                        resource_fields = [
-                            f.replace("resources.", "")
-                            for f in bpa_field_list
-                            if f.startswith("resources.")
-                        ]
-                        parent_fields = [
-                            f for f in bpa_field_list if not f.startswith("resources.")
-                        ]
-
-                        # First try to get value from resource fields
-                        value, bpa_field, keep = self.choose_value(
-                            resource_fields,
-                            metadata_map.get_allowed_values(atol_field),
-                            resource,
-                        )
-
-                        # If no value found in resource, try parent fields
-                        if value is None and parent_fields:
-                            value, bpa_field, keep = self.choose_value(
-                                parent_fields,
-                                metadata_map.get_allowed_values(atol_field),
-                            )
-                            # Record that this value came from parent
-                            source = "parent"
-                            # Get the original value directly from package
-                            original_value = (
-                                get_nested_value(self, bpa_field) if bpa_field else None
-                            )
-                        else:
-                            # Record that this value came from resource
-                            source = "resource"
-                            # Get the original value directly from resource
-                            original_value = (
-                                get_nested_value(resource, bpa_field)
-                                if bpa_field
-                                else None
-                            )
-
-                        # Check if this is a controlled vocabulary field
-                        is_cv_field = (
-                            metadata_map.get_allowed_values(atol_field) is not None
-                        )
-
-                        # Map the value if found
-                        if value is not None and bpa_field is not None:
-                            # Apply sanitization rules
-                            sanitized_value = self._apply_sanitization(
-                                metadata_map,
-                                section,
-                                atol_field,
-                                original_value,
-                                resource_id,
-                            )
-
-                            # Map the sanitized value
-                            try:
-                                mapped_value = metadata_map.map_value(
-                                    atol_field, sanitized_value
-                                )
-                            except KeyError as e:
-                                # Handle invalid values gracefully
-                                logger.warning(
-                                    f"Invalid value '{sanitized_value}' for field '{atol_field}': {e}"
-                                )
-                                mapped_value = sanitized_value
-                                # If this is a controlled vocabulary field and the value is invalid,
-                                # mark this resource as having an invalid CV value
-                                if is_cv_field:
-                                    has_invalid_cv_value = True
-
-                            resource_metadata[section][atol_field] = mapped_value
-
-                            # Record the correct field mapping path
-                            if source == "resource":
-                                self.field_mapping[atol_field] = (
-                                    f"resources.{bpa_field}"
-                                )
-                            else:
-                                self.field_mapping[atol_field] = bpa_field
-
-                            # Add to mapping log with resource information
-                            self.mapping_log.append(
-                                {
-                                    "atol_field": atol_field,
-                                    "bpa_field": bpa_field,
-                                    "value": original_value,
-                                    "sanitized_value": sanitized_value,
-                                    "mapped_value": mapped_value,
-                                    "resource_id": resource_id,
-                                    "source": source,
-                                }
-                            )
-
-                # Skip resources with invalid controlled vocabulary values
-                if has_invalid_cv_value:
-                    logger.debug(
-                        f"Skipping resource {resource_id} as it has invalid controlled vocabulary values"
-                    )
-                    continue
-
-                # Add the resource metadata to the appropriate section lists if not empty
-                for section in resource_sections:
-                    if resource_metadata[section]:
-                        # Add resource_id to the metadata
-                        resource_metadata[section]["resource_id"] = resource_id
-                        mapped_metadata[section].append(resource_metadata[section])
+                self.mapping_log.append(
+                    {
+                        "atol_field": atol_field,
+                        "bpa_field": bpa_field,
+                        "value": original_value,
+                        "sanitized_value": sanitized_value,
+                        "mapped_value": mapped_value,
+                    }
+                )
 
         # Store the mapped metadata
         self.mapped_metadata = mapped_metadata
