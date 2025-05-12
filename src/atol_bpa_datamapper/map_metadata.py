@@ -7,7 +7,7 @@ from collections import Counter
 
 def main():
 
-    max_iterations = 1
+    max_iterations = None
 
     args = parse_args_for_mapping()
     setup_logger(args.log_level)
@@ -72,7 +72,7 @@ def main():
 
             for section in package.mapped_metadata.values():
                 for atol_field, mapped_value in section.items():
-                    logger.debug(f"{atol_field},{mapped_value}")
+                    # logger.debug(f"{atol_field},{mapped_value}")
                     bpa_field = package.field_mapping[atol_field]
                     counters["mapped_field_usage"][atol_field].update([bpa_field])
                     counters["mapped_value_usage"][atol_field].update([mapped_value])

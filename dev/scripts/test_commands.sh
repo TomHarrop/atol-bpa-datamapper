@@ -13,8 +13,6 @@ filter-packages \
     <"${INPUT_DATA}" \
     >"results/${RESULT_DIR}/f.jsonl.gz"
 
-exit 0
-
 map-metadata \
     --raw_field_usage "results/${RESULT_DIR}/raw_field_usage_mapping.jsonl.gz" \
     --raw_value_usage "results/${RESULT_DIR}/raw_value_usage.jsonl.gz" \

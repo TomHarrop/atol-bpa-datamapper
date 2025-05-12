@@ -10,6 +10,78 @@ class BpaBase(dict):
         # add bpa_id as a field
         self["bpa_id"] = self.id
 
+    def choose_value(self, fields_to_check, accepted_values, parent_package=None):
+        """
+        Returns a tuple of (value, bpa_field, keep).
+
+        fields_to_check is an ordered list.
+
+        If accepted_values is None, then we don't have a controlled vocabulary
+        for this field, and keep will always be True.
+
+        If accepted_values is a list, then keep will be True if the value of
+        the selected bpa_field is in the list of accepted_values.
+
+        If package has any fields_to_check whose value is in accepted_values,
+        the value and the bpa_field are returned and accept_value is True.
+
+        If the package has no fields_to_check whose value is in
+        accepted_values, the first bpa_field and its value are returned.
+
+        If the package has no bpa_fields matching fields_to_check, the value
+        and bpa_field is None.
+
+        If the parent_package is not None, this is a Resource (not a Package),
+        and we have to strip the `resource` prefix from the field in the
+        metadata schema. We also have to check the parent object for the
+        required metadata.
+        """
+        logger.debug(
+            f"choose_value for field {fields_to_check}. Controlled vocab: {accepted_values}"
+        )
+
+        # if there is a parent package, this is a resource, and we need to strip the prefixes
+        if parent_package is not None:
+            fields_to_check = [x.split(".")[-1] for x in fields_to_check]
+            parent_values = {
+                key: get_nested_value(parent_package, key) for key in fields_to_check
+            }
+
+        values = {key: get_nested_value(self, key) for key in fields_to_check}
+
+        # if we have values from the parent, we have to combine them
+        if parent_package is not None and parent_values:
+            my_values = {}
+            for k, v in values.items():
+                my_values[k] = None
+
+                if (v is not None) and not (v.strip == ""):
+                    my_values[k] = v
+                    continue
+
+                if (parent_values[k] is not None) and not (
+                    parent_values[k].strip == ""
+                ):
+                    my_values[k] = parent_values[k]
+
+            values = my_values
+
+        first_value = None
+        first_key = None
+
+        for key, value in values.items():
+            # Skip None values and empty strings
+            if value is None or (isinstance(value, str) and value.strip() == ""):
+                continue
+
+            if not accepted_values or value in accepted_values:
+                return (value, key, True)
+            if first_value is None:
+                first_value = value
+                first_key = key
+
+        return (first_value, first_key, False)
+
     def filter(self, metadata_map: "MetadataMap", parent_package=None):
         logger.debug(f"Filtering {type(self).__name__} {self.id}")
         self.decisions = {}
@@ -68,98 +140,7 @@ class BpaBase(dict):
         self.keep = all(x for x in self.decisions.values() if isinstance(x, bool))
         logger.debug(f"Keep: {self.keep}")
 
-    def choose_value(self, fields_to_check, accepted_values, parent_package=None):
-        """
-        Returns a tuple of (value, bpa_field, keep).
-
-        fields_to_check is an ordered list.
-
-        If accepted_values is None, then we don't have a controlled vocabulary
-        for this field, and keep will always be True.
-
-        If accepted_values is a list, then keep will be True if the value of
-        the selected bpa_field is in the list of accepted_values.
-
-        If package has any fields_to_check whose value is in accepted_values,
-        the value and the bpa_field are returned and accept_value is True.
-
-        If the package has no fields_to_check whose value is in
-        accepted_values, the first bpa_field and its value are returned.
-
-        If the package has no bpa_fields matching fields_to_check, the value
-        and bpa_field is None.
-
-        If the parent_package is not None, this is a Resource (not a Package),
-        and we have to strip the `resource` prefix from the field in the
-        metadata schema. We also have to check the parent object for the
-        required metadata.
-        """
-        # if there is a parent package, this is a resource, and we need to strip the prefixes
-        if parent_package is not None:
-            fields_to_check = [x.split(".")[-1] for x in fields_to_check]
-            parent_values = {
-                key: get_nested_value(parent_package, key) for key in fields_to_check
-            }
-
-        values = {key: get_nested_value(self, key) for key in fields_to_check}
-
-        # if we have values from the parent, we have to combine them
-        if parent_package is not None and parent_values:
-            my_values = {}
-            for k, v in values.items():
-                my_values[k] = None
-
-                if (v is not None) and not (v.strip == ""):
-                    my_values[k] = v
-                    continue
-
-                if (parent_values[k] is not None) and not (
-                    parent_values[k].strip == ""
-                ):
-                    my_values[k] = parent_values[k]
-
-            values = my_values
-
-        first_value = None
-        first_key = None
-
-        for key, value in values.items():
-            # Skip None values and empty strings
-            if value is None or (isinstance(value, str) and value.strip() == ""):
-                continue
-
-            if not accepted_values or value in accepted_values:
-                return (value, key, True)
-            if first_value is None:
-                first_value = value
-                first_key = key
-
-        return (first_value, first_key, False)
-
-
-class BpaResource(BpaBase):
-    def __init__(self, resource_data):
-        logger.debug("Initialising BpaResource")
-        super().__init__(resource_data)
-
-
-class BpaPackage(BpaBase):
-    def __init__(self, package_data):
-        logger.debug("Initialising BpaPackage")
-        super().__init__(package_data)
-
-        # Generate a list of Resources for this Package
-        self.resources = {}
-        self.resource_ids = set()
-        for resource in self.get("resources"):
-            self.resources[resource["id"]] = BpaResource(resource)
-            self.resource_ids.add(resource["id"])
-
-        logger.debug(self.id)
-        logger.debug(self.fields)
-        logger.debug(self.resource_ids)
-
-    def map_metadata(self, metadata_map: "MetadataMap"):
+    def map_metadata(self, metadata_map: "MetadataMap", parent_package=None):
         """Map BPA package metadata to AToL format, handling resources properly."""
         logger.debug(f"Mapping BpaPackage {self.id}")
 
@@ -169,7 +150,6 @@ class BpaPackage(BpaBase):
         self.field_mapping = {}
         self.sanitization_changes = []
 
-        # First handle non-resource sections
         for atol_field in metadata_map.expected_fields:
             section = metadata_map.get_atol_section(atol_field)
             value, bpa_field, keep = self.choose_value(
@@ -177,9 +157,29 @@ class BpaPackage(BpaBase):
                 metadata_map.get_allowed_values(atol_field),
             )
 
+            # Summarise the value choice
+            logger.debug(
+                (
+                    f"Found value {value} "
+                    f"for atol_field {atol_field} "
+                    f"in bpa_field {bpa_field}. "
+                    f"Keep is {keep}."
+                )
+            )
+
             if value is not None and bpa_field is not None:
                 # Get the original value directly from package
                 original_value = get_nested_value(self, bpa_field)
+
+                if isinstance(original_value, list) and len(original_value) > 1:
+                    raise NotImplementedError(
+                        (
+                            f"Found different values for bpa_field {bpa_field} "
+                            f"when trying to map atol_field {atol_field} for Package {self.id}. "
+                            "Choosing between different values for the same field is not implemented.\n"
+                            f"{self}"
+                        )
+                    )
 
                 # Apply sanitization rules
                 sanitized_value = self._apply_sanitization(
@@ -223,6 +223,29 @@ class BpaPackage(BpaBase):
         ]
 
         return mapped_metadata
+
+
+class BpaResource(BpaBase):
+    def __init__(self, resource_data):
+        logger.debug("Initialising BpaResource")
+        super().__init__(resource_data)
+
+
+class BpaPackage(BpaBase):
+    def __init__(self, package_data):
+        logger.debug("Initialising BpaPackage")
+        super().__init__(package_data)
+
+        # Generate a list of Resources for this Package
+        self.resources = {}
+        self.resource_ids = set()
+        for resource in self.get("resources"):
+            self.resources[resource["id"]] = BpaResource(resource)
+            self.resource_ids.add(resource["id"])
+
+        logger.debug(self.id)
+        logger.debug(self.fields)
+        logger.debug(self.resource_ids)
 
     def _apply_sanitization(
         self, metadata_map, section, atol_field, original_value, resource_id=None
@@ -268,18 +291,83 @@ class BpaPackage(BpaBase):
 
 def get_nested_value(d, key):
     """
-    Retrieve the value from a nested dictionary using a dot-notated key.
+    Retrieve the value from a nested dictionary or list using a dot-notated
+    key.
+
+    This function traverses a nested data structure (dictionaries and lists) to
+    retrieve the value corresponding to the specified dot-notated key.
+
+    If the key points to a list of dictionaries, the function will attempt to
+    extract the value from each dictionary in the list. Values of None will be
+    removed.
+
+    If multiple values are found, a warning is logged, and the first value is
+    returned.
+
+    Args:
+        d (dict or list): The nested data structure to search. key (str): The
+        dot-notated key specifying the path to the desired value.
+
+    Returns:
+        Any: The value corresponding to the key, or None if the key is not
+        found.
+
+    Behavior:
+        - If `d` or `key` is None, the function returns None.
+        - If the key points to a dictionary, the function retrieves the value
+          directly.
+        - If the key points to a list of dictionaries, the function iterates
+          over the list and retrieves the value from each dictionary.
+        - If multiple non-None values are found in a list, a warning is logged,
+          and the first value is returned.
+        - If no value is found, the function returns None.
+
+    Example:
+        nested_data = {
+            "resources": [
+                {"id": "1", "sample_id": "sample_1"}, {"id": "2", "sample_id":
+                "sample_2"}
+            ]
+        }
+
+        get_nested_value(nested_data, "resources.sample_id") # Logs: "Multiple
+        values found for key 'resources.sample_id': ['sample_1', 'sample_2'].
+        Returning the first value." # Output: "sample_1"
+
+        get_nested_value(nested_data, "resources.id") # Logs: "Multiple values
+        found for key 'resources.id': ['1', '2']. Returning the first value." #
+        Output: "1"
+
+        get_nested_value(nested_data, "resources.nonexistent") # Output: None
+
     """
     if d is None or key is None:
         return None
 
-    keys = key.split(".")
-    current = d
+    if key.startswith("resources"):
+        logger.debug(f"Potential nested key {key}")
+        logger.debug(d["resources"])
 
-    for k in keys:
-        if isinstance(current, dict) and k in current:
-            current = current[k]
-        else:
-            return None
+    keys = key.split(".", 1)
+    current_key = keys[0]
+    remaining_keys = keys[1] if len(keys) > 1 else None
 
-    return current
+    if isinstance(d, dict):
+        if current_key in d and remaining_keys is None:
+            return d[current_key]
+        if current_key in d and remaining_keys:
+            return get_nested_value(d[current_key], remaining_keys)
+    # Iterate over lists (i.e. list of resources)
+    elif isinstance(d, list):
+        results = [
+            get_nested_value(item, remaining_keys)
+            for item in d
+            if isinstance(item, dict)
+        ]
+        filtered_results = sorted(set(x for x in results if x is not None))
+        if len(filtered_results) > 1:
+            logger.warning("Resources have different values for key {current_key}")
+            logger.warning(filtered_results)
+        return filtered_results if filtered_results else None
+
+    return None
