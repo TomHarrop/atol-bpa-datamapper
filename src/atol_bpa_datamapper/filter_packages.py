@@ -60,22 +60,24 @@ def main():
             # Check the Resources for this Package
             dropped_resources = []
             kept_resources = []
-            for k, v in package.resources.items():
+            for resource_id, resource in package.resources.items():
                 # The Resource-level filter method requires the parent Package
-                v.filter(resource_level_map, package)
+                resource.filter(resource_level_map, package)
 
-                if v.keep is True:
-                    kept_resources.append(v.id)
-                if v.keep is False:
-                    dropped_resources.append(v.id)
+                if resource.keep is True:
+                    kept_resources.append(resource.id)
+                if resource.keep is False:
+                    dropped_resources.append(resource.id)
 
             # Drop unwanted resources
-            for k in dropped_resources:
-                package.resources.pop(k)
+            for resource_id in dropped_resources:
+                package.resources.pop(resource_id)
 
             # Remove packages with no resources
             if len(kept_resources) > 0:
-                package["resources"] = [package.resources[k] for k in kept_resources]
+                package["resources"] = [
+                    package.resources[resource_id] for resource_id in kept_resources
+                ]
                 package.decisions["kept_resources"] = True
             else:
                 package.decisions["kept_resources"] = False

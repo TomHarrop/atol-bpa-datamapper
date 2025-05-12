@@ -155,6 +155,7 @@ class BpaBase(dict):
             value, bpa_field, keep = self.choose_value(
                 metadata_map.get_bpa_fields(atol_field),
                 metadata_map.get_allowed_values(atol_field),
+                parent_package,
             )
 
             # Summarise the value choice
@@ -224,6 +225,40 @@ class BpaBase(dict):
 
         return mapped_metadata
 
+    def _apply_sanitization(self, metadata_map, section, atol_field, original_value):
+        """
+        Apply sanitization rules to a value and record changes if any.
+
+        Args:
+            metadata_map: The MetadataMap instance
+            section: The section of the metadata (e.g., "organism", "reads")
+            atol_field: The AToL field name
+            original_value: The value to sanitize
+
+        Returns:
+            The sanitized value
+        """
+        # Apply sanitization rules
+        original_str = str(original_value) if original_value is not None else None
+        sanitized_value, applied_rules = metadata_map._sanitize_value(
+            section, atol_field, original_value
+        )
+        sanitized_str = str(sanitized_value) if sanitized_value is not None else None
+
+        # Record sanitization if the value was changed during sanitization
+        if original_str != sanitized_str:
+            sanitization_record = {
+                "bpa_id": self.id,
+                "field": atol_field,
+                "original_value": original_value,
+                "sanitized_value": sanitized_value,
+                "applied_rules": applied_rules,
+            }
+
+            self.sanitization_changes.append(sanitization_record)
+
+        return sanitized_value
+
 
 class BpaResource(BpaBase):
     def __init__(self, resource_data):
@@ -247,47 +282,6 @@ class BpaPackage(BpaBase):
         logger.debug(self.fields)
         logger.debug(self.resource_ids)
 
-    def _apply_sanitization(
-        self, metadata_map, section, atol_field, original_value, resource_id=None
-    ):
-        """
-        Apply sanitization rules to a value and record changes if any.
-
-        Args:
-            metadata_map: The MetadataMap instance
-            section: The section of the metadata (e.g., "organism", "reads")
-            atol_field: The AToL field name
-            original_value: The value to sanitize
-            resource_id: Optional resource ID for resource-level fields
-
-        Returns:
-            The sanitized value
-        """
-        # Apply sanitization rules
-        original_str = str(original_value) if original_value is not None else None
-        sanitized_value, applied_rules = metadata_map._sanitize_value(
-            section, atol_field, original_value
-        )
-        sanitized_str = str(sanitized_value) if sanitized_value is not None else None
-
-        # Record sanitization if the value was changed during sanitization
-        if original_str != sanitized_str:
-            sanitization_record = {
-                "bpa_id": self.id,
-                "field": atol_field,
-                "original_value": original_value,
-                "sanitized_value": sanitized_value,
-                "applied_rules": applied_rules,
-            }
-
-            # Add resource_id if provided
-            if resource_id is not None:
-                sanitization_record["resource_id"] = resource_id
-
-            self.sanitization_changes.append(sanitization_record)
-
-        return sanitized_value
-
 
 def get_nested_value(d, key):
     """
@@ -301,7 +295,7 @@ def get_nested_value(d, key):
     extract the value from each dictionary in the list. Values of None will be
     removed.
 
-    If multiple values are found, a warning is logged, and the first value is
+    If multiple values are found, a warning is logged, and a list of values is
     returned.
 
     Args:
@@ -312,43 +306,26 @@ def get_nested_value(d, key):
         Any: The value corresponding to the key, or None if the key is not
         found.
 
-    Behavior:
+    Behaviour:
         - If `d` or `key` is None, the function returns None.
         - If the key points to a dictionary, the function retrieves the value
           directly.
         - If the key points to a list of dictionaries, the function iterates
           over the list and retrieves the value from each dictionary.
         - If multiple non-None values are found in a list, a warning is logged,
-          and the first value is returned.
+          and a list of values is returned.
         - If no value is found, the function returns None.
-
-    Example:
-        nested_data = {
-            "resources": [
-                {"id": "1", "sample_id": "sample_1"}, {"id": "2", "sample_id":
-                "sample_2"}
-            ]
-        }
-
-        get_nested_value(nested_data, "resources.sample_id") # Logs: "Multiple
-        values found for key 'resources.sample_id': ['sample_1', 'sample_2'].
-        Returning the first value." # Output: "sample_1"
-
-        get_nested_value(nested_data, "resources.id") # Logs: "Multiple values
-        found for key 'resources.id': ['1', '2']. Returning the first value." #
-        Output: "1"
-
-        get_nested_value(nested_data, "resources.nonexistent") # Output: None
 
     """
     if d is None or key is None:
         return None
 
-    if key.startswith("resources"):
-        logger.debug(f"Potential nested key {key}")
-        logger.debug(d["resources"])
-
     keys = key.split(".", 1)
+
+    if len(keys) > 1:
+        logger.debug(f"Potential nested key {key}")
+        logger.debug(d[keys[0]])
+
     current_key = keys[0]
     remaining_keys = keys[1] if len(keys) > 1 else None
 
@@ -357,7 +334,7 @@ def get_nested_value(d, key):
             return d[current_key]
         if current_key in d and remaining_keys:
             return get_nested_value(d[current_key], remaining_keys)
-    # Iterate over lists (i.e. list of resources)
+    # Iterate over lists (e.g. list of resources)
     elif isinstance(d, list):
         results = [
             get_nested_value(item, remaining_keys)
