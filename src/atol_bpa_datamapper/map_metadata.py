@@ -7,7 +7,7 @@ from collections import Counter
 
 def main():
 
-    max_iterations = 10
+    max_iterations = None
 
     args = parse_args_for_mapping()
     setup_logger(args.log_level)
@@ -58,14 +58,19 @@ def main():
             package.map_metadata(package_level_map)
 
             # map the resource-level metadata
-            # TODO: mapping works but need to write the Resource-level metadata separately
+            resource_mapped_metadata = {
+                section: [] for section in resource_level_map.metadata_sections
+            }
             for resource_id, resource in package.resources.items():
                 resource.map_metadata(resource_level_map, package)
-                for section, mapped_metadata in resource.mapped_metadata.items():
-                    if section not in package.mapped_metadata:
-                        package.mapped_metadata[section] = [mapped_metadata]
-                    else:
-                        package.mapped_metadata[section].append(mapped_metadata)
+                for section in resource_mapped_metadata:
+                    resource_mapped_metadata[section].append(
+                        resource.mapped_metadata[section]
+                    )
+
+            for section, resource_metadata in resource_mapped_metadata.items():
+                package.mapped_metadata[section] = resource_metadata
+
 
             output_writer.write_data(package.mapped_metadata)
             mapping_log[package.id] = package.mapping_log
@@ -80,10 +85,26 @@ def main():
             # update counts
             counters["unused_field_counts"].update(package.unused_fields)
 
+            logger.debug(package.mapped_metadata)
+
             for section_name, section in package.mapped_metadata.items():
+                if isinstance(section, list):
+                    section = section[0]
+
                 logger.debug(f"{section_name}\n{section}")
+
                 for atol_field, mapped_value in section.items():
-                    bpa_field = package.field_mapping[atol_field]
+                    try:
+                        bpa_field = package.field_mapping[atol_field]
+                    except KeyError:
+                        # for Resources, we have to look up the key in the
+                        # Resource section.
+                        bpa_field = sorted(
+                            set(
+                                x.field_mapping[atol_field]
+                                for x in list(package.resources.values())
+                            )
+                        )[0]
                     counters["mapped_field_usage"][atol_field].update([bpa_field])
                     counters["mapped_value_usage"][atol_field].update([mapped_value])
 

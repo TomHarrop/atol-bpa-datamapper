@@ -14,6 +14,7 @@ filter-packages \
     >"results/${RESULT_DIR}/f.jsonl.gz"
 
 map-metadata \
+    -l DEBUG \
     --raw_field_usage "results/${RESULT_DIR}/raw_field_usage_mapping.jsonl.gz" \
     --raw_value_usage "results/${RESULT_DIR}/raw_value_usage.jsonl.gz" \
     --mapped_field_usage "results/${RESULT_DIR}/mapped_field_usage.jsonl.gz" \

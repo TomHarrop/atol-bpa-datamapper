@@ -320,31 +320,41 @@ def get_nested_value(d, key):
     if d is None or key is None:
         return None
 
-    keys = key.split(".", 1)
+    keys = key.split(".")
+    current = d
 
     if len(keys) > 1:
         logger.debug(f"Potential nested key {key}")
         logger.debug(d[keys[0]])
 
-    current_key = keys[0]
-    remaining_keys = keys[1] if len(keys) > 1 else None
+    for idx, k in enumerate(keys):
+        if isinstance(current, dict):
+            if k not in current:
+                return None
+            # check the next level of the dict for the next key
+            current = current[k]
+        elif isinstance(current, list):
+            # recurse with the remaining parts of the key
+            rest_of_key = ".".join(keys[idx:])
+            results = [
+                get_nested_value(item, rest_of_key)
+                for item in current
+                if isinstance(item, dict)
+            ]
+            filtered_results = sorted(set(x for x in results if x is not None))
+            if len(filtered_results) > 1:
+                logger.debug(
+                    (
+                        f"Resources have different values for key {rest_of_key}: "
+                        f"{filtered_results}"
+                    )
+                )
+            if len(filtered_results) == 1:
+                filtered_results = filtered_results[0]
 
-    if isinstance(d, dict):
-        if current_key in d and remaining_keys is None:
-            return d[current_key]
-        if current_key in d and remaining_keys:
-            return get_nested_value(d[current_key], remaining_keys)
-    # Iterate over lists (e.g. list of resources)
-    elif isinstance(d, list):
-        results = [
-            get_nested_value(item, remaining_keys)
-            for item in d
-            if isinstance(item, dict)
-        ]
-        filtered_results = sorted(set(x for x in results if x is not None))
-        if len(filtered_results) > 1:
-            logger.warning("Resources have different values for key {current_key}")
-            logger.warning(filtered_results)
-        return filtered_results if filtered_results else None
+            return filtered_results if filtered_results else None
 
-    return None
+        else:
+            return None
+
+    return current
