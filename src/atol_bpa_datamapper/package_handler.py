@@ -42,10 +42,12 @@ class BpaBase(dict):
 
         # if there is a parent package, this is a resource, and we need to strip the prefixes
         if parent_package is not None:
+            logger.debug(f"Package {self.id} has a parent {parent_package.id}")
             fields_to_check = [x.split(".")[-1] for x in fields_to_check]
             parent_values = {
                 key: get_nested_value(parent_package, key) for key in fields_to_check
             }
+            logger.debug(f"Parent values: {parent_values}")
 
         values = {key: get_nested_value(self, key) for key in fields_to_check}
 
@@ -65,6 +67,7 @@ class BpaBase(dict):
                     my_values[k] = parent_values[k]
 
             values = my_values
+            logger.debug(f"Combined values: {values}")
 
         first_value = None
         first_key = None
@@ -169,10 +172,21 @@ class BpaBase(dict):
             )
 
             if value is not None and bpa_field is not None:
-                # Get the original value directly from package
-                original_value = get_nested_value(self, bpa_field)
+                # FIXME: I'm not sure why this is here. We've already looked up
+                # the value using choose_value but we look it up again. Note
+                # that the second get_nested_value will only be called if the
+                # first is None.
+                my_value = next(
+                    value_to_use
+                    for value_to_use in [
+                        get_nested_value(self, bpa_field),
+                        get_nested_value(parent_package, bpa_field),
+                        value,
+                    ]
+                    if value_to_use is not None
+                )
 
-                if isinstance(original_value, list) and len(original_value) > 1:
+                if isinstance(my_value, list) and len(my_value) > 1:
                     raise NotImplementedError(
                         (
                             f"Found different values for bpa_field {bpa_field} "
@@ -183,12 +197,14 @@ class BpaBase(dict):
                     )
 
                 # Apply sanitization rules
+                logger.debug(f"Sanitise value {my_value}")
                 sanitized_value = self._apply_sanitization(
-                    metadata_map, section, atol_field, original_value
+                    metadata_map, section, atol_field, my_value
                 )
 
                 # Map the sanitized value
                 try:
+                    logger.debug(f"Using value {sanitized_value}")
                     mapped_value = metadata_map.map_value(atol_field, sanitized_value)
                 except KeyError as e:
                     # Handle invalid values gracefully
@@ -197,6 +213,8 @@ class BpaBase(dict):
                     )
                     mapped_value = sanitized_value
 
+                logger.debug(f"Mapped value {my_value} to {mapped_value}")
+
                 mapped_metadata[section][atol_field] = mapped_value
                 self.field_mapping[atol_field] = bpa_field
 
@@ -204,7 +222,7 @@ class BpaBase(dict):
                     {
                         "atol_field": atol_field,
                         "bpa_field": bpa_field,
-                        "value": original_value,
+                        "value": my_value,
                         "sanitized_value": sanitized_value,
                         "mapped_value": mapped_value,
                     }
