@@ -1,5 +1,43 @@
 # Changelog
 
+## v0.1.4 (2025-05-26)
+
+### Changes
+
+* Fall back to parent object if value not in current object (fixes #9)
+
+* Map metadata for Resources and add to Package output as an array of sections.
+
+* Map Resource metadata.
+
+* Find all values from nested resources in get_nested_value (fixes #6)
+
+* Filter Packages and Resources in filter_packages.py.
+
+* Filter resources while iterating through packages. chg: lookup fields in the parent package when running choose_value on resources.
+
+* Fork the filtering methods.
+
+* Filter_packages is only filtering on Package-level metadata Report KeyError in MetadataMap via logger (fixes #1)
+
+* Package filtering on package fields only.
+
+* Read split metadata schema.
+
+* Parse package metadata schema separately.
+
+### Other
+
+* Merge pull request #7 from TomHarrop/cleaner-handling-of-nested-resources.
+
+  Cleaner handling of nested resources
+
+* Run manual tests.
+
+* Mapping only at resource level.
+
+* Generate a dict of resources for each package.
+
 ## v0.1.3 (2025-05-02)
 
 ### Changes
