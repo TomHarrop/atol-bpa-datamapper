@@ -157,8 +157,7 @@
             "resources.bioplatforms_sample_id"
         ],
         "specimen_id": [
-            "specimen_id",
-            "sample_submitter_name"
+            "specimen_id"
         ],
         "material_extracted_by": [
             "material_extracted_by",
@@ -170,7 +169,8 @@
             "dna_extraction_date"
         ],
         "sample_submitter": [
-            "sample_submitter"
+            "sample_submitter",
+            "sample_submitter_name"
         ],
         "sample_submission_date": [
             "sample_submission_date"
