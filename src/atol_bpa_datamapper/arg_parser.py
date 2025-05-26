@@ -138,10 +138,18 @@ def shared_args():
 
     options_group.add_argument(
         "-f",
-        "--field_mapping_file",
+        "--package_field_mapping_file",
         type=argparse.FileType("r"),
-        help="Field mapping file in json.",
-        default=get_config_filepath("field_mapping_bpa_to_atol.json"),
+        help="Package-level field mapping file in json.",
+        default=get_config_filepath("field_mapping_bpa_to_atol_packages.json"),
+    )
+
+    options_group.add_argument(
+        "-r",
+        "--resource_field_mapping_file",
+        type=argparse.FileType("r"),
+        help="Resource-level field mapping file in json.",
+        default=get_config_filepath("field_mapping_bpa_to_atol_resources.json"),
     )
 
     options_group.add_argument(

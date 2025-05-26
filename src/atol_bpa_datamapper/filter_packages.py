@@ -12,19 +12,29 @@ def main():
     args = parse_args_for_filtering()
     setup_logger(args.log_level)
 
-    bpa_to_atol_map = MetadataMap(args.field_mapping_file, args.value_mapping_file)
+    package_level_map = MetadataMap(
+        args.package_field_mapping_file, args.value_mapping_file
+    )
+    resource_level_map = MetadataMap(
+        args.resource_field_mapping_file, args.value_mapping_file
+    )
+
     input_data = read_input(args.input)
 
     # set up counters
+    all_controlled_vocabularies = sorted(
+        set(
+            package_level_map.controlled_vocabularies
+            + resource_level_map.controlled_vocabularies
+        )
+    )
     counters = {
         "raw_field_usage": Counter(),
         "bpa_field_usage": {
-            atol_field: Counter()
-            for atol_field in bpa_to_atol_map.controlled_vocabularies
+            atol_field: Counter() for atol_field in all_controlled_vocabularies
         },
         "bpa_value_usage": {
-            atol_field: Counter()
-            for atol_field in bpa_to_atol_map.controlled_vocabularies
+            atol_field: Counter() for atol_field in all_controlled_vocabularies
         },
     }
 
@@ -40,15 +50,41 @@ def main():
             logger.debug(f"Processing package {package.id}")
             counters["raw_field_usage"].update(package.fields)
 
-            package.filter(bpa_to_atol_map)
+            # Filter on the Package-level fields
+            package.filter(package_level_map)
             for atol_field, bpa_field in package.bpa_fields.items():
                 counters["bpa_field_usage"][atol_field].update([bpa_field])
             for atol_field, bpa_value in package.bpa_values.items():
                 counters["bpa_value_usage"][atol_field].update([bpa_value])
 
+            # Check the Resources for this Package
+            dropped_resources = []
+            kept_resources = []
+            for resource_id, resource in package.resources.items():
+                # The Resource-level filter method requires the parent Package
+                resource.filter(resource_level_map, package)
+
+                if resource.keep is True:
+                    kept_resources.append(resource.id)
+                if resource.keep is False:
+                    dropped_resources.append(resource.id)
+
+            # Drop unwanted resources
+            for resource_id in dropped_resources:
+                package.resources.pop(resource_id)
+
+            # Remove packages with no resources
+            if len(kept_resources) > 0:
+                package["resources"] = [
+                    package.resources[resource_id] for resource_id in kept_resources
+                ]
+                package.decisions["kept_resources"] = True
+            else:
+                package.decisions["kept_resources"] = False
+                package.keep = False
+
             decision_log[package.id] = package.decisions
 
-            # Process each item
             if package.keep:
                 n_kept += 1
                 output_writer.write_data(package)

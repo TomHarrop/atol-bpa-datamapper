@@ -12,25 +12,31 @@ def main():
     args = parse_args_for_mapping()
     setup_logger(args.log_level)
 
-    bpa_to_atol_map = MetadataMap(args.field_mapping_file, args.value_mapping_file)
+    package_level_map = MetadataMap(
+        args.package_field_mapping_file, args.value_mapping_file
+    )
+    resource_level_map = MetadataMap(
+        args.resource_field_mapping_file, args.value_mapping_file
+    )
+
     input_data = read_input(args.input)
 
     # set up counters
+    all_fields = sorted(
+        set(package_level_map.expected_fields + resource_level_map.expected_fields)
+    )
+
     counters = {
         "raw_field_usage": Counter(),
         "raw_value_usage": {},
-        "mapped_field_usage": {
-            atol_field: Counter() for atol_field in bpa_to_atol_map.expected_fields
-        },
-        "mapped_value_usage": {
-            atol_field: Counter() for atol_field in bpa_to_atol_map.expected_fields
-        },
+        "mapped_field_usage": {atol_field: Counter() for atol_field in all_fields},
+        "mapped_value_usage": {atol_field: Counter() for atol_field in all_fields},
         "unused_field_counts": Counter(),
     }
 
     # set up mapping log
     mapping_log = {}
-    
+
     # set up sanitization changes log
     sanitization_changes = {}
 
@@ -49,32 +55,58 @@ def main():
                 except TypeError:
                     pass
 
-            package.map_metadata(bpa_to_atol_map)
+            package.map_metadata(package_level_map)
+
+            # map the resource-level metadata
+            resource_mapped_metadata = {
+                section: [] for section in resource_level_map.metadata_sections
+            }
+            for resource_id, resource in package.resources.items():
+                resource.map_metadata(resource_level_map, package)
+                for section in resource_mapped_metadata:
+                    resource_mapped_metadata[section].append(
+                        resource.mapped_metadata[section]
+                    )
+
+            for section, resource_metadata in resource_mapped_metadata.items():
+                package.mapped_metadata[section] = resource_metadata
+
+
             output_writer.write_data(package.mapped_metadata)
             mapping_log[package.id] = package.mapping_log
-            
+
             # Store sanitization changes if any were made
-            if hasattr(package, 'sanitization_changes') and package.sanitization_changes:
+            if (
+                hasattr(package, "sanitization_changes")
+                and package.sanitization_changes
+            ):
                 sanitization_changes[package.id] = package.sanitization_changes
 
             # update counts
             counters["unused_field_counts"].update(package.unused_fields)
 
+            logger.debug(package.mapped_metadata)
+
             for section_name, section in package.mapped_metadata.items():
-                if isinstance(section, dict):
-                    # Handle dictionary sections (organism, sample, etc.)
-                    for atol_field, mapped_value in section.items():
+                if isinstance(section, list):
+                    section = section[0]
+
+                logger.debug(f"{section_name}\n{section}")
+
+                for atol_field, mapped_value in section.items():
+                    try:
                         bpa_field = package.field_mapping[atol_field]
-                        counters["mapped_field_usage"][atol_field].update([bpa_field])
-                        counters["mapped_value_usage"][atol_field].update([mapped_value])
-                elif isinstance(section, list) and section_name == "runs":
-                    # Handle list section (reads)
-                    for resource_entry in section:
-                        for atol_field, mapped_value in resource_entry.items():
-                            # For reads section, the field mapping might not be in package.field_mapping
-                            # It's recorded in the mapping_log with resource_id
-                            # For simplicity, we'll just count the mapped values
-                            counters["mapped_value_usage"][atol_field].update([mapped_value])
+                    except KeyError:
+                        # for Resources, we have to look up the key in the
+                        # Resource section.
+                        bpa_field = sorted(
+                            set(
+                                x.field_mapping[atol_field]
+                                for x in list(package.resources.values())
+                            )
+                        )[0]
+                    counters["mapped_field_usage"][atol_field].update([bpa_field])
+                    counters["mapped_value_usage"][atol_field].update([mapped_value])
 
             if max_iterations and n_packages >= max_iterations:
                 break
