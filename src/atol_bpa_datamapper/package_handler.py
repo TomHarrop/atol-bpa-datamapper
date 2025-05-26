@@ -171,35 +171,21 @@ class BpaBase(dict):
                 )
             )
 
-            if value is not None and bpa_field is not None:
-                # FIXME: I'm not sure why this is here. We've already looked up
-                # the value using choose_value but we look it up again. Note
-                # that the second get_nested_value will only be called if the
-                # first is None.
-                my_value = next(
-                    value_to_use
-                    for value_to_use in [
-                        get_nested_value(self, bpa_field),
-                        get_nested_value(parent_package, bpa_field),
-                        value,
-                    ]
-                    if value_to_use is not None
+            if isinstance(value, list) and len(value) > 1:
+                raise NotImplementedError(
+                    (
+                        f"Found different values for bpa_field {bpa_field} "
+                        f"when trying to map atol_field {atol_field} for Package {self.id}. "
+                        "Choosing between different values for the same field is not implemented.\n"
+                        f"{self}"
+                    )
                 )
 
-                if isinstance(my_value, list) and len(my_value) > 1:
-                    raise NotImplementedError(
-                        (
-                            f"Found different values for bpa_field {bpa_field} "
-                            f"when trying to map atol_field {atol_field} for Package {self.id}. "
-                            "Choosing between different values for the same field is not implemented.\n"
-                            f"{self}"
-                        )
-                    )
-
+            if value is not None and bpa_field is not None:
                 # Apply sanitization rules
-                logger.debug(f"Sanitise value {my_value}")
+                logger.debug(f"Sanitise value {value}")
                 sanitized_value = self._apply_sanitization(
-                    metadata_map, section, atol_field, my_value
+                    metadata_map, section, atol_field, value
                 )
 
                 # Map the sanitized value
@@ -213,7 +199,7 @@ class BpaBase(dict):
                     )
                     mapped_value = sanitized_value
 
-                logger.debug(f"Mapped value {my_value} to {mapped_value}")
+                logger.debug(f"Mapped value {value} to {mapped_value}")
 
                 mapped_metadata[section][atol_field] = mapped_value
                 self.field_mapping[atol_field] = bpa_field
@@ -222,7 +208,7 @@ class BpaBase(dict):
                     {
                         "atol_field": atol_field,
                         "bpa_field": bpa_field,
-                        "value": my_value,
+                        "value": value,
                         "sanitized_value": sanitized_value,
                         "mapped_value": mapped_value,
                     }
