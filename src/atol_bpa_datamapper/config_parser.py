@@ -183,7 +183,7 @@ class MetadataMap(dict):
                     and sanitized_value.strip().upper()
                     in self.sanitization_config["null_values"]
                 ):
-                    logger.warning(f"value {value} mapped to None")
+                    logger.debug(f"value {value} mapped to None")
                     sanitized_value = None
 
             elif rule == "integer_sanitization":
