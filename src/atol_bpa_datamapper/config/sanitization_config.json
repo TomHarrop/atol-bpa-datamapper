@@ -32,6 +32,12 @@
             "integer_sanitization"
         ]
     },
+    "sample": {
+        "sex": [
+            "text_sanitization",
+            "empty_string_sanitization"
+        ]
+    },
     "sanitization_rules": {
         "text_sanitization": {
             "description": "Strip double whitespace, unicode whitespace characters"
@@ -49,6 +55,7 @@
         "NA",
         "NAN",
         "NONE",
+        "NOT DETERMINED",
         "NULL",
         "UNDETERMINED SP",
         "UNDETERMINED",
