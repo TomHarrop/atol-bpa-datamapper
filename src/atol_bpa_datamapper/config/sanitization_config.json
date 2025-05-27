@@ -1,13 +1,36 @@
 {
     "organism": {
-        "scientific_name": ["text_sanitization", "empty_string_sanitization"],
-        "common_name": ["text_sanitization", "empty_string_sanitization"],
-        "infraspecific_epithet": ["text_sanitization", "empty_string_sanitization"],
-        "family": ["text_sanitization", "empty_string_sanitization"],
-        "genus": ["text_sanitization", "empty_string_sanitization"],
-        "species": ["text_sanitization", "empty_string_sanitization"],
-        "order_or_group": ["text_sanitization", "empty_string_sanitization"],
-        "taxon_id": ["integer_sanitization"]
+        "scientific_name": [
+            "text_sanitization",
+            "empty_string_sanitization"
+        ],
+        "common_name": [
+            "text_sanitization",
+            "empty_string_sanitization"
+        ],
+        "infraspecific_epithet": [
+            "text_sanitization",
+            "empty_string_sanitization"
+        ],
+        "family": [
+            "text_sanitization",
+            "empty_string_sanitization"
+        ],
+        "genus": [
+            "text_sanitization",
+            "empty_string_sanitization"
+        ],
+        "species": [
+            "text_sanitization",
+            "empty_string_sanitization"
+        ],
+        "order_or_group": [
+            "text_sanitization",
+            "empty_string_sanitization"
+        ],
+        "taxon_id": [
+            "integer_sanitization"
+        ]
     },
     "sanitization_rules": {
         "text_sanitization": {
@@ -19,5 +42,16 @@
         "integer_sanitization": {
             "description": "Ensure integer values, remove decimals"
         }
-    }
+    },
+    "null_values": [
+        "",
+        "N/A",
+        "NA",
+        "NAN",
+        "NONE",
+        "NULL",
+        "UNDETERMINED SP",
+        "UNDETERMINED",
+        "UNKNOWN"
+    ]
 }
