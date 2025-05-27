@@ -178,7 +178,12 @@ class MetadataMap(dict):
 
             elif rule == "empty_string_sanitization":
                 # Convert empty strings to null
-                if isinstance(sanitized_value, str) and sanitized_value.strip() == "":
+                if (
+                    isinstance(sanitized_value, str)
+                    and sanitized_value.strip().upper()
+                    in self.sanitization_config["null_values"]
+                ):
+                    logger.debug(f"value {value} mapped to None")
                     sanitized_value = None
 
             elif rule == "integer_sanitization":
