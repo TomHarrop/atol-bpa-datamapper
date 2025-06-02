@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.1.5 (2025-06-02)
+
+### Changes
+
+* Add sex to sample section.
+
+* Map missing values to None during sanitisation.
+
+### Other
+
+* Merge pull request #11 from TomHarrop/8-map-missing-values-to-insdc-accepted-terms.
+
+  Map missing values
+
 ## v0.1.4 (2025-05-26)
 
 ### Changes
