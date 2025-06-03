@@ -99,7 +99,6 @@
         ],
         "geographic_location": [
             "location_text",
-            "indigenous_location",
             "geo_loc_name",
             "collection_location",
             "site",
@@ -117,6 +116,9 @@
             "lat_lon",
             "coord",
             "spatial"
+        ],
+        "indigenous_location": [
+            "indigenous_location"
         ],
         "elevation": [
             "altitude",
@@ -195,7 +197,7 @@
         "sample_access_date": [
             "access_control_date"
         ],
-        "project_name": [
+        "bpa_initiative": [
             "bioplatforms_project",
             "initiative_prefix",
             "organization.title"
@@ -210,14 +212,37 @@
         "title": [],
         "sample_same_as": [],
         "sample_derived_from": [],
-        "tolid": []
+        "tolid": [],
+        "preservation_method": [
+            "tissue_preservation"
+        ],
+        "preservation_temp": [
+            "tissue_preservation_temperature"
+        ],
+        "extraction_method": [
+            "material_extraction_method",
+            "dna_extraction_method",
+            "extract_protocol",
+            "dna_extraction_protocol"
+        ],
+        "nucleic_acid_treatment": [
+            "dna_treatment"
+        ],
+        "extraction_protocol_DOI": [],
+        "nucleic_acid_concentration": [
+            "material_conc_ng_ul",
+            "dna_concentration"
+        ],
+        "nucleic_acid_volume": [],
+        "project_name": [],
+        "biosample_accession": []
     },
     "experiment": {
-        "sample": [
+        "biosample_accession": [
             "ncbi_biosample_accession",
             "ncbi_biosample_accession_number"
         ],
-        "study": [
+        "bioproject_accession": [
             "ncbi_bioproject_accession",
             "ncbi_bioproject_accession_number"
         ],
@@ -298,6 +323,9 @@
         ],
         "flowcell_type": [
             "flowcell_type"
+        ],
+        "base_caller_model": [
+            "model_base_caller"
         ]
     }
 }

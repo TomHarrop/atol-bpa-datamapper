@@ -7,10 +7,10 @@
             "resources.dataset_id",
             "bpa_dataset_ids"
         ],
-        "package_id": [
+        "bpa_package_id": [
             "resources.package_id"
         ],
-        "resource_id": [
+        "bpa_resource_id": [
             "resources.id"
         ],
         "file_name": [
@@ -32,6 +32,9 @@
         ],
         "reads_access_date": [
             "access_control_date"
-        ]
+        ],
+        "sra_run_accession": [],
+        "run_read_count": [],
+        "run_base_count": []
     }
 }

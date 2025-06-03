@@ -4,6 +4,7 @@ from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
+from atol_bpa_datamapper.logger import logger
 import json
 import pandas as pd
 import re
@@ -27,7 +28,6 @@ reads_schema = (
     "1ml5hASZ-qlAuuTrwHeGzNVqqe1mXsmmoDTekd6d9pto"
     "/export?gid=1596363671&format=tsv"
 )
-
 
 vocabulary_file = (
     "https://docs.google.com/spreadsheets/d/"
@@ -116,18 +116,24 @@ def write_output(output_data, json_output_file):
 def main():
 
     # the field mappings
+    logger.info(f"read_schema {sample_schema}")
     sample_data = read_schema(sample_schema)
+    logger.info(f"read_schema {experiment_schema}")
     experiment_data = read_schema(experiment_schema)
 
     package_level_data = pd.concat([sample_data, experiment_data])
+    logger.info(f"read_schema {reads_schema}")
     resource_level_data = read_schema(reads_schema)
 
+    logger.info(f"df_to_dict package_level_data")
     package_level_dict = df_to_dict(package_level_data)
+    logger.info(f"df_to_dict resource_level_data")
     resource_level_dict = df_to_dict(resource_level_data)
 
     package_mapping_file = Path(
         "results", outdir, "field_mapping_bpa_to_atol_packages.json"
     )
+    logger.info(f"write_output to {package_mapping_file}")
     write_output(package_level_dict, package_mapping_file)
 
     resource_mapping_file = Path(
@@ -136,6 +142,7 @@ def main():
     write_output(resource_level_dict, resource_mapping_file)
 
     # the controlled vocabs
+    logger.info(f"read_vocabulary {vocabulary_file}")
     vocabulary = read_vocabulary(vocabulary_file)
     # dict of dict of dicts, values of innermost dict are vocab sets
     vocab_data = defaultdict(lambda: defaultdict(lambda: defaultdict(set)))
