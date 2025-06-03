@@ -2,12 +2,15 @@ from .arg_parser import parse_args_for_mapping
 from .config_parser import MetadataMap
 from .io import read_input, OutputWriter, write_mapping_log_to_csv, write_json
 from .logger import logger, setup_logger
+from .organism_mapper import OrganismSection, NcbiTaxdump
 from collections import Counter
 
 
 def main():
 
-    max_iterations = None
+    # debugging options
+    max_iterations = 1
+    manual_record = "bpa-fungi-illumina-shortread-467017-23222vlt3"
 
     args = parse_args_for_mapping()
     setup_logger(args.log_level)
@@ -20,6 +23,25 @@ def main():
     )
 
     input_data = read_input(args.input)
+
+    # set up taxonomy data
+    # TODO: make these arguments
+    nodes = "dev/taxdump/nodes.dmp"
+    names = "dev/taxdump/names.dmp"
+    cache_dir = "results/cache"
+    # ncbi_taxdump = NcbiTaxdump(
+    #     args.nodes,
+    #     args.names,
+    #     args.cache_dir,
+    #     resolve_to_rank="species",
+    # )
+
+    ncbi_taxdump = NcbiTaxdump(
+        nodes,
+        names,
+        cache_dir,
+        resolve_to_rank="species",
+    )
 
     # set up counters
     all_fields = sorted(
@@ -34,18 +56,26 @@ def main():
         "unused_field_counts": Counter(),
     }
 
-    # set up mapping log
+    # set up logs
     mapping_log = {}
+    grouping_log = {}
 
     # set up sanitization changes log
     sanitization_changes = {}
 
-    n_packages = 0
+    n_packages = 1
 
     with OutputWriter(args.output, args.dry_run) as output_writer:
         for package in input_data:
-            n_packages += 1
             logger.debug(f"Processing package {package.id}")
+
+            # debugging
+            if manual_record and package.id != manual_record:
+                continue
+            if max_iterations and n_packages > max_iterations:
+                break
+            n_packages += 1
+
             counters["raw_field_usage"].update(package.fields)
             for bpa_field in package.fields:
                 if bpa_field not in counters["raw_value_usage"]:
@@ -71,6 +101,18 @@ def main():
             for section, resource_metadata in resource_mapped_metadata.items():
                 package.mapped_metadata[section] = resource_metadata
 
+            organism_section = OrganismSection(
+                package.id, package.mapped_metadata["organism"], ncbi_taxdump
+            )
+
+            # TODO: this is here to stop the mapper at a changed package
+            if (
+                not package.mapped_metadata["organism"]["scientific_name"]
+                == organism_section.scientific_name
+            ):
+                logger.error(package.mapped_metadata["organism"])
+                logger.error(organism_section.__dict__)
+                raise ValueError(package.id)
 
             output_writer.write_data(package.mapped_metadata)
             mapping_log[package.id] = package.mapping_log
@@ -108,8 +150,6 @@ def main():
                     counters["mapped_field_usage"][atol_field].update([bpa_field])
                     counters["mapped_value_usage"][atol_field].update([mapped_value])
 
-            if max_iterations and n_packages >= max_iterations:
-                break
     logger.info(f"Processed {n_packages} packages")
 
     # write optional output
