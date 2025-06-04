@@ -10,7 +10,7 @@ def main():
 
     # debugging options
     max_iterations = 1
-    manual_record = "bpa-fungi-illumina-shortread-467017-23222vlt3"
+    manual_record = "bpa-fungi-illumina-shortread-465900-22n37nlt3"
 
     args = parse_args_for_mapping()
     setup_logger(args.log_level)
@@ -86,6 +86,40 @@ def main():
                     pass
 
             package.map_metadata(package_level_map)
+            mapping_log[package.id] = package.mapping_log
+
+            # map the organism
+            organism_section = OrganismSection(
+                package.id, package.mapped_metadata["organism"], ncbi_taxdump
+            )
+            grouping_log[package.id] = organism_section.mapped_metadata
+
+            logger.error(f"Mapped organism info: {organism_section.mapped_metadata}")
+
+            # overwrite values in the organism section
+            for key, value in organism_section.mapped_metadata.items():
+                if key in package_level_map.expected_fields:
+                    logger.error(key)
+                    logger.error(value)
+                    
+                    try:
+                        current_value = package.mapped_metadata["organism"][key]
+                    except KeyError:
+                        current_value = None
+
+                    if not value == current_value:
+                        logger.warning(
+                            f"Updating organism key {key} from {current_value} to {value}"
+                        )
+                        package.mapped_metadata["organism"][key] = value
+
+            # if package.mapped_metadata["organism"]["atol_scientific_name"]:
+            #     raise ValueError(package.id)
+            # else:
+            #     continue
+
+            logger.error(package.mapped_metadata["organism"])
+            output_writer.write_data(package.mapped_metadata)
 
             # map the resource-level metadata
             resource_mapped_metadata = {
@@ -100,22 +134,6 @@ def main():
 
             for section, resource_metadata in resource_mapped_metadata.items():
                 package.mapped_metadata[section] = resource_metadata
-
-            organism_section = OrganismSection(
-                package.id, package.mapped_metadata["organism"], ncbi_taxdump
-            )
-
-            # TODO: this is here to stop the mapper at a changed package
-            if (
-                not package.mapped_metadata["organism"]["scientific_name"]
-                == organism_section.scientific_name
-            ):
-                logger.error(package.mapped_metadata["organism"])
-                logger.error(organism_section.__dict__)
-                raise ValueError(package.id)
-
-            output_writer.write_data(package.mapped_metadata)
-            mapping_log[package.id] = package.mapping_log
 
             # Store sanitization changes if any were made
             if (

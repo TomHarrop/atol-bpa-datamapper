@@ -23,6 +23,7 @@ NULL_VALUES = [
     "UNDETERMINED SP",
     "UNDETERMINED",
     "UNKNOWN",
+    "SP",
     None,
 ]
 
@@ -100,6 +101,27 @@ def recursive_find_lower_ranks(
 def sanitise_string(string):
     allowed_chars = re.compile("[a-zA-Z0-9 ]")
     return "".join(allowed_chars.findall(re.sub(r"\s+", " ", string))).strip()
+
+
+def split_scientific_name(scientific_name):
+    my_scientific_name = sanitise_string(scientific_name)
+    if my_scientific_name.upper() in NULL_VALUES:
+        logger.debug(f"{my_scientific_name} matched NULL_VALUES")
+        return None
+
+    name_parts = [sanitise_string(x) for x in my_scientific_name.split(" ")]
+
+    if not len(name_parts) == 2:
+        logger.debug(f"Length of {name_parts} is not 2")
+        return None
+
+    for part in name_parts:
+        if part.upper() in NULL_VALUES:
+            logger.debug(f"Name part {part} matched NULL_VALUES")
+            return None
+
+    logger.warning(f"Parsed {name_parts} from {scientific_name}")
+    return name_parts
 
 
 def remove_whitespace(string):
@@ -209,25 +231,25 @@ class OrganismSection(dict):
         else:
             self.organism_grouping_key = None
 
+        logger.debug(f"OrganismSection\nProperties: {self}\ndict: {self.__dict__}")
+        self.mapped_metadata = self.__dict__
+
     def check_bpa_metadata_for_species_information(self, ncbi_taxdump, package_id):
         bpa_scientific_name = sanitise_string(str(self.get("scientific_name")))
         retrieved_taxid = None
 
         # check whatever's in the scientific name field
-        if bpa_scientific_name.upper() not in NULL_VALUES:
-            logger.debug(f"Attempting to parse scientific name {bpa_scientific_name}")
-            # check if the name splits into exactly two words
-            name_parts = bpa_scientific_name.split(" ")
-            if len(name_parts) == 2:
-                genus_from_bpa_scientific_name = name_parts[0]
-                species_from_bpa_scientific_name = name_parts[1]
-                retrieved_taxid = ncbi_taxdump.search_by_binomial_name(
-                    genus_from_bpa_scientific_name,
-                    species_from_bpa_scientific_name,
-                    package_id,
-                )
-            else:
-                logger.warning(f"Could not parse scientific name {bpa_scientific_name}")
+        logger.debug(f"Attempting to parse scientific name {bpa_scientific_name}")
+        name_parts = split_scientific_name(bpa_scientific_name)
+
+        if name_parts:
+            retrieved_taxid = ncbi_taxdump.search_by_binomial_name(
+                name_parts[0],
+                name_parts[1],
+                package_id,
+            )
+        else:
+            logger.warning(f"Could not parse scientific name {bpa_scientific_name}")
 
         if not retrieved_taxid:
             # check if we have genus and species fields
