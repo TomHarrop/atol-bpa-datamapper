@@ -120,7 +120,7 @@ def split_scientific_name(scientific_name):
             logger.debug(f"Name part {part} matched NULL_VALUES")
             return None
 
-    logger.warning(f"Parsed {name_parts} from {scientific_name}")
+    logger.debug(f"Parsed {name_parts} from {scientific_name}")
     return name_parts
 
 
@@ -249,7 +249,7 @@ class OrganismSection(dict):
                 package_id,
             )
         else:
-            logger.warning(f"Could not parse scientific name {bpa_scientific_name}")
+            logger.debug(f"Gave up on scientific name {bpa_scientific_name}")
 
         if not retrieved_taxid:
             # check if we have genus and species fields
@@ -299,7 +299,7 @@ class OrganismSection(dict):
             self.scientific_name
             and str(self.get("infraspecific_epithet")).upper() not in NULL_VALUES
         ):
-            logger.warning(
+            logger.debug(
                 f'{package_id} has subspecies information but taxid {self.taxid} rank "{self.rank}" is not lower than "{ncbi_taxdump.resolve_to_rank}"'
             )
             logger.debug("Accepted ranks: {ncbi_taxdump.accepted_ranks}")

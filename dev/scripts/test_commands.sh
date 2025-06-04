@@ -32,15 +32,3 @@ map-metadata \
     <"results/${RESULT_DIR}/f.jsonl.gz" \
     >"results/${RESULT_DIR}/m.jsonl.gz"
 
-exit 0
-
-# TODO: this is part of metadata mapping
-# taxdump: wget ftp://ftp.ncbi.nih.gov/pub/taxonomy/new_taxdump/new_taxdump.tar.gz
-resolve-organism \
-    --nodes dev/taxdump/nodes.dmp --names dev/taxdump/names.dmp \
-    --rejected_packages "results/${RESULT_DIR}/rejected_packages.txt" \
-    --mapping_log "results/${RESULT_DIR}/resolve_log.csv.gz" \
-    --cache_dir CACHE_DIR \
-    <"results/${RESULT_DIR}/f.jsonl.gz" \
-    >"results/${RESULT_DIR}/r.jsonl.gz"
-

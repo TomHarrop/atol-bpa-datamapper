@@ -9,8 +9,8 @@ from collections import Counter
 def main():
 
     # debugging options
-    max_iterations = 1
-    manual_record = "bpa-fungi-illumina-shortread-465900-22n37nlt3"
+    max_iterations = None
+    manual_record = None
 
     args = parse_args_for_mapping()
     setup_logger(args.log_level)
@@ -94,31 +94,25 @@ def main():
             )
             grouping_log[package.id] = organism_section.mapped_metadata
 
-            logger.error(f"Mapped organism info: {organism_section.mapped_metadata}")
+            logger.debug(f"Mapped organism info: {organism_section.mapped_metadata}")
 
             # overwrite values in the organism section
             for key, value in organism_section.mapped_metadata.items():
                 if key in package_level_map.expected_fields:
-                    logger.error(key)
-                    logger.error(value)
-                    
+                    logger.debug(key)
+                    logger.debug(value)
+
                     try:
                         current_value = package.mapped_metadata["organism"][key]
                     except KeyError:
                         current_value = None
 
                     if not value == current_value:
-                        logger.warning(
+                        logger.debug(
                             f"Updating organism key {key} from {current_value} to {value}"
                         )
                         package.mapped_metadata["organism"][key] = value
 
-            # if package.mapped_metadata["organism"]["atol_scientific_name"]:
-            #     raise ValueError(package.id)
-            # else:
-            #     continue
-
-            logger.error(package.mapped_metadata["organism"])
             output_writer.write_data(package.mapped_metadata)
 
             # map the resource-level metadata
@@ -154,19 +148,22 @@ def main():
                 logger.debug(f"{section_name}\n{section}")
 
                 for atol_field, mapped_value in section.items():
-                    try:
-                        bpa_field = package.field_mapping[atol_field]
-                    except KeyError:
-                        # for Resources, we have to look up the key in the
-                        # Resource section.
-                        bpa_field = sorted(
-                            set(
-                                x.field_mapping[atol_field]
-                                for x in list(package.resources.values())
-                            )
-                        )[0]
-                    counters["mapped_field_usage"][atol_field].update([bpa_field])
                     counters["mapped_value_usage"][atol_field].update([mapped_value])
+
+                    bpa_field = None
+                    if atol_field in package.field_mapping:
+                        bpa_field = package.field_mapping[atol_field]
+                    else:
+                        bpa_fields = {
+                            x.field_mapping[atol_field]
+                            for x in package.resources.values()
+                            if atol_field in x.field_mapping
+                        }
+                        if bpa_fields:
+                            bpa_field = sorted(bpa_fields)[0]
+
+                    if bpa_field is not None:
+                        counters["mapped_field_usage"][atol_field].update([bpa_field])
 
     logger.info(f"Processed {n_packages} packages")
 
