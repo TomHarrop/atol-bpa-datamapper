@@ -57,6 +57,7 @@
         "NONE",
         "NOT DETERMINED",
         "NULL",
+        "SP",
         "UNDETERMINED SP",
         "UNDETERMINED",
         "UNKNOWN"

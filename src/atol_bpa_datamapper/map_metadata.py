@@ -22,24 +22,11 @@ def main():
         args.resource_field_mapping_file, args.value_mapping_file
     )
 
-    input_data = read_input(args.input)
-
     # set up taxonomy data
-    # TODO: make these arguments
-    nodes = "dev/taxdump/nodes.dmp"
-    names = "dev/taxdump/names.dmp"
-    cache_dir = "results/cache"
-    # ncbi_taxdump = NcbiTaxdump(
-    #     args.nodes,
-    #     args.names,
-    #     args.cache_dir,
-    #     resolve_to_rank="species",
-    # )
-
     ncbi_taxdump = NcbiTaxdump(
-        nodes,
-        names,
-        cache_dir,
+        args.nodes,
+        args.names,
+        args.cache_dir,
         resolve_to_rank="species",
     )
 
@@ -63,7 +50,9 @@ def main():
     # set up sanitization changes log
     sanitization_changes = {}
 
-    n_packages = 1
+    n_packages = 0
+
+    input_data = read_input(args.input)
 
     with OutputWriter(args.output, args.dry_run) as output_writer:
         for package in input_data:
@@ -72,8 +61,9 @@ def main():
             # debugging
             if manual_record and package.id != manual_record:
                 continue
-            if max_iterations and n_packages > max_iterations:
+            if max_iterations and n_packages >= max_iterations:
                 break
+
             n_packages += 1
 
             counters["raw_field_usage"].update(package.fields)
@@ -92,7 +82,7 @@ def main():
             organism_section = OrganismSection(
                 package.id, package.mapped_metadata["organism"], ncbi_taxdump
             )
-            grouping_log[package.id] = organism_section.mapped_metadata
+            grouping_log[package.id] = [organism_section.mapped_metadata]
 
             logger.debug(f"Mapped organism info: {organism_section.mapped_metadata}")
 
@@ -172,6 +162,9 @@ def main():
         if args.mapping_log:
             logger.info(f"Writing mapping log to {args.mapping_log}")
             write_mapping_log_to_csv(mapping_log, args.mapping_log)
+        if args.grouping_log:
+            logger.info(f"Writing grouping log to {args.grouping_log}")
+            write_mapping_log_to_csv(grouping_log, args.grouping_log)
         if args.raw_field_usage:
             logger.info(f"Writing field usage counts to {args.raw_field_usage}")
             write_json(counters["raw_field_usage"], args.raw_field_usage)
