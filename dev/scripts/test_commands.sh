@@ -35,3 +35,22 @@ map-metadata \
     <"results/${RESULT_DIR}/f.jsonl.gz" \
     >"results/${RESULT_DIR}/m.jsonl.gz"
 
+exit 0
+
+# profiling
+python3 -m cProfile -o profile.stats \
+    -m atol_bpa_datamapper.map_metadata \
+    --nodes "dev/taxdump/nodes.dmp" \
+    --names "dev/taxdump/names.dmp" \
+    --raw_field_usage "results/${RESULT_DIR}/raw_field_usage_mapping.jsonl.gz" \
+    --raw_value_usage "results/${RESULT_DIR}/raw_value_usage.jsonl.gz" \
+    --mapped_field_usage "results/${RESULT_DIR}/mapped_field_usage.jsonl.gz" \
+    --mapped_value_usage "results/${RESULT_DIR}/mapped_value_usage.jsonl.gz" \
+    --unused_field_counts "results/${RESULT_DIR}/unused_field_counts.jsonl.gz" \
+    --mapping_log "results/${RESULT_DIR}/mapping_log.csv.gz" \
+    --grouping_log "results/${RESULT_DIR}/grouping_log.csv.gz" \
+    --sanitization_changes "results/${RESULT_DIR}/sanitization_changes.jsonl.gz" \
+    <"results/${RESULT_DIR}/f.jsonl.gz" \
+    >"results/${RESULT_DIR}/m.jsonl.gz"
+
+python3 -m pstats profile.stats

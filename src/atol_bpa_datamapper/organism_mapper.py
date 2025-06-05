@@ -143,6 +143,10 @@ class NcbiTaxdump:
         # Create a dictionary for faster lookups
         scientific_names = names[names["name_class"] == "scientific name"]
         self.scientific_name_dict = scientific_names["name_txt"].to_dict()
+        self.name_to_taxids = {}
+        for taxid, name in self.scientific_name_dict.items():
+            key = name.lower()
+            self.name_to_taxids.setdefault(key, []).append(taxid)
 
         update_tree = any([nodes_changed, names_changed])
 
@@ -167,17 +171,10 @@ class NcbiTaxdump:
         search_string = f"{genus} {species}"
         logger.debug(f"Searching for {search_string}")
 
-        # Perform the lookup in the scientific_name_dict
-        candidate_taxids = [
-            taxid
-            for taxid, name in self.scientific_name_dict.items()
-            if search_string in name
-        ]
-
+        candidate_taxids = self.name_to_taxids.get(search_string.lower(), [])
         if len(candidate_taxids) == 0:
             logger.debug(f"No results found for {search_string}")
             return None
-
         accepted_level_taxids = [
             taxid
             for taxid in candidate_taxids

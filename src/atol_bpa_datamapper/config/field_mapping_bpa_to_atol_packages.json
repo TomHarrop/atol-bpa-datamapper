@@ -328,6 +328,9 @@
         ],
         "base_caller_model": [
             "model_base_caller"
+        ],
+        "bpa_package_id": [
+            "id"
         ]
     }
 }

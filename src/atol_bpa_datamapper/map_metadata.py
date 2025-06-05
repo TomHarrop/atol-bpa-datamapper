@@ -15,6 +15,7 @@ def main():
     args = parse_args_for_mapping()
     setup_logger(args.log_level)
 
+    # read the schemas
     package_level_map = MetadataMap(
         args.package_field_mapping_file, args.value_mapping_file
     )
@@ -34,7 +35,6 @@ def main():
     all_fields = sorted(
         set(package_level_map.expected_fields + resource_level_map.expected_fields)
     )
-
     counters = {
         "raw_field_usage": Counter(),
         "raw_value_usage": {},
@@ -46,13 +46,10 @@ def main():
     # set up logs
     mapping_log = {}
     grouping_log = {}
-
-    # set up sanitization changes log
     sanitization_changes = {}
 
-    n_packages = 0
-
     input_data = read_input(args.input)
+    n_packages = 0
 
     with OutputWriter(args.output, args.dry_run) as output_writer:
         for package in input_data:
@@ -89,8 +86,9 @@ def main():
             # overwrite values in the organism section
             for key, value in organism_section.mapped_metadata.items():
                 if key in package_level_map.expected_fields:
-                    logger.debug(key)
-                    logger.debug(value)
+                    logger.debug(
+                        f"organism_section mapped_metadata has key {key} with value {value}"
+                    )
 
                     try:
                         current_value = package.mapped_metadata["organism"][key]
