@@ -23,6 +23,8 @@ def main():
         args.resource_field_mapping_file, args.value_mapping_file
     )
 
+    null_values = package_level_map.sanitization_config.get("null_values")
+
     # set up taxonomy data
     ncbi_taxdump = NcbiTaxdump(
         args.nodes,
@@ -77,7 +79,10 @@ def main():
 
             # map the organism
             organism_section = OrganismSection(
-                package.id, package.mapped_metadata["organism"], ncbi_taxdump
+                package.id,
+                package.mapped_metadata["organism"],
+                ncbi_taxdump,
+                null_values,
             )
             grouping_log[package.id] = [organism_section.mapped_metadata]
 
