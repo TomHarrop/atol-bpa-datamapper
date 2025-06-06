@@ -102,10 +102,8 @@ class BpaBase(dict):
             logger.debug(f"  in BPA fields {bpa_field_list}.")
 
             # apply default if there is one
-            has_default = False
-            if "default" in metadata_map[atol_field]:
-                has_default = True
-                default_value = metadata_map[atol_field]["default"]
+            has_default, default_value = metadata_map.check_default_value(atol_field)
+            if has_default:
                 logger.debug(f"  Default is {default_value}.")
 
             value, bpa_field, keep = self.choose_value(
@@ -171,6 +169,11 @@ class BpaBase(dict):
                 parent_package,
             )
 
+            # apply default if there is one
+            has_default, default_value = metadata_map.check_default_value(atol_field)
+            if value is None and has_default == True:
+                value, bpa_field, keep = (default_value, "default_value", True)
+
             # Summarise the value choice
             logger.debug(
                 (
@@ -191,7 +194,7 @@ class BpaBase(dict):
                     )
                 )
 
-            if value is not None and bpa_field is not None:
+            if keep is True and bpa_field is not None:
                 # Apply sanitization rules
                 logger.debug(f"Sanitise value {value}")
                 sanitized_value = self._apply_sanitization(
@@ -204,7 +207,7 @@ class BpaBase(dict):
                     mapped_value = metadata_map.map_value(atol_field, sanitized_value)
                 except KeyError as e:
                     # Handle invalid values gracefully
-                    logger.warning(
+                    logger.debug(
                         f"Invalid value '{sanitized_value}' for field '{atol_field}': {e}"
                     )
                     mapped_value = sanitized_value

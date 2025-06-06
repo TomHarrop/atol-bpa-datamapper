@@ -101,6 +101,12 @@ class MetadataMap(dict):
         except KeyError as e:
             return None
 
+    def check_default_value(self, atol_field):
+        if "default" in self[atol_field]:
+            return (True, self[atol_field]["default"])
+        else:
+            return (False, None)
+
     def get_bpa_fields(self, atol_field):
         return self[atol_field]["bpa_fields"]
 
