@@ -62,6 +62,31 @@
             "null": [
                 null
             ]
+        },
+        "GAL": {
+            "AGRF": [
+                "AGRF"
+            ],
+            "BRF": [
+                "BRF",
+                "Biomolecular Research Facility - ANU",
+                "Biomolecular Resource Facility"
+            ],
+            "Genomics WA": [
+                "Genomics WA"
+            ],
+            "Ramaciotti": [
+                "RAMAC",
+                "Ramaciotti",
+                "Ramaciotti Centre for Genomics",
+                "Ramaciotti, UNSW",
+                "Ramaciotti/Garvan",
+                "Ramaciotti_UNSW"
+            ],
+            "Kinghorn": [
+                "UNSW",
+                "UNSW/Kinghorn"
+            ]
         }
     },
     "experiment": {

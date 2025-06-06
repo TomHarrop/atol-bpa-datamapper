@@ -13,7 +13,7 @@ if [ ! -f "${INPUT_DATA}" ]; then
         -z -r https://data.bioplatforms.com
 fi
 
-python3 -m cProfile -o filter.stats \
+python3 -m cProfile -o "results/${RESULT_DIR}/filter.stats" \
     -m atol_bpa_datamapper.filter_packages \
     --raw_field_usage "results/${RESULT_DIR}/raw_field_usage_filtering.jsonl.gz" \
     --bpa_field_usage results/${RESULT_DIR}/bpa_field_usage.jsonl.gz \
@@ -22,7 +22,7 @@ python3 -m cProfile -o filter.stats \
     <"${INPUT_DATA}" \
     >"results/${RESULT_DIR}/f.jsonl.gz"
 
-python3 -m cProfile -o map.stats \
+python3 -m cProfile -o "results/${RESULT_DIR}/map.stats" \
     -m atol_bpa_datamapper.map_metadata \
     --nodes "dev/taxdump/nodes.dmp" \
     --names "dev/taxdump/names.dmp" \
