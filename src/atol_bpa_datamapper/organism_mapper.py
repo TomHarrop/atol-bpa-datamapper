@@ -9,23 +9,6 @@ import skbio.io
 from skbio.tree import TreeNode
 import re
 
-########################################################
-# This may get integrated into the package handler !!! #
-########################################################
-
-NULL_VALUES = [
-    "",
-    "N/A",
-    "NA",
-    "NAN",
-    "NONE",
-    "NULL",
-    "UNDETERMINED SP",
-    "UNDETERMINED",
-    "UNKNOWN",
-    None,
-]
-
 
 def compute_sha256(file_path):
     logger.debug(f"Computing sha256 checksum for {file_path}.")
@@ -102,6 +85,27 @@ def sanitise_string(string):
     return "".join(allowed_chars.findall(re.sub(r"\s+", " ", string))).strip()
 
 
+def split_scientific_name(scientific_name, null_values):
+    my_scientific_name = sanitise_string(scientific_name)
+    if my_scientific_name.upper() in null_values:
+        logger.debug(f"{my_scientific_name} matched null_values")
+        return None
+
+    name_parts = [sanitise_string(x) for x in my_scientific_name.split(" ")]
+
+    if not len(name_parts) == 2:
+        logger.debug(f"Length of {name_parts} is not 2")
+        return None
+
+    for part in name_parts:
+        if part.upper() in null_values:
+            logger.debug(f"Name part {part} matched null_values")
+            return None
+
+    logger.debug(f"Parsed {name_parts} from {scientific_name}")
+    return name_parts
+
+
 def remove_whitespace(string):
     allowed_chars = re.compile("[a-zA-Z0-9]")
     return re.sub(r"[^a-zA-Z0-9]+", "_", string)
@@ -121,6 +125,10 @@ class NcbiTaxdump:
         # Create a dictionary for faster lookups
         scientific_names = names[names["name_class"] == "scientific name"]
         self.scientific_name_dict = scientific_names["name_txt"].to_dict()
+        self.name_to_taxids = {}
+        for taxid, name in self.scientific_name_dict.items():
+            key = name.lower()
+            self.name_to_taxids.setdefault(key, []).append(taxid)
 
         update_tree = any([nodes_changed, names_changed])
 
@@ -145,17 +153,10 @@ class NcbiTaxdump:
         search_string = f"{genus} {species}"
         logger.debug(f"Searching for {search_string}")
 
-        # Perform the lookup in the scientific_name_dict
-        candidate_taxids = [
-            taxid
-            for taxid, name in self.scientific_name_dict.items()
-            if search_string in name
-        ]
-
+        candidate_taxids = self.name_to_taxids.get(search_string.lower(), [])
         if len(candidate_taxids) == 0:
             logger.debug(f"No results found for {search_string}")
             return None
-
         accepted_level_taxids = [
             taxid
             for taxid in candidate_taxids
@@ -173,11 +174,11 @@ class NcbiTaxdump:
 
 class OrganismSection(dict):
 
-    def __init__(self, package_id, package_data, ncbi_taxdump):
+    def __init__(self, package_id, package_data, ncbi_taxdump, null_values=None):
 
         super().__init__()
         self.update(package_data)
-        self.has_taxid = self.get("taxon_id") not in NULL_VALUES + ["0", "0.0"]
+        self.has_taxid = self.get("taxon_id") not in null_values + ["0", "0.0"]
 
         # get the taxid
         self.raw_taxid = self.get("taxon_id") if self.has_taxid else None
@@ -196,9 +197,11 @@ class OrganismSection(dict):
         # Otherwise, too risky?
         self.taxid_retrieved_from_metadata = False
         if not self.scientific_name:
-            self.check_bpa_metadata_for_species_information(ncbi_taxdump, package_id)
+            self.check_bpa_metadata_for_species_information(
+                ncbi_taxdump, package_id, null_values
+            )
 
-        self.check_for_subspecies_information(ncbi_taxdump, package_id)
+        self.check_for_subspecies_information(ncbi_taxdump, package_id, null_values)
 
         # generate a key for grouping the organisms
         # TODO: this should be some sort of UUID
@@ -209,32 +212,34 @@ class OrganismSection(dict):
         else:
             self.organism_grouping_key = None
 
-    def check_bpa_metadata_for_species_information(self, ncbi_taxdump, package_id):
+        logger.debug(f"OrganismSection\nProperties: {self}\ndict: {self.__dict__}")
+        self.mapped_metadata = self.__dict__
+
+    def check_bpa_metadata_for_species_information(
+        self, ncbi_taxdump, package_id, null_values
+    ):
         bpa_scientific_name = sanitise_string(str(self.get("scientific_name")))
         retrieved_taxid = None
 
         # check whatever's in the scientific name field
-        if bpa_scientific_name.upper() not in NULL_VALUES:
-            logger.debug(f"Attempting to parse scientific name {bpa_scientific_name}")
-            # check if the name splits into exactly two words
-            name_parts = bpa_scientific_name.split(" ")
-            if len(name_parts) == 2:
-                genus_from_bpa_scientific_name = name_parts[0]
-                species_from_bpa_scientific_name = name_parts[1]
-                retrieved_taxid = ncbi_taxdump.search_by_binomial_name(
-                    genus_from_bpa_scientific_name,
-                    species_from_bpa_scientific_name,
-                    package_id,
-                )
-            else:
-                logger.warning(f"Could not parse scientific name {bpa_scientific_name}")
+        logger.debug(f"Attempting to parse scientific name {bpa_scientific_name}")
+        name_parts = split_scientific_name(bpa_scientific_name, null_values)
+
+        if name_parts:
+            retrieved_taxid = ncbi_taxdump.search_by_binomial_name(
+                name_parts[0],
+                name_parts[1],
+                package_id,
+            )
+        else:
+            logger.debug(f"Gave up on scientific name {bpa_scientific_name}")
 
         if not retrieved_taxid:
             # check if we have genus and species fields
             genus = sanitise_string(str(self.get("genus")))
             species = sanitise_string(str(self.get("species")))
 
-            if genus.upper() not in NULL_VALUES and species.upper() not in NULL_VALUES:
+            if genus.upper() not in null_values and species.upper() not in null_values:
                 logger.debug(
                     f"Attempting to parse separate genus {genus} and species {species}"
                 )
@@ -261,7 +266,7 @@ class OrganismSection(dict):
                 f"Assigning scientific name {self.scientific_name} to package {package_id}"
             )
 
-    def check_for_subspecies_information(self, ncbi_taxdump, package_id):
+    def check_for_subspecies_information(self, ncbi_taxdump, package_id, null_values):
         # some taxids resolve lower than species, use these first
         if (
             self.has_taxid_at_accepted_level
@@ -275,9 +280,9 @@ class OrganismSection(dict):
         # try to resolve the subspecies information manually
         if (
             self.scientific_name
-            and str(self.get("infraspecific_epithet")).upper() not in NULL_VALUES
+            and str(self.get("infraspecific_epithet")).upper() not in null_values
         ):
-            logger.warning(
+            logger.debug(
                 f'{package_id} has subspecies information but taxid {self.taxid} rank "{self.rank}" is not lower than "{ncbi_taxdump.resolve_to_rank}"'
             )
             logger.debug("Accepted ranks: {ncbi_taxdump.accepted_ranks}")

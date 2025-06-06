@@ -23,7 +23,6 @@ classifiers = [
 [project.scripts]
 filter-packages = "atol_bpa_datamapper.filter_packages:main"
 map-metadata = "atol_bpa_datamapper.map_metadata:main"
-resolve-organism = "atol_bpa_datamapper.resolve_organism:main"
 
 [project.urls]
 Homepage = "https://github.com/tomharrop/atol-bpa-datamapper"

@@ -47,7 +47,9 @@
         ],
         "common_name": [
             "common_name"
-        ]
+        ],
+        "atol_scientific_name": [],
+        "organism_grouping_key": []
     },
     "sample": {
         "specimen_voucher": [
@@ -326,6 +328,9 @@
         ],
         "base_caller_model": [
             "model_base_caller"
+        ],
+        "bpa_package_id": [
+            "id"
         ]
     }
 }

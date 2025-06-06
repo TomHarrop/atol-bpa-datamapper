@@ -34,44 +34,6 @@ def parse_args_for_filtering():
     return parser.parse_args()
 
 
-def parse_args_for_grouping():
-    parser, input_group, output_group, options_group = shared_args()
-    parser.description = "Group packages in *filtered* metadata, according to derived species information"
-
-    input_group.add_argument(
-        "--nodes",
-        required=True,
-        help="NCBI nodes.dmp file from taxdump",
-    )
-
-    input_group.add_argument(
-        "--names",
-        required=True,
-        help="NCBI names.dmp file from taxdump",
-    )
-
-    output_group.add_argument(
-        "--rejected_packages",
-        help="Text list of packages that had insufficient organism information",
-    )
-
-    output_group.add_argument(
-        "--mapping_log",
-        help="Compressed CSV file to record derived organism info for each package",
-    )
-
-    options_group.add_argument(
-        "--cache_dir",
-        help="Directory to cache the NCBI taxonomy after processing",
-        default=Path(
-            os.getenv("XDG_CACHE_HOME", os.path.expanduser("~/.cache")),
-            "atol_bpa_datamapper",
-        ),
-    )
-
-    return parser.parse_args()
-
-
 def parse_args_for_mapping():
     parser, input_group, output_group, options_group, counter_group = field_value_args()
     parser.description = "Map metadata in filtered jsonlines.gz"
@@ -102,11 +64,43 @@ def parse_args_for_mapping():
         "--mapping_log",
         help="Compressed CSV file to record the mapping used for each package",
     )
-    
+
     # Add an option to specify where to save sanitization changes
     mapping_group.add_argument(
         "--sanitization_changes",
         help="File to record the sanitization changes made during mapping",
+    )
+
+    # organism mapping
+    input_group.add_argument(
+        "--nodes",
+        required=True,
+        help="NCBI nodes.dmp file from taxdump",
+    )
+
+    input_group.add_argument(
+        "--names",
+        required=True,
+        help="NCBI names.dmp file from taxdump",
+    )
+
+    mapping_group.add_argument(
+        "--grouping_log",
+        help="Compressed CSV file to record derived organism info for each package",
+    )
+
+    mapping_group.add_argument(
+        "--grouped_packages",
+        help="JSON file of Package IDs grouped by organism grouping_key",
+    )
+
+    options_group.add_argument(
+        "--cache_dir",
+        help="Directory to cache the NCBI taxonomy after processing",
+        default=Path(
+            os.getenv("XDG_CACHE_HOME", os.path.expanduser("~/.cache")),
+            "atol_bpa_datamapper",
+        ),
     )
 
     return parser.parse_args()
