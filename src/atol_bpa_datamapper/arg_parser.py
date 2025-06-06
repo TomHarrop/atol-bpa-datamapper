@@ -34,18 +34,6 @@ def parse_args_for_filtering():
     return parser.parse_args()
 
 
-def parse_args_for_grouping():
-    parser, input_group, output_group, options_group = shared_args()
-    parser.description = "Group packages in *filtered* metadata, according to derived species information"
-
-    output_group.add_argument(
-        "--rejected_packages",
-        help="Text list of packages that had insufficient organism information",
-    )
-
-    return parser.parse_args()
-
-
 def parse_args_for_mapping():
     parser, input_group, output_group, options_group, counter_group = field_value_args()
     parser.description = "Map metadata in filtered jsonlines.gz"
@@ -99,6 +87,11 @@ def parse_args_for_mapping():
     mapping_group.add_argument(
         "--grouping_log",
         help="Compressed CSV file to record derived organism info for each package",
+    )
+
+    mapping_group.add_argument(
+        "--grouped_packages",
+        help="JSON file of Package IDs grouped by organism grouping_key",
     )
 
     options_group.add_argument(

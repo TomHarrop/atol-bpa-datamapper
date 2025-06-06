@@ -31,6 +31,7 @@ map-metadata \
     --unused_field_counts "results/${RESULT_DIR}/unused_field_counts.jsonl.gz" \
     --mapping_log "results/${RESULT_DIR}/mapping_log.csv.gz" \
     --grouping_log "results/${RESULT_DIR}/grouping_log.csv.gz" \
+    --grouped_packages "results/${RESULT_DIR}/grouped_packages.jsonl.gz" \
     --sanitization_changes "results/${RESULT_DIR}/sanitization_changes.jsonl.gz" \
     <"results/${RESULT_DIR}/f.jsonl.gz" \
     >"results/${RESULT_DIR}/m.jsonl.gz"

@@ -48,6 +48,7 @@ def main():
     # set up logs
     mapping_log = {}
     grouping_log = {}
+    grouped_packages = {}
     sanitization_changes = {}
 
     input_data = read_input(args.input)
@@ -85,6 +86,9 @@ def main():
                 null_values,
             )
             grouping_log[package.id] = [organism_section.mapped_metadata]
+            grouping_key = organism_section.organism_grouping_key
+            if grouping_key is not None:
+                grouped_packages.setdefault(grouping_key, []).append(package.id)
 
             logger.debug(f"Mapped organism info: {organism_section.mapped_metadata}")
 
@@ -180,6 +184,9 @@ def main():
         if args.mapped_value_usage:
             logger.info(f"Writing BPA value usage counts to {args.mapped_value_usage}")
             write_json(counters["mapped_value_usage"], args.mapped_value_usage)
+        if args.grouped_packages:
+            logger.info(f"Writing grouped_packages to {args.grouped_packages}")
+            write_json(grouped_packages, args.grouped_packages)
         if args.unused_field_counts:
             logger.info(f"Writing unused field counts to {args.unused_field_counts}")
             write_json(counters["unused_field_counts"], args.unused_field_counts)
