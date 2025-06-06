@@ -101,9 +101,19 @@ class BpaBase(dict):
             logger.debug(f"  for values {accepted_values}...")
             logger.debug(f"  in BPA fields {bpa_field_list}.")
 
+            # apply default if there is one
+            has_default = False
+            if "default" in metadata_map[atol_field]:
+                has_default = True
+                default_value = metadata_map[atol_field]["default"]
+                logger.debug(f"  Default is {default_value}.")
+
             value, bpa_field, keep = self.choose_value(
                 bpa_field_list, accepted_values, parent_package
             )
+
+            if value is None and has_default == True:
+                value, bpa_field, keep = (default_value, "default_value", True)
 
             # This is a manual override for the pesky genome_data key. If the
             # package has no context_keys whose value is in

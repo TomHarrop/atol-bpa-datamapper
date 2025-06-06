@@ -59,8 +59,13 @@ class MetadataMap(dict):
                 try:
                     bpa_value_to_atol_value = {}
                     for atol_value, list_of_bpa_values in value_mapping_dict.items():
+                        # Handle JSON `null`, which is always None
+                        atol_value = None if atol_value == "null" else atol_value
                         for value in list_of_bpa_values:
-                            bpa_value_to_atol_value[value] = atol_value
+                            if value is None:
+                                self[atol_field]["default"] = atol_value
+                            else:
+                                bpa_value_to_atol_value[value] = atol_value
                     self[atol_field]["value_mapping"] = bpa_value_to_atol_value
                 except KeyError as e:
                     logger.error(
