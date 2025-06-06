@@ -46,6 +46,22 @@
                 "Reference genomes",
                 "reference genome"
             ]
+        },
+        "sex": {
+            "female": [
+                "Female",
+                "female"
+            ],
+            "hermaphrodite": [
+                "hermaphrodite"
+            ],
+            "male": [
+                "Male",
+                "male"
+            ],
+            "null": [
+                null
+            ]
         }
     },
     "experiment": {
