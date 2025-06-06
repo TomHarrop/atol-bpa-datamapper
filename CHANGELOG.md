@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.1.6 (2025-06-06)
+
+### New
+
+* Group Packages by organism during mapping.
+
+  Move organism lookup to mapper
+
+* Group Packages by organism during mapping.
+
+* Include the BPA id in the output.
+
+### Changes
+
+* Use null values from config for grouping"
+
 ## v0.1.5 (2025-06-02)
 
 ### Changes
