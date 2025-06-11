@@ -70,7 +70,7 @@ def read_vocabulary(vocabulary_file):
             "atol_value": pd.StringDtype,
             "allowed_value": pd.StringDtype,
         },
-        na_values=["", "[unmapped]"],
+        na_values=["", "[unmapped]", "None"],
     )
     return df
 
@@ -113,6 +113,10 @@ def write_output(output_data, json_output_file):
         json.dump(output_data, json_file, indent=4)
 
 
+def cellstrip(cell):
+    return cell.strip() if isinstance(cell, str) else None
+
+
 def main():
 
     # the field mappings
@@ -146,11 +150,12 @@ def main():
     vocabulary = read_vocabulary(vocabulary_file)
     # dict of dict of dicts, values of innermost dict are vocab sets
     vocab_data = defaultdict(lambda: defaultdict(lambda: defaultdict(set)))
+
     for _, row in vocabulary.iterrows():
-        atol_field = row["atol_field"].strip()
-        category = row["category"].strip()
-        atol_value = row["atol_value"].strip()
-        allowed_value = row["allowed_value"].strip()
+        atol_field = cellstrip(row["atol_field"])
+        category = cellstrip(row["category"])
+        atol_value = cellstrip(row["atol_value"])
+        allowed_value = cellstrip(row["allowed_value"])
         vocab_data[category][atol_field][atol_value].update([allowed_value])
 
     # coerce vocab sets to list during conversion

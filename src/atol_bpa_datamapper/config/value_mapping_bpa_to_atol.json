@@ -45,6 +45,51 @@
                 "Reference genome for Rhodomyrtus psidioides",
                 "Reference genomes",
                 "reference genome"
+            ],
+            "annotation": [
+                "Transcriptome",
+                "Transcriptomics - long read"
+            ]
+        },
+        "sex": {
+            "female": [
+                "Female",
+                "female"
+            ],
+            "hermaphrodite": [
+                "hermaphrodite"
+            ],
+            "male": [
+                "Male",
+                "male"
+            ],
+            "null": [
+                null
+            ]
+        },
+        "GAL": {
+            "AGRF": [
+                "AGRF"
+            ],
+            "BRF": [
+                "BRF",
+                "Biomolecular Research Facility - ANU",
+                "Biomolecular Resource Facility"
+            ],
+            "Genomics WA": [
+                "Genomics WA"
+            ],
+            "Ramaciotti": [
+                "RAMAC",
+                "Ramaciotti",
+                "Ramaciotti Centre for Genomics",
+                "Ramaciotti, UNSW",
+                "Ramaciotti/Garvan",
+                "Ramaciotti_UNSW"
+            ],
+            "Kinghorn": [
+                "UNSW",
+                "UNSW/Kinghorn"
             ]
         }
     },
