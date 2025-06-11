@@ -31,10 +31,7 @@ See [`dev/scripts/test_commands.sh`](dev/scripts/test_commands.sh) for an exampl
 ### filter-packages
 
 ```
-usage: filter-packages [-h] [-i INPUT] [-o OUTPUT] [-f FIELD_MAPPING_FILE] [-v VALUE_MAPPING_FILE]
-                       [-l {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [-n] [--raw_field_usage RAW_FIELD_USAGE]
-                       [--bpa_field_usage BPA_FIELD_USAGE] [--bpa_value_usage BPA_VALUE_USAGE]
-                       [--decision_log DECISION_LOG]
+usage: filter-packages [-h] [-i INPUT] [-o OUTPUT] [-f PACKAGE_FIELD_MAPPING_FILE] [-r RESOURCE_FIELD_MAPPING_FILE] [-v VALUE_MAPPING_FILE] [-l {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [-n] [--raw_field_usage RAW_FIELD_USAGE] [--bpa_field_usage BPA_FIELD_USAGE] [--bpa_value_usage BPA_VALUE_USAGE] [--decision_log DECISION_LOG]
 
 Filter packages from jsonlines.gz
 
@@ -50,8 +47,10 @@ Output:
                         Output file (default: stdout)
 
 General options:
-  -f FIELD_MAPPING_FILE, --field_mapping_file FIELD_MAPPING_FILE
-                        Field mapping file in json.
+  -f PACKAGE_FIELD_MAPPING_FILE, --package_field_mapping_file PACKAGE_FIELD_MAPPING_FILE
+                        Package-level field mapping file in json.
+  -r RESOURCE_FIELD_MAPPING_FILE, --resource_field_mapping_file RESOURCE_FIELD_MAPPING_FILE
+                        Resource-level field mapping file in json.
   -v VALUE_MAPPING_FILE, --value_mapping_file VALUE_MAPPING_FILE
                         Value mapping file in json.
   -l {DEBUG,INFO,WARNING,ERROR,CRITICAL}, --log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
@@ -74,11 +73,8 @@ Filtering options:
 ### map-metadata
 
 ```
-usage: map-metadata [-h] [-i INPUT] [-o OUTPUT] [-f FIELD_MAPPING_FILE] [-v VALUE_MAPPING_FILE]
-                    [-l {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [-n] [--raw_field_usage RAW_FIELD_USAGE]
-                    [--raw_value_usage RAW_VALUE_USAGE] [--mapped_field_usage MAPPED_FIELD_USAGE]
-                    [--mapped_value_usage MAPPED_VALUE_USAGE] [--unused_field_counts UNUSED_FIELD_COUNTS]
-                    [--mapping_log MAPPING_LOG] [--sanitization_changes SANITIZATION_CHANGES]
+usage: map-metadata [-h] [-i INPUT] [-o OUTPUT] [-f PACKAGE_FIELD_MAPPING_FILE] [-r RESOURCE_FIELD_MAPPING_FILE] [-v VALUE_MAPPING_FILE] [-l {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [-n] [--raw_field_usage RAW_FIELD_USAGE] [--raw_value_usage RAW_VALUE_USAGE] [--mapped_field_usage MAPPED_FIELD_USAGE] [--mapped_value_usage MAPPED_VALUE_USAGE]
+                    [--unused_field_counts UNUSED_FIELD_COUNTS] [--mapping_log MAPPING_LOG] [--sanitization_changes SANITIZATION_CHANGES] --nodes NODES --names NAMES [--grouping_log GROUPING_LOG] [--grouped_packages GROUPED_PACKAGES] [--cache_dir CACHE_DIR]
 
 Map metadata in filtered jsonlines.gz
 
@@ -88,19 +84,25 @@ options:
 Input:
   -i INPUT, --input INPUT
                         Input file (default: stdin)
+  --nodes NODES         NCBI nodes.dmp file from taxdump
+  --names NAMES         NCBI names.dmp file from taxdump
 
 Output:
   -o OUTPUT, --output OUTPUT
                         Output file (default: stdout)
 
 General options:
-  -f FIELD_MAPPING_FILE, --field_mapping_file FIELD_MAPPING_FILE
-                        Field mapping file in json.
+  -f PACKAGE_FIELD_MAPPING_FILE, --package_field_mapping_file PACKAGE_FIELD_MAPPING_FILE
+                        Package-level field mapping file in json.
+  -r RESOURCE_FIELD_MAPPING_FILE, --resource_field_mapping_file RESOURCE_FIELD_MAPPING_FILE
+                        Resource-level field mapping file in json.
   -v VALUE_MAPPING_FILE, --value_mapping_file VALUE_MAPPING_FILE
                         Value mapping file in json.
   -l {DEBUG,INFO,WARNING,ERROR,CRITICAL}, --log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
                         Set the logging level (default: INFO)
   -n, --dry-run         Test mode. Output will be uncompressed jsonlines.
+  --cache_dir CACHE_DIR
+                        Directory to cache the NCBI taxonomy after processing
 
 Counters:
   --raw_field_usage RAW_FIELD_USAGE
@@ -119,43 +121,10 @@ Mapping options:
                         Compressed CSV file to record the mapping used for each package
   --sanitization_changes SANITIZATION_CHANGES
                         File to record the sanitization changes made during mapping
-```
-### resolve-organism
-
-```
-usage: resolve-organism [-h] [-i INPUT] [-o OUTPUT] [-f FIELD_MAPPING_FILE] [-v VALUE_MAPPING_FILE] [-l {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [-n] --nodes NODES --names NAMES [--rejected_packages REJECTED_PACKAGES]
-                        [--mapping_log MAPPING_LOG] [--cache_dir CACHE_DIR]
-
-Group packages in *filtered* metadata, according to derived species information
-
-options:
-  -h, --help            show this help message and exit
-
-Input:
-  -i INPUT, --input INPUT
-                        Input file (default: stdin)
-  --nodes NODES         NCBI nodes.dmp file from taxdump
-  --names NAMES         NCBI names.dmp file from taxdump
-
-Output:
-  -o OUTPUT, --output OUTPUT
-                        Output file (default: stdout)
-  --rejected_packages REJECTED_PACKAGES
-                        Text list of packages that had insufficient organism information
-  --mapping_log MAPPING_LOG
+  --grouping_log GROUPING_LOG
                         Compressed CSV file to record derived organism info for each package
-
-General options:
-  -f FIELD_MAPPING_FILE, --field_mapping_file FIELD_MAPPING_FILE
-                        Field mapping file in json.
-  -v VALUE_MAPPING_FILE, --value_mapping_file VALUE_MAPPING_FILE
-                        Value mapping file in json.
-  -l {DEBUG,INFO,WARNING,ERROR,CRITICAL}, --log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
-                        Set the logging level (default: INFO)
-  -n, --dry-run         Test mode. Output will be uncompressed jsonlines.
-  --cache_dir CACHE_DIR
-                        Directory to cache the NCBI taxonomy after processing
-
+  --grouped_packages GROUPED_PACKAGES
+                        JSON file of Package IDs grouped by organism grouping_key
 ```
 
 ### Deployment
