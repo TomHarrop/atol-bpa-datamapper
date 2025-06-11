@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.1.7 (2025-06-11)
+
+### New
+
+* Allow default values in controlled vocab.
+
+  Allow default values in controlled vocab
+
 ## v0.1.6 (2025-06-06)
 
 ### New
