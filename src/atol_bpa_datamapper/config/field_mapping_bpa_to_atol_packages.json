@@ -99,15 +99,22 @@
             "dna_source",
             "sample_type"
         ],
-        "geographic_location": [
+        "region_and_locality": [
             "location_text",
             "geo_loc_name",
             "collection_location",
             "site",
             "location_id",
             "state_or_region",
-            "state_or_territory",
-            "country",
+            "state_or_territory"
+        ],
+        "country_or_sea": [
+            "country"
+        ],
+        "indigenous_location": [
+            "indigenous_location"
+        ],
+        "latitude": [
             "decimal_latitude_public",
             "latitude",
             "lat_lon",
@@ -118,9 +125,6 @@
             "lat_lon",
             "coord",
             "spatial"
-        ],
-        "indigenous_location": [
-            "indigenous_location"
         ],
         "elevation": [
             "altitude",
@@ -133,7 +137,7 @@
             "habitat",
             "env_local_scale"
         ],
-        "sample_collection_method": [
+        "collection_method": [
             "collection_method",
             "samp_mat_process"
         ],
@@ -218,7 +222,7 @@
         "preservation_method": [
             "tissue_preservation"
         ],
-        "preservation_temp": [
+        "preservation_temperature": [
             "tissue_preservation_temperature"
         ],
         "extraction_method": [
@@ -231,13 +235,19 @@
             "dna_treatment"
         ],
         "extraction_protocol_DOI": [],
-        "nucleic_acid_concentration": [
+        "nucleic_acid_conc": [
             "material_conc_ng_ul",
             "dna_concentration"
         ],
         "nucleic_acid_volume": [],
         "project_name": [],
-        "biosample_accession": []
+        "biosample_accession": [],
+        "project_lead": [
+            "project_lead"
+        ],
+        "project_collaborators": [
+            "project_collaborators"
+        ]
     },
     "experiment": {
         "biosample_accession": [
