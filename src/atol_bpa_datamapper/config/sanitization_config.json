@@ -36,6 +36,10 @@
         "sex": [
             "text_sanitization",
             "empty_string_sanitization"
+        ],
+        "lifestage": [
+            "text_sanitization",
+            "empty_string_sanitization"
         ]
     },
     "sanitization_rules": {
