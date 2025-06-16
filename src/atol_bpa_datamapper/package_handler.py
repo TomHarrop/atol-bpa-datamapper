@@ -72,13 +72,27 @@ class BpaBase(dict):
         first_value = None
         first_key = None
 
+        logger.debug(f"Checking values: {values}")
         for key, value in values.items():
-            # Skip None values and empty strings
+            if isinstance(value, list):
+                logger.debug(
+                    f"Multiple values for {key}: {value}. Only checking {value[0]}"
+                )
+                value = value[0]
+
+            # skip None values and empty strings
             if value is None or (isinstance(value, str) and value.strip() == ""):
                 continue
-
-            if not accepted_values or value in accepted_values:
+            # return the first item if there is no controlled vocab
+            if not accepted_values:
                 return (value, key, True)
+            else:
+                # do a case-insensitive check but use the value from the vocab
+                # if there's a match
+                for accepted_value in accepted_values:
+                    if accepted_value.upper() == value.upper():
+                        return (accepted_value, key, True)
+
             if first_value is None:
                 first_value = value
                 first_key = key
