@@ -10,7 +10,9 @@ class BpaBase(dict):
         # add bpa_id as a field
         self["bpa_id"] = self.id
 
-    def choose_value(self, fields_to_check, accepted_values, parent_package=None):
+    def choose_value(
+        self, fields_to_check, accepted_values, parent_package=None, null_values=[]
+    ):
         """
         Returns a tuple of (value, bpa_field, keep).
 
@@ -81,7 +83,7 @@ class BpaBase(dict):
                 value = value[0]
 
             # skip None values and empty strings
-            if value is None or (isinstance(value, str) and value.strip() == ""):
+            if value is None or value.upper() in null_values:
                 continue
             # return the first item if there is no controlled vocab
             if not accepted_values:
@@ -101,6 +103,7 @@ class BpaBase(dict):
 
     def filter(self, metadata_map: "MetadataMap", parent_package=None):
         logger.debug(f"Filtering {type(self).__name__} {self.id}")
+        null_values = metadata_map.sanitization_config.get("null_values")
         self.decisions = {}
         self.bpa_fields = {}
         self.bpa_values = {}
@@ -121,7 +124,7 @@ class BpaBase(dict):
                 logger.debug(f"  Default is {default_value}.")
 
             value, bpa_field, keep = self.choose_value(
-                bpa_field_list, accepted_values, parent_package
+                bpa_field_list, accepted_values, parent_package, null_values
             )
 
             if value is None and has_default == True:
