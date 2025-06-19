@@ -65,6 +65,7 @@
         "SP",
         "UNDETERMINED SP",
         "UNDETERMINED",
-        "UNKNOWN"
+        "UNKNOWN",
+        "UNKNWON"
     ]
 }

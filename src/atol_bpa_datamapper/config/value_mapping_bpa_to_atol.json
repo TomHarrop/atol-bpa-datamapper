@@ -1,4 +1,51 @@
 {
+    "experiment": {
+        "platform": {
+            "10x": [
+                "gap-genomics-10x",
+                "omg-10x-processed-illumina",
+                "omg-10x-raw",
+                "omg-10x-raw-illumina"
+            ],
+            "illumina_genomic": [
+                "NovaSeq",
+                "ausarg-illumina-fastq",
+                "fungi-illumina-shortread",
+                "gap-illumina-shortread",
+                "grasslands-illumina-shortread",
+                "omg-genomics-hiseq",
+                "omg-novaseq",
+                "omg-novaseq-whole-genome",
+                "pp-illumina-shortread",
+                "tsi-illumina-fastq",
+                "tsi-illumina-shortread"
+            ],
+            "ont_genomic": [
+                "ausarg-ont-promethion",
+                "fungi-ont-promethion",
+                "gap-ont-minion",
+                "gap-ont-promethion",
+                "omg-ont-promethion",
+                "pp-ont-promethion"
+            ],
+            "pacbio_hifi": [
+                "ausarg-pacbio-hifi",
+                "avian-pacbio-hifi",
+                "cipps-pacbio-hifi",
+                "gap-pacbio-hifi",
+                "grasslands-pacbio-hifi",
+                "omg-pacbio",
+                "pp-pacbio-hifi",
+                "tsi-pacbio-hifi"
+            ],
+            "proximo_hic": [
+                "ausarg-hi-c",
+                "gap-hi-c",
+                "grasslands-hi-c",
+                "tsi-hi-c"
+            ]
+        }
+    },
     "organism": {
         "bioplatforms_project_id": {
             "aus-avian": [
@@ -6,6 +53,9 @@
             ],
             "ausarg": [
                 "ausarg"
+            ],
+            "bpa-ipm": [
+                "bpa-ipm"
             ],
             "bpa-omg": [
                 "bpa-omg"
@@ -33,8 +83,44 @@
             ]
         }
     },
+    "runs": {
+        "file_format": {
+            "BAM": [
+                "BAM",
+                "bam"
+            ],
+            "BZ2": [
+                "BZ2"
+            ],
+            "FASTA": [
+                "FASTA",
+                "fasta"
+            ],
+            "FASTQ": [
+                ".fast.gz",
+                ".fastq.gz",
+                "FASTQ",
+                "FastQ",
+                "fastq",
+                "fastq.qz"
+            ],
+            "GZ": [
+                "GZ"
+            ],
+            "TAR": [
+                "TAR"
+            ],
+            "ZIP": [
+                "ZIP"
+            ]
+        }
+    },
     "sample": {
         "data_context": {
+            "annotation": [
+                "Transcriptome",
+                "Transcriptomics - long read"
+            ],
             "genome_assembly": [
                 "Genome resequencing",
                 "Genomics",
@@ -43,24 +129,6 @@
                 "Reference genome for Rhodomyrtus psidioides",
                 "Reference genomes",
                 "reference genome"
-            ],
-            "annotation": [
-                "Transcriptome",
-                "Transcriptomics - long read"
-            ]
-        },
-        "sex": {
-            "female": [
-                "female"
-            ],
-            "hermaphrodite": [
-                "hermaphrodite"
-            ],
-            "male": [
-                "male"
-            ],
-            "null": [
-                null
             ]
         },
         "GAL": {
@@ -75,6 +143,10 @@
             "Genomics WA": [
                 "Genomics WA"
             ],
+            "Kinghorn": [
+                "UNSW",
+                "UNSW/Kinghorn"
+            ],
             "Ramaciotti": [
                 "RAMAC",
                 "Ramaciotti",
@@ -82,16 +154,13 @@
                 "Ramaciotti, UNSW",
                 "Ramaciotti/Garvan",
                 "Ramaciotti_UNSW"
-            ],
-            "Kinghorn": [
-                "UNSW",
-                "UNSW/Kinghorn"
             ]
         },
         "lifestage": {
             "adult": [
                 "Adult",
-                "adult organism"
+                "adult organism",
+                "adult plant"
             ],
             "egg": [
                 "egg"
@@ -99,7 +168,7 @@
             "embryo": [
                 "embryo"
             ],
-            "FL.04 end of flowering stage": [
+            "end of flowering stage": [
                 "Open boll"
             ],
             "gametophyte": [
@@ -108,17 +177,20 @@
             "inflorescence emergence stage": [
                 "Floret emergence"
             ],
-            "juvenile": [
+            "juvenile stage": [
+                "Hatchling",
                 "immature",
                 "juvenile",
-                "pouch young",
-                "sub-adult",
-                "subadult"
+                "juvenile stage",
+                "pouch young"
             ],
             "larva": [
+                "Tadpole",
                 "larva"
             ],
             "mature": [
+                "Middle age",
+                "mature",
                 "mature plant"
             ],
             "missing: control sample": [
@@ -145,6 +217,13 @@
             "missing: third party data": [
                 "missing: third party data"
             ],
+            "neonate stage": [
+                "Newborn",
+                "neonate stage"
+            ],
+            "null": [
+                null
+            ],
             "not applicable": [
                 "not applicable"
             ],
@@ -158,7 +237,16 @@
                 "prime adult stage"
             ],
             "pupa": [
-                "pupa"
+                "pupa",
+                "pupae"
+            ],
+            "seedling": [
+                "seedling"
+            ],
+            "sexually immature stage": [
+                "sub-adult",
+                "sub-adult organism",
+                "subadult"
             ],
             "spore-bearing structure": [
                 "spore-bearing structure"
@@ -175,87 +263,20 @@
             ],
             "zygote": [
                 "zygote"
+            ]
+        },
+        "sex": {
+            "female": [
+                "female"
+            ],
+            "hermaphrodite": [
+                "hermaphrodite"
+            ],
+            "male": [
+                "male"
             ],
             "null": [
                 null
-            ]
-        }
-    },
-    "experiment": {
-        "platform": {
-            "pacbio_hifi": [
-                "ausarg-pacbio-hifi",
-                "avian-pacbio-hifi",
-                "cipps-pacbio-hifi",
-                "gap-pacbio-hifi",
-                "grasslands-pacbio-hifi",
-                "omg-pacbio",
-                "pp-pacbio-hifi",
-                "tsi-pacbio-hifi"
-            ],
-            "proximo_hic": [
-                "ausarg-hi-c",
-                "gap-hi-c",
-                "grasslands-hi-c",
-                "tsi-hi-c"
-            ],
-            "illumina_genomic": [
-                "ausarg-illumina-fastq",
-                "fungi-illumina-shortread",
-                "gap-illumina-shortread",
-                "grasslands-illumina-shortread",
-                "omg-genomics-hiseq",
-                "omg-novaseq",
-                "omg-novaseq-whole-genome",
-                "pp-illumina-shortread",
-                "tsi-illumina-fastq",
-                "tsi-illumina-shortread"
-            ],
-            "ont_genomic": [
-                "ausarg-ont-promethion",
-                "fungi-ont-promethion",
-                "gap-ont-minion",
-                "gap-ont-promethion",
-                "omg-ont-promethion",
-                "pp-ont-promethion"
-            ],
-            "10x": [
-                "gap-genomics-10x",
-                "omg-10x-processed-illumina",
-                "omg-10x-raw",
-                "omg-10x-raw-illumina"
-            ]
-        }
-    },
-    "runs": {
-        "file_format": {
-            "BZ2": [
-                "BZ2"
-            ],
-            "GZ": [
-                "GZ"
-            ],
-            "FASTQ": [
-                ".fast.gz",
-                ".fastq.gz",
-                "FASTQ",
-                "FastQ",
-                "fastq",
-                "fastq.qz"
-            ],
-            "FASTA": [
-                "FASTA",
-                "fasta"
-            ],
-            "TAR": [
-                "TAR"
-            ],
-            "ZIP": [
-                "ZIP"
-            ],
-            "BAM": [
-                "BAM",
-                "bam"
             ]
         }
     }
