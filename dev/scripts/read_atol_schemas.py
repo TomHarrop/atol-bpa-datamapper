@@ -158,6 +158,19 @@ def main():
         allowed_value = cellstrip(row["allowed_value"])
         vocab_data[category][atol_field][atol_value].update([allowed_value])
 
+    # vocab_dict = {}
+
+    # for category, fields in vocab_data.items():
+    #     for atol_field, atol_values in fields.items():
+    #         for atol_value, allowed_values in atol_values.items():
+    #             try:
+    #                 vocab_dict[atol_field]=list(sorted(allowed_values))
+    #             except TypeError as e:
+    #                 logger.error(atol_field)
+    #                 logger.error(atol_values)
+    #                 logger.error(allowed_values)
+    #                 raise e
+
     # coerce vocab sets to list during conversion
     vocab_dict = {
         category: {
