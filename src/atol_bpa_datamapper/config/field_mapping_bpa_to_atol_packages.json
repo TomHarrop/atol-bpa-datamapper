@@ -116,15 +116,11 @@
         ],
         "latitude": [
             "decimal_latitude_public",
-            "latitude",
-            "lat_lon",
-            "coord",
-            "spatial",
+            "latitude"
+        ],
+        "longitude": [
             "decimal_longitude_public",
-            "longitude",
-            "lat_lon",
-            "coord",
-            "spatial"
+            "longitude"
         ],
         "elevation": [
             "altitude",
