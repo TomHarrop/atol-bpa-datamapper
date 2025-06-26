@@ -1,26 +1,284 @@
 {
     "experiment": {
-        "platform": {
-            "10x": [
-                "gap-genomics-10x",
-                "omg-10x-processed-illumina",
-                "omg-10x-raw",
-                "omg-10x-raw-illumina"
+        "library_layout": {
+            "null": [
+                null
+            ]
+        },
+        "library_selection": {
+            "5-methylcytidine antibody": [
+                "5-methylcytidine antibody"
             ],
-            "illumina_genomic": [
+            "CAGE": [
+                "CAGE"
+            ],
+            "cDNA": [
+                "cDNA"
+            ],
+            "cDNA_oligo_dT": [
+                "cDNA_oligo_dT"
+            ],
+            "cDNA_randomPriming": [
+                "cDNA_randomPriming"
+            ],
+            "ChIP": [
+                "ChIP"
+            ],
+            "ChIP-Seq": [
+                "ChIP-Seq"
+            ],
+            "DNase": [
+                "DNase"
+            ],
+            "HMPR": [
+                "HMPR"
+            ],
+            "Hybrid Selection": [
+                "Hybrid Selection"
+            ],
+            "Inverse rRNA": [
+                "Inverse rRNA"
+            ],
+            "Inverse rRNA selection": [
+                "Inverse rRNA selection"
+            ],
+            "MBD2 protein methyl-CpG binding domain": [
+                "MBD2 protein methyl-CpG binding domain"
+            ],
+            "MDA": [
+                "MDA"
+            ],
+            "MF": [
+                "MF"
+            ],
+            "MNase": [
+                "MNase"
+            ],
+            "MSLL": [
+                "MSLL"
+            ],
+            "Oligo-dT": [
+                "Oligo-dT"
+            ],
+            "other": [
+                "other"
+            ],
+            "padlock probes capture method": [
+                "padlock probes capture method"
+            ],
+            "PCR": [
+                "PCR"
+            ],
+            "PolyA": [
+                "PolyA"
+            ],
+            "RACE": [
+                "RACE"
+            ],
+            "RANDOM": [
+                "RANDOM"
+            ],
+            "RANDOM PCR": [
+                "RANDOM PCR"
+            ],
+            "Reduced Representation": [
+                "Reduced Representation"
+            ],
+            "repeat fractionation": [
+                "repeat fractionation"
+            ],
+            "Restriction Digest": [
+                "Restriction Digest"
+            ],
+            "RT-PCR": [
+                "RT-PCR"
+            ],
+            "size fractionation": [
+                "size fractionation"
+            ],
+            "unspecified": [
+                "unspecified"
+            ]
+        },
+        "library_source": {
+            "GENOMIC": [
+                "GENOMIC"
+            ],
+            "GENOMIC SINGLE CELL": [
+                "GENOMIC SINGLE CELL"
+            ],
+            "METAGENOMIC": [
+                "METAGENOMIC"
+            ],
+            "METATRANSCRIPTOMIC": [
+                "METATRANSCRIPTOMIC"
+            ],
+            "OTHER": [
+                "OTHER"
+            ],
+            "SYNTHETIC": [
+                "SYNTHETIC"
+            ],
+            "TRANSCRIPTOMIC": [
+                "TRANSCRIPTOMIC"
+            ],
+            "TRANSCRIPTOMIC SINGLE CELL": [
+                "TRANSCRIPTOMIC SINGLE CELL"
+            ],
+            "VIRAL RNA": [
+                "VIRAL RNA"
+            ]
+        },
+        "library_strategy": {
+            "AMPLICON": [
+                "AMPLICON"
+            ],
+            "ATAC-seq": [
+                "ATAC-seq"
+            ],
+            "Bisulfite-Seq": [
+                "Bisulfite-Seq"
+            ],
+            "ChIA-PET": [
+                "ChIA-PET"
+            ],
+            "ChIP-Seq": [
+                "ChIP-Seq"
+            ],
+            "ChM-Seq": [
+                "ChM-Seq"
+            ],
+            "CLONE": [
+                "CLONE"
+            ],
+            "CLONEEND": [
+                "CLONEEND"
+            ],
+            "CTS": [
+                "CTS"
+            ],
+            "DNase-Hypersensitivity": [
+                "DNase-Hypersensitivity"
+            ],
+            "EST": [
+                "EST"
+            ],
+            "FAIRE-seq": [
+                "FAIRE-seq"
+            ],
+            "FINISHING": [
+                "FINISHING"
+            ],
+            "FL-cDNA": [
+                "FL-cDNA"
+            ],
+            "GBS": [
+                "GBS"
+            ],
+            "Hi-C": [
+                "Hi-C"
+            ],
+            "MBD-Seq": [
+                "MBD-Seq"
+            ],
+            "MeDIP-Seq": [
+                "MeDIP-Seq"
+            ],
+            "miRNA-Seq": [
+                "miRNA-Seq"
+            ],
+            "MNase-Seq": [
+                "MNase-Seq"
+            ],
+            "MRE-Seq": [
+                "MRE-Seq"
+            ],
+            "ncRNA-Seq": [
+                "ncRNA-Seq"
+            ],
+            "NOMe-Seq": [
+                "NOMe-Seq"
+            ],
+            "OTHER": [
+                "OTHER"
+            ],
+            "POOLCLONE": [
+                "POOLCLONE"
+            ],
+            "RAD-Seq": [
+                "RAD-Seq"
+            ],
+            "Ribo-Seq": [
+                "Ribo-Seq"
+            ],
+            "RIP-Seq": [
+                "RIP-Seq"
+            ],
+            "RNA-Seq": [
+                "RNA-Seq"
+            ],
+            "SELEX": [
+                "SELEX"
+            ],
+            "snRNA-seq": [
+                "snRNA-seq"
+            ],
+            "ssRNA-seq": [
+                "ssRNA-seq"
+            ],
+            "Synthetic-Long-Read": [
+                "Synthetic-Long-Read"
+            ],
+            "Targeted-Capture": [
+                "Targeted-Capture"
+            ],
+            "Tethered Chromatin Conformation Capture": [
+                "Tethered Chromatin Conformation Capture"
+            ],
+            "Tn-Seq": [
+                "Tn-Seq"
+            ],
+            "VALIDATION": [
+                "VALIDATION"
+            ],
+            "WCS": [
+                "WCS"
+            ],
+            "WGA": [
+                "WGA"
+            ],
+            "WGS": [
+                "WGS"
+            ],
+            "WXS": [
+                "WXS"
+            ]
+        },
+        "platform": {
+            "ILLUMINA": [
+                "ILLUMINA",
                 "NovaSeq",
+                "ausarg-hi-c",
                 "ausarg-illumina-fastq",
                 "fungi-illumina-shortread",
+                "gap-genomics-10x",
+                "gap-hi-c",
                 "gap-illumina-shortread",
+                "grasslands-hi-c",
                 "grasslands-illumina-shortread",
+                "omg-10x-processed-illumina",
+                "omg-10x-raw",
+                "omg-10x-raw-illumina",
                 "omg-genomics-hiseq",
                 "omg-novaseq",
                 "omg-novaseq-whole-genome",
                 "pp-illumina-shortread",
+                "tsi-hi-c",
                 "tsi-illumina-fastq",
                 "tsi-illumina-shortread"
             ],
-            "ont_genomic": [
+            "OXFORD_NANOPORE": [
+                "OXFORD_NANOPORE",
                 "ausarg-ont-promethion",
                 "fungi-ont-promethion",
                 "gap-ont-minion",
@@ -28,7 +286,8 @@
                 "omg-ont-promethion",
                 "pp-ont-promethion"
             ],
-            "pacbio_hifi": [
+            "PACBIO_SMRT": [
+                "PACBIO_SMRT",
                 "ausarg-pacbio-hifi",
                 "avian-pacbio-hifi",
                 "cipps-pacbio-hifi",
@@ -38,11 +297,47 @@
                 "pp-pacbio-hifi",
                 "tsi-pacbio-hifi"
             ],
-            "proximo_hic": [
-                "ausarg-hi-c",
-                "gap-hi-c",
-                "grasslands-hi-c",
-                "tsi-hi-c"
+            "ABI_SOLID": [
+                "ABI_SOLID"
+            ],
+            "BGISEQ": [
+                "BGISEQ"
+            ],
+            "CAPILLARY": [
+                "CAPILLARY"
+            ],
+            "COMPLETE_GENOMICS": [
+                "COMPLETE_GENOMICS"
+            ],
+            "DNBSEQ": [
+                "DNBSEQ"
+            ],
+            "ELEMENT": [
+                "ELEMENT"
+            ],
+            "GENAPSYS": [
+                "GENAPSYS"
+            ],
+            "GENEMIND": [
+                "GENEMIND"
+            ],
+            "HELICOS": [
+                "HELICOS"
+            ],
+            "ION_TORRENT": [
+                "ION_TORRENT"
+            ],
+            "LS454": [
+                "LS454"
+            ],
+            "TAPESTRI": [
+                "TAPESTRI"
+            ],
+            "ULTIMA": [
+                "ULTIMA"
+            ],
+            "VELA_DIAGNOSTICS": [
+                "VELA_DIAGNOSTICS"
             ]
         }
     },

@@ -273,23 +273,76 @@
         ],
         "library_strategy": [
             "library_strategy",
+            "library_prep_method",
+            "library_type",
+            "sequence_data_type",
+            "type",
+            "tags.display_name",
+            "tags.name",
+            "library_source",
+            "sample_material_preparation_type",
+            "library_selection",
+            "material_extraction_type",
+            "resources.resource_type",
+            "library_layout",
+            "library_construction_protocol",
+            "data_type",
+            "description",
+            "sequencing_platform",
+            "sequencer",
+            "sequencing_model",
+            "sequencing_technology",
             "library_type"
         ],
         "library_source": [
             "library_source",
+            "sample_material_preparation_type",
+            "library_strategy",
+            "library_prep_method",
+            "library_type",
+            "sequence_data_type",
+            "type",
+            "tags.display_name",
+            "tags.name",
+            "library_selection",
             "material_extraction_type",
-            "sample_material_preparation_type"
+            "resources.resource_type",
+            "library_layout",
+            "library_construction_protocol",
+            "data_type",
+            "description",
+            "sequencing_platform",
+            "sequencer",
+            "sequencing_model",
+            "sequencing_technology"
         ],
         "insert_size": [
             "insert_size_range"
         ],
         "library_construction_protocol": [
-            "library_construction_protocol",
-            "library_prep_method",
-            "library_type"
+            "library_construction_protocol"
         ],
         "library_selection": [
-            "library_selection"
+            "library_selection",
+            "material_extraction_type",
+            "resources.resource_type",
+            "library_construction_protocol",
+            "data_type",
+            "description",
+            "library_strategy",
+            "library_prep_method",
+            "library_type",
+            "sequence_data_type",
+            "type",
+            "tags.display_name",
+            "tags.name",
+            "library_source",
+            "sample_material_preparation_type",
+            "library_layout",
+            "sequencing_platform",
+            "sequencer",
+            "sequencing_model",
+            "sequencing_technology"
         ],
         "library_layout": [
             "library_layout"
@@ -300,13 +353,13 @@
             "sequencing_technology"
         ],
         "platform": [
+            "resources.resource_type",
             "sequencing_platform",
             "Sequence Data Type",
             "library_type",
             "description",
             "data_type",
             "sequence_data_type",
-            "resources.resource_type",
             "tags.display_name",
             "tags.name",
             "type"
