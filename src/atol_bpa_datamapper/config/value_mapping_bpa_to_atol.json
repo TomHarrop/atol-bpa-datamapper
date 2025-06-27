@@ -255,48 +255,6 @@
             ]
         },
         "platform": {
-            "ILLUMINA": [
-                "ILLUMINA",
-                "NovaSeq",
-                "ausarg-hi-c",
-                "ausarg-illumina-fastq",
-                "fungi-illumina-shortread",
-                "gap-genomics-10x",
-                "gap-hi-c",
-                "gap-illumina-shortread",
-                "grasslands-hi-c",
-                "grasslands-illumina-shortread",
-                "omg-10x-processed-illumina",
-                "omg-10x-raw",
-                "omg-10x-raw-illumina",
-                "omg-genomics-hiseq",
-                "omg-novaseq",
-                "omg-novaseq-whole-genome",
-                "pp-illumina-shortread",
-                "tsi-hi-c",
-                "tsi-illumina-fastq",
-                "tsi-illumina-shortread"
-            ],
-            "OXFORD_NANOPORE": [
-                "OXFORD_NANOPORE",
-                "ausarg-ont-promethion",
-                "fungi-ont-promethion",
-                "gap-ont-minion",
-                "gap-ont-promethion",
-                "omg-ont-promethion",
-                "pp-ont-promethion"
-            ],
-            "PACBIO_SMRT": [
-                "PACBIO_SMRT",
-                "ausarg-pacbio-hifi",
-                "avian-pacbio-hifi",
-                "cipps-pacbio-hifi",
-                "gap-pacbio-hifi",
-                "grasslands-pacbio-hifi",
-                "omg-pacbio",
-                "pp-pacbio-hifi",
-                "tsi-pacbio-hifi"
-            ],
             "ABI_SOLID": [
                 "ABI_SOLID"
             ],
@@ -324,11 +282,53 @@
             "HELICOS": [
                 "HELICOS"
             ],
+            "ILLUMINA": [
+                "ILLUMINA",
+                "NovaSeq",
+                "ausarg-hi-c",
+                "ausarg-illumina-fastq",
+                "fungi-illumina-shortread",
+                "gap-genomics-10x",
+                "gap-hi-c",
+                "gap-illumina-shortread",
+                "grasslands-hi-c",
+                "grasslands-illumina-shortread",
+                "omg-10x-processed-illumina",
+                "omg-10x-raw",
+                "omg-10x-raw-illumina",
+                "omg-genomics-hiseq",
+                "omg-novaseq",
+                "omg-novaseq-whole-genome",
+                "pp-illumina-shortread",
+                "tsi-hi-c",
+                "tsi-illumina-fastq",
+                "tsi-illumina-shortread"
+            ],
             "ION_TORRENT": [
                 "ION_TORRENT"
             ],
             "LS454": [
                 "LS454"
+            ],
+            "OXFORD_NANOPORE": [
+                "OXFORD_NANOPORE",
+                "ausarg-ont-promethion",
+                "fungi-ont-promethion",
+                "gap-ont-minion",
+                "gap-ont-promethion",
+                "omg-ont-promethion",
+                "pp-ont-promethion"
+            ],
+            "PACBIO_SMRT": [
+                "PACBIO_SMRT",
+                "ausarg-pacbio-hifi",
+                "avian-pacbio-hifi",
+                "cipps-pacbio-hifi",
+                "gap-pacbio-hifi",
+                "grasslands-pacbio-hifi",
+                "omg-pacbio",
+                "pp-pacbio-hifi",
+                "tsi-pacbio-hifi"
             ],
             "TAPESTRI": [
                 "TAPESTRI"
@@ -380,27 +380,86 @@
     },
     "runs": {
         "file_format": {
-            "BAM": [
-                "BAM",
+            "454_native": [
+                "454_native"
+            ],
+            "454_native_qual": [
+                "454_native_qual"
+            ],
+            "454_native_seq": [
+                "454_native_seq"
+            ],
+            "bam": [
                 "bam"
             ],
             "BZ2": [
                 "BZ2"
             ],
-            "FASTA": [
-                "FASTA",
+            "CompleteGenomics_native": [
+                "CompleteGenomics_native"
+            ],
+            "cram": [
+                "cram"
+            ],
+            "fasta": [
                 "fasta"
             ],
-            "FASTQ": [
+            "fastq": [
                 ".fast.gz",
                 ".fastq.gz",
-                "FASTQ",
-                "FastQ",
                 "fastq",
                 "fastq.qz"
             ],
             "GZ": [
                 "GZ"
+            ],
+            "Helicos_native": [
+                "Helicos_native"
+            ],
+            "Illumina_native": [
+                "Illumina_native"
+            ],
+            "Illumina_native_int": [
+                "Illumina_native_int"
+            ],
+            "Illumina_native_prb": [
+                "Illumina_native_prb"
+            ],
+            "Illumina_native_qseq": [
+                "Illumina_native_qseq"
+            ],
+            "Illumina_native_scarf": [
+                "Illumina_native_scarf"
+            ],
+            "Illumina_native_seq": [
+                "Illumina_native_seq"
+            ],
+            "OxfordNanopore_native": [
+                "OxfordNanopore_native"
+            ],
+            "PacBio_HDF5": [
+                "PacBio_HDF5"
+            ],
+            "sff": [
+                "sff"
+            ],
+            "SOLiD_native": [
+                "SOLiD_native"
+            ],
+            "SOLiD_native_csfasta": [
+                "SOLiD_native_csfasta"
+            ],
+            "SOLiD_native_qual": [
+                "SOLiD_native_qual"
+            ],
+            "sra": [
+                "sra"
+            ],
+            "srf": [
+                "srf"
+            ],
+            "tab": [
+                "tab"
             ],
             "TAR": [
                 "TAR"

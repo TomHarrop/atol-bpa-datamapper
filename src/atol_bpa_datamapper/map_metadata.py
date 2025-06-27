@@ -110,12 +110,11 @@ def main():
                         )
                         package.mapped_metadata["organism"][key] = value
 
-            output_writer.write_data(package.mapped_metadata)
-
             # map the resource-level metadata
             resource_mapped_metadata = {
                 section: [] for section in resource_level_map.metadata_sections
             }
+
             for resource_id, resource in package.resources.items():
                 resource.map_metadata(resource_level_map, package)
                 for section in resource_mapped_metadata:
@@ -125,6 +124,10 @@ def main():
 
             for section, resource_metadata in resource_mapped_metadata.items():
                 package.mapped_metadata[section] = resource_metadata
+
+
+            # write the output
+            output_writer.write_data(package.mapped_metadata)
 
             # Store sanitization changes if any were made
             if (
