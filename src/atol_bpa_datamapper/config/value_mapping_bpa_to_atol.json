@@ -40,7 +40,8 @@
                 "Inverse rRNA"
             ],
             "Inverse rRNA selection": [
-                "Inverse rRNA selection"
+                "Inverse rRNA selection",
+                "Stranded RNA with rRNA Depletion"
             ],
             "MBD2 protein methyl-CpG binding domain": [
                 "MBD2 protein methyl-CpG binding domain"
@@ -94,6 +95,7 @@
                 "RT-PCR"
             ],
             "size fractionation": [
+                "20kb template prep_blue pippin",
                 "size fractionation"
             ],
             "unspecified": [
@@ -102,7 +104,9 @@
         },
         "library_source": {
             "GENOMIC": [
-                "GENOMIC"
+                "DNA",
+                "GENOMIC",
+                "gDNA"
             ],
             "GENOMIC SINGLE CELL": [
                 "GENOMIC SINGLE CELL"
@@ -120,7 +124,9 @@
                 "SYNTHETIC"
             ],
             "TRANSCRIPTOMIC": [
-                "TRANSCRIPTOMIC"
+                "RNA",
+                "TRANSCRIPTOMIC",
+                "illumina-transcriptomics"
             ],
             "TRANSCRIPTOMIC SINGLE CELL": [
                 "TRANSCRIPTOMIC SINGLE CELL"
@@ -176,7 +182,8 @@
                 "GBS"
             ],
             "Hi-C": [
-                "Hi-C"
+                "Hi-C",
+                "HiC"
             ],
             "MBD-Seq": [
                 "MBD-Seq"
@@ -206,7 +213,8 @@
                 "POOLCLONE"
             ],
             "RAD-Seq": [
-                "RAD-Seq"
+                "RAD-Seq",
+                "ddRAD (based on Peterson et al 2012)"
             ],
             "Ribo-Seq": [
                 "Ribo-Seq"
@@ -215,7 +223,11 @@
                 "RIP-Seq"
             ],
             "RNA-Seq": [
-                "RNA-Seq"
+                "RNA-Seq",
+                "RNA-Seq and small RNA",
+                "RNASeq",
+                "Whole Transcriptome Sequencing",
+                "illumina-transcriptomics"
             ],
             "SELEX": [
                 "SELEX"
@@ -248,7 +260,8 @@
                 "WGA"
             ],
             "WGS": [
-                "WGS"
+                "WGS",
+                "Whole Genome Sequencing"
             ],
             "WXS": [
                 "WXS"
@@ -293,6 +306,8 @@
                 "gap-illumina-shortread",
                 "grasslands-hi-c",
                 "grasslands-illumina-shortread",
+                "illumina-shortread",
+                "illumina-transcriptomics",
                 "omg-10x-processed-illumina",
                 "omg-10x-raw",
                 "omg-10x-raw-illumina",
@@ -324,6 +339,7 @@
                 "ausarg-pacbio-hifi",
                 "avian-pacbio-hifi",
                 "cipps-pacbio-hifi",
+                "forest-pacbio-hifi",
                 "gap-pacbio-hifi",
                 "grasslands-pacbio-hifi",
                 "omg-pacbio",
