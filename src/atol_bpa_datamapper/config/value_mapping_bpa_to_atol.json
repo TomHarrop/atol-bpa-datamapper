@@ -62,6 +62,9 @@
                 "Oligo-dT"
             ],
             "other": [
+                "PCR-Free Tagmentation",
+                "PCR-based Tagmentation",
+                "Tagmentation",
                 "other"
             ],
             "padlock probes capture method": [
