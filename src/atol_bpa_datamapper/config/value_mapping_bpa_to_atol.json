@@ -106,6 +106,7 @@
             "GENOMIC": [
                 "DNA",
                 "GENOMIC",
+                "Genome DNA",
                 "gDNA"
             ],
             "GENOMIC SINGLE CELL": [
@@ -223,10 +224,12 @@
                 "RIP-Seq"
             ],
             "RNA-Seq": [
+                "Illumina TruSeq Total RNA",
                 "RNA-Seq",
                 "RNA-Seq and small RNA",
                 "RNASeq",
                 "Whole Transcriptome Sequencing",
+                "cDNA ligated with Nanopore native adapters",
                 "illumina-transcriptomics"
             ],
             "SELEX": [
@@ -489,15 +492,19 @@
         "data_context": {
             "annotation": [
                 "Transcriptome",
+                "Transcriptomics",
                 "Transcriptomics - long read"
             ],
             "genome_assembly": [
+                "Conservation genomics",
+                "Genome assembly",
                 "Genome resequencing",
                 "Genomics",
                 "Pangenome",
                 "Reference genome (HiC)",
                 "Reference genome for Rhodomyrtus psidioides",
                 "Reference genomes",
+                "Resequencing",
                 "reference genome"
             ]
         },
