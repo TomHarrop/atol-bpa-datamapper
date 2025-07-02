@@ -6,12 +6,6 @@
             ]
         },
         "library_selection": {
-            "5-methylcytidine antibody": [
-                "5-methylcytidine antibody"
-            ],
-            "CAGE": [
-                "CAGE"
-            ],
             "cDNA": [
                 "cDNA"
             ],
@@ -20,18 +14,6 @@
             ],
             "cDNA_randomPriming": [
                 "cDNA_randomPriming"
-            ],
-            "ChIP": [
-                "ChIP"
-            ],
-            "ChIP-Seq": [
-                "ChIP-Seq"
-            ],
-            "DNase": [
-                "DNase"
-            ],
-            "HMPR": [
-                "HMPR"
             ],
             "Hybrid Selection": [
                 "Hybrid Selection"
@@ -43,32 +25,15 @@
                 "Inverse rRNA selection",
                 "Stranded RNA with rRNA Depletion"
             ],
-            "MBD2 protein methyl-CpG binding domain": [
-                "MBD2 protein methyl-CpG binding domain"
-            ],
-            "MDA": [
-                "MDA"
-            ],
-            "MF": [
-                "MF"
-            ],
-            "MNase": [
-                "MNase"
-            ],
-            "MSLL": [
-                "MSLL"
-            ],
             "Oligo-dT": [
                 "Oligo-dT"
             ],
             "other": [
+                "Enzymatic Tagementation",
                 "PCR-Free Tagmentation",
                 "PCR-based Tagmentation",
                 "Tagmentation",
                 "other"
-            ],
-            "padlock probes capture method": [
-                "padlock probes capture method"
             ],
             "PCR": [
                 "PCR"
@@ -76,17 +41,11 @@
             "PolyA": [
                 "PolyA"
             ],
-            "RACE": [
-                "RACE"
-            ],
             "RANDOM": [
                 "RANDOM"
             ],
             "RANDOM PCR": [
                 "RANDOM PCR"
-            ],
-            "Reduced Representation": [
-                "Reduced Representation"
             ],
             "repeat fractionation": [
                 "repeat fractionation"
@@ -115,17 +74,8 @@
             "GENOMIC SINGLE CELL": [
                 "GENOMIC SINGLE CELL"
             ],
-            "METAGENOMIC": [
-                "METAGENOMIC"
-            ],
-            "METATRANSCRIPTOMIC": [
-                "METATRANSCRIPTOMIC"
-            ],
             "OTHER": [
                 "OTHER"
-            ],
-            "SYNTHETIC": [
-                "SYNTHETIC"
             ],
             "TRANSCRIPTOMIC": [
                 "RNA",
@@ -134,47 +84,17 @@
             ],
             "TRANSCRIPTOMIC SINGLE CELL": [
                 "TRANSCRIPTOMIC SINGLE CELL"
-            ],
-            "VIRAL RNA": [
-                "VIRAL RNA"
             ]
         },
         "library_strategy": {
-            "AMPLICON": [
-                "AMPLICON"
-            ],
-            "ATAC-seq": [
-                "ATAC-seq"
-            ],
-            "Bisulfite-Seq": [
-                "Bisulfite-Seq"
-            ],
-            "ChIA-PET": [
-                "ChIA-PET"
-            ],
-            "ChIP-Seq": [
-                "ChIP-Seq"
-            ],
-            "ChM-Seq": [
-                "ChM-Seq"
-            ],
             "CLONE": [
                 "CLONE"
             ],
             "CLONEEND": [
                 "CLONEEND"
             ],
-            "CTS": [
-                "CTS"
-            ],
-            "DNase-Hypersensitivity": [
-                "DNase-Hypersensitivity"
-            ],
             "EST": [
                 "EST"
-            ],
-            "FAIRE-seq": [
-                "FAIRE-seq"
             ],
             "FINISHING": [
                 "FINISHING"
@@ -182,49 +102,18 @@
             "FL-cDNA": [
                 "FL-cDNA"
             ],
-            "GBS": [
-                "GBS"
-            ],
             "Hi-C": [
                 "Hi-C",
                 "HiC"
             ],
-            "MBD-Seq": [
-                "MBD-Seq"
-            ],
-            "MeDIP-Seq": [
-                "MeDIP-Seq"
-            ],
             "miRNA-Seq": [
                 "miRNA-Seq"
-            ],
-            "MNase-Seq": [
-                "MNase-Seq"
-            ],
-            "MRE-Seq": [
-                "MRE-Seq"
             ],
             "ncRNA-Seq": [
                 "ncRNA-Seq"
             ],
-            "NOMe-Seq": [
-                "NOMe-Seq"
-            ],
             "OTHER": [
                 "OTHER"
-            ],
-            "POOLCLONE": [
-                "POOLCLONE"
-            ],
-            "RAD-Seq": [
-                "RAD-Seq",
-                "ddRAD (based on Peterson et al 2012)"
-            ],
-            "Ribo-Seq": [
-                "Ribo-Seq"
-            ],
-            "RIP-Seq": [
-                "RIP-Seq"
             ],
             "RNA-Seq": [
                 "Illumina TruSeq Total RNA",
@@ -235,9 +124,6 @@
                 "cDNA ligated with Nanopore native adapters",
                 "illumina-transcriptomics"
             ],
-            "SELEX": [
-                "SELEX"
-            ],
             "snRNA-seq": [
                 "snRNA-seq"
             ],
@@ -246,12 +132,6 @@
             ],
             "Synthetic-Long-Read": [
                 "Synthetic-Long-Read"
-            ],
-            "Targeted-Capture": [
-                "Targeted-Capture"
-            ],
-            "Tethered Chromatin Conformation Capture": [
-                "Tethered Chromatin Conformation Capture"
             ],
             "Tn-Seq": [
                 "Tn-Seq"
@@ -342,6 +222,7 @@
             ],
             "PACBIO_SMRT": [
                 "PACBIO_SMRT",
+                "arp-genomics-pacbio",
                 "ausarg-pacbio-hifi",
                 "avian-pacbio-hifi",
                 "cipps-pacbio-hifi",
@@ -349,6 +230,7 @@
                 "gap-pacbio-hifi",
                 "grasslands-pacbio-hifi",
                 "omg-pacbio",
+                "pacbio-rsii",
                 "pp-pacbio-hifi",
                 "tsi-pacbio-hifi"
             ],
@@ -414,9 +296,6 @@
             "bam": [
                 "bam"
             ],
-            "BZ2": [
-                "BZ2"
-            ],
             "CompleteGenomics_native": [
                 "CompleteGenomics_native"
             ],
@@ -431,9 +310,6 @@
                 ".fastq.gz",
                 "fastq",
                 "fastq.qz"
-            ],
-            "GZ": [
-                "GZ"
             ],
             "Helicos_native": [
                 "Helicos_native"
@@ -482,12 +358,6 @@
             ],
             "tab": [
                 "tab"
-            ],
-            "TAR": [
-                "TAR"
-            ],
-            "ZIP": [
-                "ZIP"
             ]
         }
     },
@@ -513,7 +383,12 @@
         },
         "GAL": {
             "AGRF": [
-                "AGRF"
+                "AGRF",
+                "AGRF / Kor-jent van Dijk",
+                "AGRF Adelaide",
+                "AGRF Melbourne",
+                "AGRF_Melboune",
+                "AGRF_Melbourne"
             ],
             "BRF": [
                 "BRF",
@@ -533,6 +408,7 @@
                 "Ramaciotti Centre for Genomics",
                 "Ramaciotti, UNSW",
                 "Ramaciotti/Garvan",
+                "RamaciottiGarvan",
                 "Ramaciotti_UNSW"
             ]
         },
