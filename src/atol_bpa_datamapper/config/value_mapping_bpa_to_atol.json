@@ -1,4 +1,250 @@
 {
+    "experiment": {
+        "library_layout": {
+            "null": [
+                null
+            ]
+        },
+        "library_selection": {
+            "cDNA": [
+                "cDNA"
+            ],
+            "cDNA_oligo_dT": [
+                "cDNA_oligo_dT"
+            ],
+            "cDNA_randomPriming": [
+                "cDNA_randomPriming"
+            ],
+            "Hybrid Selection": [
+                "Hybrid Selection"
+            ],
+            "Inverse rRNA": [
+                "Inverse rRNA"
+            ],
+            "Inverse rRNA selection": [
+                "Inverse rRNA selection",
+                "Stranded RNA with rRNA Depletion"
+            ],
+            "Oligo-dT": [
+                "Oligo-dT"
+            ],
+            "other": [
+                "Enzymatic Tagementation",
+                "PCR-Free Tagmentation",
+                "PCR-based Tagmentation",
+                "Tagmentation",
+                "other"
+            ],
+            "PCR": [
+                "PCR"
+            ],
+            "PolyA": [
+                "PolyA"
+            ],
+            "RANDOM": [
+                "RANDOM"
+            ],
+            "RANDOM PCR": [
+                "RANDOM PCR"
+            ],
+            "repeat fractionation": [
+                "repeat fractionation"
+            ],
+            "Restriction Digest": [
+                "Restriction Digest"
+            ],
+            "RT-PCR": [
+                "RT-PCR"
+            ],
+            "size fractionation": [
+                "20kb template prep_blue pippin",
+                "size fractionation"
+            ],
+            "unspecified": [
+                "unspecified"
+            ]
+        },
+        "library_source": {
+            "GENOMIC": [
+                "DNA",
+                "GENOMIC",
+                "Genome DNA",
+                "gDNA"
+            ],
+            "GENOMIC SINGLE CELL": [
+                "GENOMIC SINGLE CELL"
+            ],
+            "OTHER": [
+                "OTHER"
+            ],
+            "TRANSCRIPTOMIC": [
+                "RNA",
+                "TRANSCRIPTOMIC",
+                "illumina-transcriptomics"
+            ],
+            "TRANSCRIPTOMIC SINGLE CELL": [
+                "TRANSCRIPTOMIC SINGLE CELL"
+            ]
+        },
+        "library_strategy": {
+            "CLONE": [
+                "CLONE"
+            ],
+            "CLONEEND": [
+                "CLONEEND"
+            ],
+            "EST": [
+                "EST"
+            ],
+            "FINISHING": [
+                "FINISHING"
+            ],
+            "FL-cDNA": [
+                "FL-cDNA"
+            ],
+            "Hi-C": [
+                "Hi-C",
+                "HiC"
+            ],
+            "miRNA-Seq": [
+                "miRNA-Seq"
+            ],
+            "ncRNA-Seq": [
+                "ncRNA-Seq"
+            ],
+            "OTHER": [
+                "OTHER"
+            ],
+            "RNA-Seq": [
+                "Illumina TruSeq Total RNA",
+                "RNA-Seq",
+                "RNA-Seq and small RNA",
+                "RNASeq",
+                "Whole Transcriptome Sequencing",
+                "cDNA ligated with Nanopore native adapters",
+                "illumina-transcriptomics"
+            ],
+            "snRNA-seq": [
+                "snRNA-seq"
+            ],
+            "ssRNA-seq": [
+                "ssRNA-seq"
+            ],
+            "Synthetic-Long-Read": [
+                "Synthetic-Long-Read"
+            ],
+            "Tn-Seq": [
+                "Tn-Seq"
+            ],
+            "VALIDATION": [
+                "VALIDATION"
+            ],
+            "WCS": [
+                "WCS"
+            ],
+            "WGA": [
+                "WGA"
+            ],
+            "WGS": [
+                "WGS",
+                "Whole Genome Sequencing"
+            ],
+            "WXS": [
+                "WXS"
+            ]
+        },
+        "platform": {
+            "ABI_SOLID": [
+                "ABI_SOLID"
+            ],
+            "BGISEQ": [
+                "BGISEQ"
+            ],
+            "CAPILLARY": [
+                "CAPILLARY"
+            ],
+            "COMPLETE_GENOMICS": [
+                "COMPLETE_GENOMICS"
+            ],
+            "DNBSEQ": [
+                "DNBSEQ"
+            ],
+            "ELEMENT": [
+                "ELEMENT"
+            ],
+            "GENAPSYS": [
+                "GENAPSYS"
+            ],
+            "GENEMIND": [
+                "GENEMIND"
+            ],
+            "HELICOS": [
+                "HELICOS"
+            ],
+            "ILLUMINA": [
+                "ILLUMINA",
+                "NovaSeq",
+                "ausarg-hi-c",
+                "ausarg-illumina-fastq",
+                "fungi-illumina-shortread",
+                "gap-genomics-10x",
+                "gap-hi-c",
+                "gap-illumina-shortread",
+                "grasslands-hi-c",
+                "grasslands-illumina-shortread",
+                "illumina-shortread",
+                "illumina-transcriptomics",
+                "omg-10x-processed-illumina",
+                "omg-10x-raw",
+                "omg-10x-raw-illumina",
+                "omg-genomics-hiseq",
+                "omg-novaseq",
+                "omg-novaseq-whole-genome",
+                "pp-illumina-shortread",
+                "tsi-hi-c",
+                "tsi-illumina-fastq",
+                "tsi-illumina-shortread"
+            ],
+            "ION_TORRENT": [
+                "ION_TORRENT"
+            ],
+            "LS454": [
+                "LS454"
+            ],
+            "OXFORD_NANOPORE": [
+                "OXFORD_NANOPORE",
+                "ausarg-ont-promethion",
+                "fungi-ont-promethion",
+                "gap-ont-minion",
+                "gap-ont-promethion",
+                "omg-ont-promethion",
+                "pp-ont-promethion"
+            ],
+            "PACBIO_SMRT": [
+                "PACBIO_SMRT",
+                "arp-genomics-pacbio",
+                "ausarg-pacbio-hifi",
+                "avian-pacbio-hifi",
+                "cipps-pacbio-hifi",
+                "forest-pacbio-hifi",
+                "gap-pacbio-hifi",
+                "grasslands-pacbio-hifi",
+                "omg-pacbio",
+                "pacbio-rsii",
+                "pp-pacbio-hifi",
+                "tsi-pacbio-hifi"
+            ],
+            "TAPESTRI": [
+                "TAPESTRI"
+            ],
+            "ULTIMA": [
+                "ULTIMA"
+            ],
+            "VELA_DIAGNOSTICS": [
+                "VELA_DIAGNOSTICS"
+            ]
+        }
+    },
     "organism": {
         "bioplatforms_project_id": {
             "aus-avian": [
@@ -6,6 +252,9 @@
             ],
             "ausarg": [
                 "ausarg"
+            ],
+            "bpa-ipm": [
+                "bpa-ipm"
             ],
             "bpa-omg": [
                 "bpa-omg"
@@ -33,43 +282,113 @@
             ]
         }
     },
+    "runs": {
+        "file_format": {
+            "454_native": [
+                "454_native"
+            ],
+            "454_native_qual": [
+                "454_native_qual"
+            ],
+            "454_native_seq": [
+                "454_native_seq"
+            ],
+            "bam": [
+                "bam"
+            ],
+            "CompleteGenomics_native": [
+                "CompleteGenomics_native"
+            ],
+            "cram": [
+                "cram"
+            ],
+            "fasta": [
+                "fasta"
+            ],
+            "fastq": [
+                ".fast.gz",
+                ".fastq.gz",
+                "fastq",
+                "fastq.qz"
+            ],
+            "Helicos_native": [
+                "Helicos_native"
+            ],
+            "Illumina_native": [
+                "Illumina_native"
+            ],
+            "Illumina_native_int": [
+                "Illumina_native_int"
+            ],
+            "Illumina_native_prb": [
+                "Illumina_native_prb"
+            ],
+            "Illumina_native_qseq": [
+                "Illumina_native_qseq"
+            ],
+            "Illumina_native_scarf": [
+                "Illumina_native_scarf"
+            ],
+            "Illumina_native_seq": [
+                "Illumina_native_seq"
+            ],
+            "OxfordNanopore_native": [
+                "OxfordNanopore_native"
+            ],
+            "PacBio_HDF5": [
+                "PacBio_HDF5"
+            ],
+            "sff": [
+                "sff"
+            ],
+            "SOLiD_native": [
+                "SOLiD_native"
+            ],
+            "SOLiD_native_csfasta": [
+                "SOLiD_native_csfasta"
+            ],
+            "SOLiD_native_qual": [
+                "SOLiD_native_qual"
+            ],
+            "sra": [
+                "sra"
+            ],
+            "srf": [
+                "srf"
+            ],
+            "tab": [
+                "tab"
+            ]
+        }
+    },
     "sample": {
         "data_context": {
+            "annotation": [
+                "Transcriptome",
+                "Transcriptomics",
+                "Transcriptomics - long read"
+            ],
             "genome_assembly": [
+                "Conservation genomics",
+                "Genome assembly",
                 "Genome resequencing",
                 "Genomics",
                 "Pangenome",
-                "Reference Genome",
-                "Reference genome",
                 "Reference genome (HiC)",
                 "Reference genome for Rhodomyrtus psidioides",
                 "Reference genomes",
+                "Resequencing",
                 "reference genome"
-            ],
-            "annotation": [
-                "Transcriptome",
-                "Transcriptomics - long read"
-            ]
-        },
-        "sex": {
-            "female": [
-                "Female",
-                "female"
-            ],
-            "hermaphrodite": [
-                "hermaphrodite"
-            ],
-            "male": [
-                "Male",
-                "male"
-            ],
-            "null": [
-                null
             ]
         },
         "GAL": {
             "AGRF": [
-                "AGRF"
+                "AGRF",
+                "AGRF / Kor-jent van Dijk",
+                "AGRF Adelaide",
+                "AGRF Melbourne",
+                "AGRF_Melboune",
+                "AGRF_Melbourne"
             ],
             "BRF": [
                 "BRF",
@@ -79,95 +398,141 @@
             "Genomics WA": [
                 "Genomics WA"
             ],
+            "Kinghorn": [
+                "UNSW",
+                "UNSW/Kinghorn"
+            ],
             "Ramaciotti": [
                 "RAMAC",
                 "Ramaciotti",
                 "Ramaciotti Centre for Genomics",
                 "Ramaciotti, UNSW",
                 "Ramaciotti/Garvan",
+                "RamaciottiGarvan",
                 "Ramaciotti_UNSW"
-            ],
-            "Kinghorn": [
-                "UNSW",
-                "UNSW/Kinghorn"
             ]
-        }
-    },
-    "experiment": {
-        "platform": {
-            "pacbio_hifi": [
-                "ausarg-pacbio-hifi",
-                "avian-pacbio-hifi",
-                "cipps-pacbio-hifi",
-                "gap-pacbio-hifi",
-                "grasslands-pacbio-hifi",
-                "omg-pacbio",
-                "pp-pacbio-hifi",
-                "tsi-pacbio-hifi"
+        },
+        "lifestage": {
+            "adult": [
+                "Adult",
+                "adult organism",
+                "adult plant"
             ],
-            "proximo_hic": [
-                "ausarg-hi-c",
-                "gap-hi-c",
-                "grasslands-hi-c",
-                "tsi-hi-c"
+            "egg": [
+                "egg"
             ],
-            "illumina_genomic": [
-                "ausarg-illumina-fastq",
-                "fungi-illumina-shortread",
-                "gap-illumina-shortread",
-                "grasslands-illumina-shortread",
-                "omg-genomics-hiseq",
-                "omg-novaseq",
-                "omg-novaseq-whole-genome",
-                "pp-illumina-shortread",
-                "tsi-illumina-fastq",
-                "tsi-illumina-shortread"
+            "embryo": [
+                "embryo"
             ],
-            "ont_genomic": [
-                "ausarg-ont-promethion",
-                "fungi-ont-promethion",
-                "gap-ont-minion",
-                "gap-ont-promethion",
-                "omg-ont-promethion",
-                "pp-ont-promethion"
+            "end of flowering stage": [
+                "Open boll"
             ],
-            "10x": [
-                "gap-genomics-10x",
-                "omg-10x-processed-illumina",
-                "omg-10x-raw",
-                "omg-10x-raw-illumina"
+            "gametophyte": [
+                "gametophyte"
+            ],
+            "inflorescence emergence stage": [
+                "Floret emergence"
+            ],
+            "juvenile stage": [
+                "Hatchling",
+                "immature",
+                "juvenile",
+                "juvenile stage",
+                "pouch young"
+            ],
+            "larva": [
+                "Tadpole",
+                "larva"
+            ],
+            "mature": [
+                "Middle age",
+                "mature",
+                "mature plant"
+            ],
+            "missing: control sample": [
+                "missing: control sample"
+            ],
+            "missing: data agreement established pre-2023": [
+                "missing: data agreement established pre-2023"
+            ],
+            "missing: endangered species": [
+                "missing: endangered species"
+            ],
+            "missing: human-identifiable": [
+                "missing: human-identifiable"
+            ],
+            "missing: lab stock": [
+                "missing: lab stock"
+            ],
+            "missing: sample group": [
+                "missing: sample group"
+            ],
+            "missing: synthetic construct": [
+                "missing: synthetic construct"
+            ],
+            "missing: third party data": [
+                "missing: third party data"
+            ],
+            "neonate stage": [
+                "Newborn",
+                "neonate stage"
+            ],
+            "null": [
+                null
+            ],
+            "not applicable": [
+                "not applicable"
+            ],
+            "not collected": [
+                "not collected"
+            ],
+            "not provided": [
+                "not provided"
+            ],
+            "prime adult stage": [
+                "prime adult stage"
+            ],
+            "pupa": [
+                "pupa",
+                "pupae"
+            ],
+            "seedling": [
+                "seedling"
+            ],
+            "sexually immature stage": [
+                "sub-adult",
+                "sub-adult organism",
+                "subadult"
+            ],
+            "spore-bearing structure": [
+                "spore-bearing structure"
+            ],
+            "sporophyte": [
+                "sporophyte"
+            ],
+            "vegetative cell": [
+                "vegetative cell"
+            ],
+            "vegetative structure": [
+                "Vegetative",
+                "vegetative structure"
+            ],
+            "zygote": [
+                "zygote"
             ]
-        }
-    },
-    "runs": {
-        "file_format": {
-            "BZ2": [
-                "BZ2"
+        },
+        "sex": {
+            "female": [
+                "female"
             ],
-            "GZ": [
-                "GZ"
+            "hermaphrodite": [
+                "hermaphrodite"
             ],
-            "FASTQ": [
-                ".fast.gz",
-                ".fastq.gz",
-                "FASTQ",
-                "FastQ",
-                "fastq",
-                "fastq.qz"
+            "male": [
+                "male"
             ],
-            "FASTA": [
-                "FASTA",
-                "fasta"
-            ],
-            "TAR": [
-                "TAR"
-            ],
-            "ZIP": [
-                "ZIP"
-            ],
-            "BAM": [
-                "BAM",
-                "bam"
+            "null": [
+                null
             ]
         }
     }

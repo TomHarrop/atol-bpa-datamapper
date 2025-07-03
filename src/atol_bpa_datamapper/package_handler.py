@@ -10,7 +10,9 @@ class BpaBase(dict):
         # add bpa_id as a field
         self["bpa_id"] = self.id
 
-    def choose_value(self, fields_to_check, accepted_values, parent_package=None):
+    def _choose_value(
+        self, fields_to_check, accepted_values, parent_package=None, null_values=[]
+    ):
         """
         Returns a tuple of (value, bpa_field, keep).
 
@@ -72,69 +74,99 @@ class BpaBase(dict):
         first_value = None
         first_key = None
 
+        logger.debug(f"Checking values: {values}")
         for key, value in values.items():
-            # Skip None values and empty strings
-            if value is None or (isinstance(value, str) and value.strip() == ""):
-                continue
+            if isinstance(value, list):
+                logger.debug(
+                    f"Multiple values for {key}: {value}. Only checking {value[0]}"
+                )
+                value = value[0]
 
-            if not accepted_values or value in accepted_values:
+            # skip None values and empty strings
+            if value is None or value.upper() in null_values:
+                continue
+            # return the first item if there is no controlled vocab
+            if not accepted_values:
                 return (value, key, True)
+            else:
+                # do a case-insensitive check but use the value from the vocab
+                # if there's a match
+                for accepted_value in accepted_values:
+                    if accepted_value.upper() == value.upper():
+                        return (accepted_value, key, True)
+
             if first_value is None:
                 first_value = value
                 first_key = key
 
         return (first_value, first_key, False)
 
+    def _check_atol_field(
+        self, atol_field, metadata_map: "MetadataMap", parent_package=None
+    ):
+        null_values = metadata_map.sanitization_config.get("null_values", [])
+        logger.debug(f"Checking field {atol_field}...")
+
+        bpa_field_list = metadata_map[atol_field]["bpa_fields"]
+        accepted_values = metadata_map.get_allowed_values(atol_field)
+
+        logger.debug(f"  for values {accepted_values}...")
+        logger.debug(f"  in BPA fields {bpa_field_list}.")
+
+        # check if there is a default
+        has_default, default_value = metadata_map.check_default_value(atol_field)
+        if has_default:
+            logger.debug(f"  Default is {default_value}.")
+
+        # check for accepted_value
+        value, bpa_field, keep = self._choose_value(
+            bpa_field_list, accepted_values, parent_package, null_values
+        )
+
+        # apply the default if we didn't get an accepted_value
+        if has_default == True and keep == False:
+            if value is not None:
+                logger.warning(
+                    f"Field {atol_field} has value {value}. Using default {default_value}."
+                )
+            else:
+                logger.debug(
+                    f"Field {atol_field} has no value. Using default {default_value}."
+                )
+            value, bpa_field, keep = (default_value, "default_value", True)
+
+        # This is a manual override for the pesky genome_data key. If the
+        # package has no context_keys whose value is in
+        # accepted_data_context, but it does have a key called
+        # "genome_data" with value "yes", keep_package is True.
+        if atol_field == "data_context" and "genome_data" in self.fields and not keep:
+            logger.debug("Checking genome_data field")
+            if self["genome_data"] == "yes":
+                logger.debug("Setting keep to True")
+                value, bpa_field, keep = ("yes", "genome_data", True)
+
+        # Summarise the value choice
+        logger.debug(
+            (
+                f"Found value {value} "
+                f"for atol_field {atol_field} "
+                f"in bpa_field {bpa_field}. "
+                f"Keep is {keep}."
+            )
+        )
+
+        return (value, bpa_field, keep)
+
     def filter(self, metadata_map: "MetadataMap", parent_package=None):
         logger.debug(f"Filtering {type(self).__name__} {self.id}")
+
         self.decisions = {}
         self.bpa_fields = {}
         self.bpa_values = {}
 
         for atol_field in metadata_map.controlled_vocabularies:
-
-            logger.debug(f"Checking field {atol_field}...")
-
-            bpa_field_list = metadata_map[atol_field]["bpa_fields"]
-            accepted_values = metadata_map.get_allowed_values(atol_field)
-
-            logger.debug(f"  for values {accepted_values}...")
-            logger.debug(f"  in BPA fields {bpa_field_list}.")
-
-            # apply default if there is one
-            has_default, default_value = metadata_map.check_default_value(atol_field)
-            if has_default:
-                logger.debug(f"  Default is {default_value}.")
-
-            value, bpa_field, keep = self.choose_value(
-                bpa_field_list, accepted_values, parent_package
-            )
-
-            if value is None and has_default == True:
-                value, bpa_field, keep = (default_value, "default_value", True)
-
-            # This is a manual override for the pesky genome_data key. If the
-            # package has no context_keys whose value is in
-            # accepted_data_context, but it does have a key called
-            # "genome_data" with value "yes", keep_package is True.
-            if (
-                atol_field == "data_context"
-                and "genome_data" in self.fields
-                and not keep
-            ):
-                logger.debug("Checking genome_data field")
-                if self["genome_data"] == "yes":
-                    logger.debug("Setting keep to True")
-                    value, bpa_field, keep = ("yes", "genome_data", True)
-
-            # Summarise the value choice
-            logger.debug(
-                (
-                    f"Found value {value} "
-                    f"for atol_field {atol_field} "
-                    f"in bpa_field {bpa_field}. "
-                    f"Keep is {keep}."
-                )
+            value, bpa_field, keep = self._check_atol_field(
+                atol_field, metadata_map, parent_package
             )
 
             # record the field that was used in the bpa data
@@ -154,7 +186,7 @@ class BpaBase(dict):
     def map_metadata(self, metadata_map: "MetadataMap", parent_package=None):
         """Map BPA package metadata to AToL format, handling resources properly."""
         logger.debug(f"Mapping BpaPackage {self.id}")
-
+        null_values = metadata_map.sanitization_config.get("null_values")
         mapped_metadata = {k: {} for k in metadata_map.metadata_sections}
 
         self.mapping_log = []
@@ -163,25 +195,8 @@ class BpaBase(dict):
 
         for atol_field in metadata_map.expected_fields:
             section = metadata_map.get_atol_section(atol_field)
-            value, bpa_field, keep = self.choose_value(
-                metadata_map.get_bpa_fields(atol_field),
-                metadata_map.get_allowed_values(atol_field),
-                parent_package,
-            )
-
-            # apply default if there is one
-            has_default, default_value = metadata_map.check_default_value(atol_field)
-            if value is None and has_default == True:
-                value, bpa_field, keep = (default_value, "default_value", True)
-
-            # Summarise the value choice
-            logger.debug(
-                (
-                    f"Found value {value} "
-                    f"for atol_field {atol_field} "
-                    f"in bpa_field {bpa_field}. "
-                    f"Keep is {keep}."
-                )
+            value, bpa_field, keep = self._check_atol_field(
+                atol_field, metadata_map, parent_package
             )
 
             if isinstance(value, list) and len(value) > 1:

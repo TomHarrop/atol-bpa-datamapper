@@ -37,3 +37,5 @@ python3 -m cProfile -o "results/${RESULT_DIR}/map.stats" \
     --sanitization_changes "results/${RESULT_DIR}/sanitization_changes.jsonl.gz" \
     <"results/${RESULT_DIR}/f.jsonl.gz" \
     >"results/${RESULT_DIR}/m.jsonl.gz"
+
+Rscript dev/scripts/analyse_decision_log.R ${RESULT_DIR}
