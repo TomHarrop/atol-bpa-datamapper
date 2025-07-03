@@ -1,5 +1,37 @@
 # Changelog
 
+## v0.1.8 (2025-07-03)
+
+### New
+
+* Analyse the decision_log to find values that need mapping.
+
+* Vocab for runs.
+
+* Vocabularies for mandatory Sample and Organism fields.
+
+### Changes
+
+* Start mapping BPA terms to SRA terms.
+
+* If there is a default, non-accepted values are kept and mapped to default (fixes #21)
+
+* Check null strings in choose_value (fixes #20)
+
+* Case-insensitive vocab matching.
+
+* Sanitise sample.lifestage.
+
+### Other
+
+* Vocabularies for Sample, Organism, Experiment and Run sections.
+
+  new: Vocabularies for Sample, Organism, Experiment and Run sections
+
+* Add some terms from the decision log.
+
+* Experiment vocab.
+
 ## v0.1.7 (2025-06-11)
 
 ### New
