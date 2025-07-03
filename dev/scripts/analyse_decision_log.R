@@ -22,8 +22,25 @@ GetRejectedValues <- function(x, decision_log) {
   return(rejection_counts)
 }
 
+GetSingleFailures <- function(x, decision_log, single_fails) {
+  varname <- sub("_accepted", "", x)
+  single_rejection_counts <- decision_log[
+    id %in% single_fails & x == FALSE, .N,
+    by = varname, env = list(x = x, varname = varname)
+  ][order(N, decreasing = TRUE)]
 
-results_dir <- "2025-07-02_10583"
+  setnames(single_rejection_counts, varname, "value")
+  single_rejection_counts[, field := varname]
+  setcolorder(single_rejection_counts, c("field", "value", "N"))
+  return(single_rejection_counts)
+}
+
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) < 1) {
+  results_dir <- "2025-07-02_15210"
+}
+results_dir <- args[1]
+
 
 decision_log_file <- paste(c("results", results_dir, "decision_log.csv.gz"),
   collapse = "/"
@@ -31,6 +48,10 @@ decision_log_file <- paste(c("results", results_dir, "decision_log.csv.gz"),
 failed_counts_file <- paste(c("results", results_dir, "failed_counts.csv"),
   collapse = "/"
 )
+single_fails_file <- paste(c("results", results_dir, "single_fail_values.csv"),
+  collapse = "/"
+)
+
 
 
 decision_log <- fread(decision_log_file)
@@ -42,27 +63,26 @@ sdc <- lgc_cols[lgc_cols != "kept_resources"]
 
 
 # get an ordered list of everything failing filtering
-failed_counts <- rbindlist(lapply(sdc, GetRejectedValues, decision_log = decision_log))
+failed_counts <- rbindlist(
+  lapply(sdc, GetRejectedValues, decision_log = decision_log)
+)
 fwrite(failed_counts, failed_counts_file)
 
 
-
-
-decision_log[, n_passes := sum(.SD), .SDcols = sdc, by = id]
-
-# Packages that only failed one field. The lowest sum indicates the field that
-# is causing the most fails.
-decision_log[
-  n_passes == length(sdc) - 1, lapply(.SD, function(x) sum(!x)),
-  .SDcols = sdc
+# check for datasets that only failed on one field
+setkey(decision_log, id)
+fails_per_sample <- decision_log[,
+  .(n_fails = sum(!.SD)),
+  .SDcols = lgc_cols, by = id
 ]
+single_fails <- fails_per_sample[n_fails == 1, unique(id)]
 
-decision_log[id == "bpa-tsi-genomics-ddrad-102_100_100_629192-233jlllt3"]
 
-decision_log[n_passes == length(sdc) - 1 & data_context_accepted == FALSE, .N, by = data_context][order(N, decreasing = TRUE)]
-
-decision_log[n_passes == length(sdc) - 1 & library_selection_accepted == FALSE, .N, by = library_selection][order(N, decreasing = TRUE)]
-
-decision_log[n_passes == length(sdc) - 1 & library_strategy_accepted == FALSE, .N, by = library_strategy][order(N, decreasing = TRUE)]
-
-decision_log[n_passes == length(sdc) - 1 & library_source_accepted == FALSE, .N, by = library_source][order(N, decreasing = TRUE)]
+single_fail_values <- rbindlist(
+  lapply(
+    lgc_cols,
+    GetSingleFailures,
+    decision_log = decision_log, single_fails = single_fails
+  )
+)
+fwrite(single_fail_values, single_fails_file)
