@@ -180,15 +180,15 @@ class OrganismSection(dict):
         self.update(package_data)
         self.has_taxid = self.get("taxon_id") not in null_values + ["0", "0.0"]
 
-        # get the taxid
-        self.raw_taxid = self.get("taxon_id") if self.has_taxid else None
-        self.taxid = None
+        # get the taxon_id
+        self.raw_taxon_id = self.get("taxon_id") if self.has_taxid else None
+        self.taxon_id = None
 
-        if self.raw_taxid is not None:
-            self.format_taxid()
+        if self.raw_taxon_id is not None:
+            self.format_taxon_id()
 
-        # look up taxid in NCBI taxonomy
-        self.check_ncbi_taxonomy_for_taxid(ncbi_taxdump)
+        # look up taxon_id in NCBI taxonomy
+        self.check_ncbi_taxonomy_for_taxon_id(ncbi_taxdump)
 
         # Check for species information in the raw metadata. Realistically, we
         # can only do this if we can parse the scientific name into a Genus and
@@ -207,7 +207,7 @@ class OrganismSection(dict):
         # TODO: this should be some sort of UUID
         if self.has_taxid_at_accepted_level:
             self.organism_grouping_key = "_".join(
-                [remove_whitespace(self.atol_scientific_name), str(self.taxid)]
+                [remove_whitespace(self.atol_scientific_name), str(self.taxon_id)]
             )
         else:
             self.organism_grouping_key = None
@@ -257,11 +257,11 @@ class OrganismSection(dict):
         # process the results
         if retrieved_taxid:
             logger.debug(f"Found single taxid at accepted level {retrieved_taxid}")
-            self.taxid = retrieved_taxid
+            self.taxon_id = retrieved_taxid
             self.has_taxid = True
             self.taxid_retrieved_from_metadata = True
 
-            self.check_ncbi_taxonomy_for_taxid(ncbi_taxdump)
+            self.check_ncbi_taxonomy_for_taxon_id(ncbi_taxdump)
             logger.debug(
                 f"Assigning scientific name {self.scientific_name} to package {package_id}"
             )
@@ -283,7 +283,7 @@ class OrganismSection(dict):
             and str(self.get("infraspecific_epithet")).upper() not in null_values
         ):
             logger.debug(
-                f'{package_id} has subspecies information but taxid {self.taxid} rank "{self.rank}" is not lower than "{ncbi_taxdump.resolve_to_rank}"'
+                f'{package_id} has subspecies information but taxon_id {self.taxon_id} rank "{self.rank}" is not lower than "{ncbi_taxdump.resolve_to_rank}"'
             )
             logger.debug("Accepted ranks: {ncbi_taxdump.accepted_ranks}")
             self.has_subspecies_information = True
@@ -299,15 +299,15 @@ class OrganismSection(dict):
         self.has_subspecies_information = False
         self.subspecies_source = None
 
-    def check_ncbi_taxonomy_for_taxid(self, ncbi_taxdump):
+    def check_ncbi_taxonomy_for_taxon_id(self, ncbi_taxdump):
         # Check if it's an NCBI taxid
         self.taxid_is_ncbi_node = (
-            self.has_taxid and self.taxid in ncbi_taxdump.nodes.index
+            self.has_taxid and self.taxon_id in ncbi_taxdump.nodes.index
         )
 
         if self.taxid_is_ncbi_node:
-            self.rank = ncbi_taxdump.get_rank(self.taxid)
-            self.scientific_name = ncbi_taxdump.get_scientific_name_txt(self.taxid)
+            self.rank = ncbi_taxdump.get_rank(self.taxon_id)
+            self.scientific_name = ncbi_taxdump.get_scientific_name_txt(self.taxon_id)
             self.scientific_name_source = "ncbi"
         else:
             self.rank = None
@@ -316,18 +316,21 @@ class OrganismSection(dict):
 
         self.has_taxid_at_accepted_level = self.rank in ncbi_taxdump.accepted_ranks
 
-    def format_taxid(self):
-        # check if the raw_taxid is an int
+    def format_taxon_id(self):
+        # check if the raw_taxon_id is an int
+        if self.raw_taxon_id is None:
+            return
+            
         try:
-            self.taxid = int(self.raw_taxid)
-            self.raw_taxid_is_int = True
-            self.raw_taxid_coerced_to_int = False
+            self.taxon_id = int(self.raw_taxon_id)
+            self.raw_taxon_id_is_int = True
+            self.raw_taxon_id_coerced_to_int = False
         except (ValueError, TypeError):
-            self.raw_taxid_is_int = False
-            # check if we can coerce taxid to int
+            self.raw_taxon_id_is_int = False
+            # check if we can coerce taxon_id to int
             try:
-                self.taxid = int(float(self.raw_taxid))
-                self.raw_taxid_coerced_to_int = True
+                self.taxon_id = int(float(self.raw_taxon_id))
+                self.raw_taxon_id_coerced_to_int = True
             except (ValueError, TypeError):
-                self.raw_taxid_coerced_to_int = False
-                self.taxid = None
+                self.raw_taxon_id_coerced_to_int = False
+                self.taxon_id = None
