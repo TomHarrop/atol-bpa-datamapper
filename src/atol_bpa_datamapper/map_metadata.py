@@ -125,7 +125,6 @@ def main():
             for section, resource_metadata in resource_mapped_metadata.items():
                 package.mapped_metadata[section] = resource_metadata
 
-
             # write the output
             output_writer.write_data(package.mapped_metadata)
 
