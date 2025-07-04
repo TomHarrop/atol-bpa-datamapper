@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.9 (2025-07-04)
+
+### New
+
+* Update the taxon_id if a single match is found in the taxonomy.
+
+### Other
+
+* Merge pull request #23 from TomHarrop/taxid_snafu.
+
+  new: Update the taxon_id if a single match is found in the taxonomy
+
 ## v0.1.8 (2025-07-03)
 
 ### New
