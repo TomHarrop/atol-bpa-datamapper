@@ -27,7 +27,7 @@ class SampleTransformer:
         """
         self.unique_samples = {}
         self.sample_conflicts = {}
-        self.package_to_sample_map = defaultdict(list)
+        self.sample_to_package_map = defaultdict(list)
         self.transformation_changes = []
 
     def process_package(self, package):
@@ -55,8 +55,8 @@ class SampleTransformer:
             
         sample_name = sample_data["sample_name"]
         
-        # Track package to sample map
-        self.package_to_sample_map[package_id].append(sample_name)
+        # Track sample to package map
+        self.sample_to_package_map[sample_name].append(package_id)
         
         # Create transformation change record
         has_conflicts = False
@@ -159,7 +159,7 @@ class SampleTransformer:
         return {
             "unique_samples": unique_samples_without_conflicts,
             "sample_conflicts": self.sample_conflicts,
-            "package_to_sample_map": dict(self.package_to_sample_map),
+            "package_map": dict(self.sample_to_package_map),
             "transformation_changes": self.transformation_changes
         }
 
@@ -196,8 +196,8 @@ def main():
             write_json(results["sample_conflicts"], args.conflicts)
         
         if args.package_map:
-            logger.info(f"Writing package to sample map to {args.package_map}")
-            write_json(results["package_to_sample_map"], args.package_map)
+            logger.info(f"Writing sample to package map to {args.package_map}")
+            write_json(results["package_map"], args.package_map)
         
         if args.transformation_changes:
             logger.info(f"Writing transformation changes to {args.transformation_changes}")
