@@ -36,67 +36,55 @@ class SampleTransformer:
         
         Args:
             package: A raw package dictionary with sample data
-            
+        
         Returns:
             bool: True if the package was processed successfully
         """
-        # Get package ID from experiment section if available
-        package_id = 'unknown'
-        if "experiment" in package and "bpa_package_id" in package["experiment"]:
-            package_id = package["experiment"]["bpa_package_id"]
+        # Extract package ID and validate required fields
+        package_id = package.get("experiment", {}).get("bpa_package_id", "unknown")
         
-        # Check if sample section exists
         if "sample" not in package:
             logger.warning(f"Package {package_id} has no sample section")
             return False
             
         sample_data = package["sample"]
         
-        # Check if sample_name exists
         if "sample_name" not in sample_data:
             logger.warning(f"Package {package_id} has no sample_name")
             return False
             
         sample_name = sample_data["sample_name"]
         
-        # Track which package relates to this sample
-        self.package_to_sample_map[sample_name].append(package_id)
+        # Track package to sample map
+        self.package_to_sample_map[package_id].append(sample_name)
         
-        # If this is a new sample, add it to unique samples
+        # Create transformation change record
+        has_conflicts = False
+        
+        # Check if this is a new sample or if we need to check for conflicts
         if sample_name not in self.unique_samples:
-            self.unique_samples[sample_name] = sample_data
-            return True
+            # New sample - just add it
+            self.unique_samples[sample_name] = sample_data.copy()
+        else:
+            # Existing sample - check for conflicts
+            existing_sample = self.unique_samples[sample_name]
+            field_conflicts = self._check_conflicts(sample_name, existing_sample, sample_data)
             
-        # If the sample already exists, check for conflicts
-        existing_sample = self.unique_samples[sample_name]
-        conflicts = self._check_conflicts(sample_name, existing_sample, sample_data)
+            # If we found conflicts, add them to our conflicts dictionary
+            if field_conflicts:
+                self.sample_conflicts[sample_name] = field_conflicts
+                has_conflicts = True
         
-        # Track the transformation change (sample merging)
+        # Add transformation change record
         transformation_change = {
             "sample_name": sample_name,
             "package_id": package_id,
             "action": "merge",
-            "conflicts": len(conflicts) > 0
+            "conflicts": has_conflicts
         }
         self.transformation_changes.append(transformation_change)
         
-        # Add conflicts to the sample_conflicts dictionary
-        if conflicts:
-            # Initialize the sample's conflicts dictionary if needed
-            if sample_name not in self.sample_conflicts:
-                self.sample_conflicts[sample_name] = {}
-                
-            # Group conflicts by field
-            for field, values in conflicts.items():
-                if field not in self.sample_conflicts[sample_name]:
-                    self.sample_conflicts[sample_name][field] = []
-                # Add new values if they're not already in the list
-                for value in values:
-                    if value not in self.sample_conflicts[sample_name][field]:
-                        self.sample_conflicts[sample_name][field].append(value)
-            
         return True
-    
     def _check_conflicts(self, sample_name, existing_sample, new_sample):
         """
         Check for conflicts between existing and new sample data.
@@ -111,45 +99,47 @@ class SampleTransformer:
         """
         conflicts = {}
         
-        for field, new_value in new_sample.items():
-            if field == "sample_name":
-                continue
-                
-            # If the field exists in the existing sample, check for conflicts
-            if field in existing_sample:
-                existing_value = existing_sample[field]
-                
-                # If the values are different, record a conflict
-                if existing_value != new_value:
-                    # Special handling for sample_access_date - use the most recent date
-                    if field == "sample_access_date":
-                        try:
-                            # Try to parse the dates
-                            existing_date = datetime.fromisoformat(existing_value.split('T')[0] if 'T' in existing_value else existing_value)
-                            new_date = datetime.fromisoformat(new_value.split('T')[0] if 'T' in new_value else new_value)
-                            
-                            # Update to the most recent date
-                            if new_date > existing_date:
-                                logger.info(f"Updating sample_access_date for {sample_name} from {existing_value} to {new_value}")
-                                existing_sample[field] = new_value
-                            
-                            # Don't record this as a conflict
-                            continue
-                        except (ValueError, TypeError):
-                            # If we can't parse the dates, treat it as a normal conflict
-                            logger.warning(f"Could not parse dates for sample_access_date: {existing_value} and {new_value}")
+        # Skip sample_name field and only check fields that exist in both samples
+        common_fields = set(new_sample.keys()) & set(existing_sample.keys()) - {'sample_name'}
+        
+        for field in common_fields:
+            existing_value = existing_sample[field]
+            new_value = new_sample[field]
+            
+            if existing_value != new_value:
+                # Special handling for sample_access_date
+                if field == "sample_access_date" and self._update_access_date(existing_sample, field, existing_value, new_value):
+                    continue
                     
-                    # Add the conflict to our dictionary of conflicts
-                    if field not in conflicts:
-                        conflicts[field] = []
-                    
-                    # Add both values to the list of conflicting values
-                    if existing_value not in conflicts[field]:
-                        conflicts[field].append(existing_value)
-                    if new_value not in conflicts[field]:
-                        conflicts[field].append(new_value)
+                # Add the conflict
+                if field not in conflicts:
+                    conflicts[field] = []
+                
+                # Add both values to the list of conflicting values if not already present
+                for value in (existing_value, new_value):
+                    if value not in conflicts[field]:
+                        conflicts[field].append(value)
         
         return conflicts
+
+    def _update_access_date(self, existing_sample, field, existing_value, new_value):
+        """Helper method to handle sample_access_date special case"""
+        try:
+            # Try to parse the dates
+            existing_date = datetime.fromisoformat(existing_value.split('T')[0] if 'T' in existing_value else existing_value)
+            new_date = datetime.fromisoformat(new_value.split('T')[0] if 'T' in new_value else new_value)
+            
+            # Update to the most recent date
+            if new_date > existing_date:
+                logger.info(f"Updating sample_access_date from {existing_value} to {new_value}")
+                existing_sample[field] = new_value
+            
+            # Successfully handled the date conflict
+            return True
+        except (ValueError, TypeError):
+            # If we can't parse the dates, treat it as a normal conflict
+            logger.warning(f"Could not parse dates for sample_access_date: {existing_value} and {new_value}")
+            return False
     
     def get_results(self):
         """
