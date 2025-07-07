@@ -17,7 +17,14 @@ from datetime import datetime
 
 
 class SampleTransformer:
+    """
+    Transform sample data from multiple packages into unique samples.
+    """
+    
     def __init__(self):
+        """
+        Initialize the SampleTransformer.
+        """
         self.unique_samples = {}
         self.sample_conflicts = {}
         self.package_to_sample_map = defaultdict(list)
@@ -73,10 +80,20 @@ class SampleTransformer:
         }
         self.transformation_changes.append(transformation_change)
         
+        # Add conflicts to the sample_conflicts dictionary
         if conflicts:
+            # Initialize the sample's conflicts dictionary if needed
             if sample_name not in self.sample_conflicts:
-                self.sample_conflicts[sample_name] = []
-            self.sample_conflicts[sample_name].extend(conflicts)
+                self.sample_conflicts[sample_name] = {}
+                
+            # Group conflicts by field
+            for field, values in conflicts.items():
+                if field not in self.sample_conflicts[sample_name]:
+                    self.sample_conflicts[sample_name][field] = []
+                # Add new values if they're not already in the list
+                for value in values:
+                    if value not in self.sample_conflicts[sample_name][field]:
+                        self.sample_conflicts[sample_name][field].append(value)
             
         return True
     
@@ -90,9 +107,9 @@ class SampleTransformer:
             new_sample: The new sample data
             
         Returns:
-            list: A list of conflict records
+            dict: A dictionary of conflicts grouped by field
         """
-        conflicts = []
+        conflicts = {}
         
         for field, new_value in new_sample.items():
             if field == "sample_name":
@@ -122,12 +139,15 @@ class SampleTransformer:
                             # If we can't parse the dates, treat it as a normal conflict
                             logger.warning(f"Could not parse dates for sample_access_date: {existing_value} and {new_value}")
                     
-                    conflicts.append({
-                        "sample_name": sample_name,
-                        "field": field,
-                        "existing_value": existing_value,
-                        "new_value": new_value
-                    })
+                    # Add the conflict to our dictionary of conflicts
+                    if field not in conflicts:
+                        conflicts[field] = []
+                    
+                    # Add both values to the list of conflicting values
+                    if existing_value not in conflicts[field]:
+                        conflicts[field].append(existing_value)
+                    if new_value not in conflicts[field]:
+                        conflicts[field].append(new_value)
         
         return conflicts
     
