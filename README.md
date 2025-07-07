@@ -173,3 +173,12 @@ schema](https://docs.google.com/spreadsheets/d/1ml5hASZ-qlAuuTrwHeGzNVqqe1mXsmmo
 using the script at
 [`dev/scripts/read_atol_schemas.py`](dev/scripts/read_atol_schemas.py).
 
+## Pipeline Workflow
+
+A typical workflow would involve running the three steps in sequence:
+
+1. **filter-packages**: Filter the raw BPA packages based on required metadata fields and controlled vocabularies (as defined in src/atol_bpa_datamapper/config/*)
+
+2. **map-metadata**: Map the filtered data to AToL format
+
+3. **transform-data**: Extract unique samples and track package relationships
