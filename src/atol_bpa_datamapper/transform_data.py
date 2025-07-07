@@ -8,7 +8,7 @@ This script processes mapped metadata packages to:
 """
 
 from .arg_parser import parse_args_for_transform
-from .io import read_input, write_json
+from .io import read_mapped_data, write_json
 from .logger import logger, setup_logger
 import json
 import os
@@ -20,34 +20,36 @@ class SampleTransformer:
         self.unique_samples = {}
         self.sample_conflicts = {}
         self.package_to_sample_map = defaultdict(list)
+        self.transformation_changes = []
 
     def process_package(self, package):
         """
         Process a single package to extract sample information.
         
         Args:
-            package: A package object with mapped_metadata
+            package: A raw package dictionary with sample data
             
         Returns:
             bool: True if the package was processed successfully
         """
-
-        if "sample" not in package.mapped_metadata:
-            logger.warning(f"Package {package.id} has no sample section")
+        # Get package ID from experiment section if available
+        package_id = 'unknown'
+        if "experiment" in package and "bpa_package_id" in package["experiment"]:
+            package_id = package["experiment"]["bpa_package_id"]
+        
+        # Check if sample section exists
+        if "sample" not in package:
+            logger.warning(f"Package {package_id} has no sample section")
             return False
             
-        sample_data = package.mapped_metadata["sample"]
+        sample_data = package["sample"]
         
+        # Check if sample_name exists
         if "sample_name" not in sample_data:
-            logger.warning(f"Package {package.id} has no sample_name")
+            logger.warning(f"Package {package_id} has no sample_name")
             return False
             
         sample_name = sample_data["sample_name"]
-        
-        package_id = package.id
-        if "experiment" in package.mapped_metadata:
-            if "bpa_package_id" in package.mapped_metadata["experiment"]:
-                package_id = package.mapped_metadata["experiment"]["bpa_package_id"]
         
         # Track which package relates to this sample
         self.package_to_sample_map[sample_name].append(package_id)
@@ -60,6 +62,15 @@ class SampleTransformer:
         # If the sample already exists, check for conflicts
         existing_sample = self.unique_samples[sample_name]
         conflicts = self._check_conflicts(sample_name, existing_sample, sample_data)
+        
+        # Track the transformation change (sample merging)
+        transformation_change = {
+            "sample_name": sample_name,
+            "package_id": package_id,
+            "action": "merge",
+            "conflicts": len(conflicts) > 0
+        }
+        self.transformation_changes.append(transformation_change)
         
         if conflicts:
             if sample_name not in self.sample_conflicts:
@@ -105,7 +116,8 @@ class SampleTransformer:
         return {
             "unique_samples": self.unique_samples,
             "sample_conflicts": self.sample_conflicts,
-            "package_to_sample_map": dict(self.package_to_sample_map)
+            "package_to_sample_map": dict(self.package_to_sample_map),
+            "transformation_changes": self.transformation_changes
         }
 
 
@@ -116,12 +128,12 @@ def main():
     
     transformer = SampleTransformer()
     
-    input_data = read_input(args.input)
+    input_data = read_mapped_data(args.input)
     n_packages = 0
     n_processed = 0
     
     for package in input_data:
-        logger.debug(f"Processing package {package.id}")
+        logger.debug(f"Processing package {package.get('id', 'unknown')}")
         n_packages += 1
         
         if transformer.process_package(package):
@@ -143,6 +155,10 @@ def main():
         if args.package_map:
             logger.info(f"Writing package to sample map to {args.package_map}")
             write_json(results["package_to_sample_map"], args.package_map)
+        
+        if args.transformation_changes:
+            logger.info(f"Writing transformation changes to {args.transformation_changes}")
+            write_json(results["transformation_changes"], args.transformation_changes)
     
     n_unique = len(results["unique_samples"])
     n_conflicts = len(results["sample_conflicts"])

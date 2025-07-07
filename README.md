@@ -135,7 +135,7 @@ Mapping options:
 ### transform-data
 
 ```
-usage: transform-data [-h] [-i INPUT] [-o OUTPUT] [-l {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [-n] [--conflicts CONFLICTS] [--package-map PACKAGE_MAP]
+usage: transform-data [-h] [-i INPUT] [-o OUTPUT] [-l {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [-n] [--conflicts CONFLICTS] [--package-map PACKAGE_MAP] [--transformation-changes TRANSFORMATION_CHANGES]
 
 Transform mapped metadata to extract unique samples
 
@@ -160,6 +160,8 @@ Transform options:
                         File to record conflicts between samples with the same sample_name
   --package-map PACKAGE_MAP
                         File to record which packages relate to each unique sample
+  --transformation-changes TRANSFORMATION_CHANGES
+                        File to record the transformation changes made during sample merging
 ```
 
 ### Deployment

@@ -31,6 +31,11 @@ def parse_args_for_transform():
         help="File to record which packages relate to each unique sample",
     )
     
+    transform_group.add_argument(
+        "--transformation-changes",
+        help="File to record the transformation changes made during sample merging",
+    )
+    
     # Set default input file if not provided
     for action in input_group._group_actions:
         if action.dest == "input":
