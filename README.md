@@ -2,6 +2,11 @@
 
 Map data from the BPA data portal for AToL's Genome Engine.
 
+The pipeline consists of three main steps:
+1. **filter-packages**: Filter packages based on controlled vocabularies
+2. **map-metadata**: Map BPA metadata to AToL format
+3. **transform-data**: Extract unique samples and track package relationships
+
 ## Installation
 
 ### Recommended: Use the [BioContainer](https://quay.io/repository/biocontainers/atol-bpa-datamapper?tab=tags)
@@ -125,6 +130,36 @@ Mapping options:
                         Compressed CSV file to record derived organism info for each package
   --grouped_packages GROUPED_PACKAGES
                         JSON file of Package IDs grouped by organism grouping_key
+```
+
+### transform-data
+
+```
+usage: transform-data [-h] [-i INPUT] [-o OUTPUT] [-l {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [-n] [--conflicts CONFLICTS] [--package-map PACKAGE_MAP]
+
+Transform mapped metadata to extract unique samples
+
+options:
+  -h, --help            show this help message and exit
+
+Input:
+  -i INPUT, --input INPUT
+                        Input file (default: src/output/map/mapped.jsonl.gz)
+
+Output:
+  -o OUTPUT, --output OUTPUT
+                        Output file (default: stdout)
+
+General options:
+  -l {DEBUG,INFO,WARNING,ERROR,CRITICAL}, --log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        Set the logging level (default: INFO)
+  -n, --dry-run         Test mode. Output will be uncompressed jsonlines.
+
+Transform options:
+  --conflicts CONFLICTS
+                        File to record conflicts between samples with the same sample_name
+  --package-map PACKAGE_MAP
+                        File to record which packages relate to each unique sample
 ```
 
 ### Deployment

@@ -10,6 +10,36 @@ def get_config_filepath(filename):
     return pkg_resources.files(config).joinpath(filename)
 
 
+def parse_args_for_transform():
+    parser, input_group, output_group, options_group = shared_args()
+    parser.description = "Transform mapped metadata to extract unique samples"
+    
+    # Remove mapping file arguments that aren't needed for transform
+    for action in list(options_group._group_actions):
+        if action.dest in ["package_field_mapping_file", "resource_field_mapping_file", "value_mapping_file"]:
+            options_group._group_actions.remove(action)
+    
+    transform_group = parser.add_argument_group("Transform options")
+    
+    transform_group.add_argument(
+        "--conflicts",
+        help="File to record conflicts between samples with the same sample_name",
+    )
+    
+    transform_group.add_argument(
+        "--package-map",
+        help="File to record which packages relate to each unique sample",
+    )
+    
+    # Set default input file if not provided
+    for action in input_group._group_actions:
+        if action.dest == "input":
+            action.default = "src/output/map/mapped.jsonl.gz"
+            action.help = "Input file (default: src/output/map/mapped.jsonl.gz)"
+    
+    return parser.parse_args()
+
+
 def parse_args_for_filtering():
     parser, input_group, output_group, options_group, counter_group = field_value_args()
     parser.description = "Filter packages from jsonlines.gz"
