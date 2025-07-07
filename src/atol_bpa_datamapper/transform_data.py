@@ -13,6 +13,7 @@ from .logger import logger, setup_logger
 import json
 import os
 from collections import defaultdict
+from datetime import datetime
 
 
 class SampleTransformer:
@@ -103,6 +104,24 @@ class SampleTransformer:
                 
                 # If the values are different, record a conflict
                 if existing_value != new_value:
+                    # Special handling for sample_access_date - use the most recent date
+                    if field == "sample_access_date":
+                        try:
+                            # Try to parse the dates
+                            existing_date = datetime.fromisoformat(existing_value.split('T')[0] if 'T' in existing_value else existing_value)
+                            new_date = datetime.fromisoformat(new_value.split('T')[0] if 'T' in new_value else new_value)
+                            
+                            # Update to the most recent date
+                            if new_date > existing_date:
+                                logger.info(f"Updating sample_access_date for {sample_name} from {existing_value} to {new_value}")
+                                existing_sample[field] = new_value
+                            
+                            # Don't record this as a conflict
+                            continue
+                        except (ValueError, TypeError):
+                            # If we can't parse the dates, treat it as a normal conflict
+                            logger.warning(f"Could not parse dates for sample_access_date: {existing_value} and {new_value}")
+                    
                     conflicts.append({
                         "sample_name": sample_name,
                         "field": field,
@@ -113,8 +132,22 @@ class SampleTransformer:
         return conflicts
     
     def get_results(self):
+        """
+        Get the results of the transformation.
+        
+        Returns:
+            dict: A dictionary containing unique samples, conflicts, and package to sample map
+        """
+        # Remove samples with conflicts from unique_samples
+        unique_samples_without_conflicts = {}
+        for sample_name, sample_data in self.unique_samples.items():
+            if sample_name not in self.sample_conflicts:
+                unique_samples_without_conflicts[sample_name] = sample_data
+            else:
+                logger.info(f"Removing sample {sample_name} from output due to conflicts")
+                
         return {
-            "unique_samples": self.unique_samples,
+            "unique_samples": unique_samples_without_conflicts,
             "sample_conflicts": self.sample_conflicts,
             "package_to_sample_map": dict(self.package_to_sample_map),
             "transformation_changes": self.transformation_changes
