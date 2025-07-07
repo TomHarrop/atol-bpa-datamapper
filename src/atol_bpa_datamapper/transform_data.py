@@ -16,10 +16,7 @@ from collections import defaultdict
 
 
 class SampleTransformer:
-    """Class for transforming mapped metadata into unique samples."""
-
     def __init__(self):
-        """Initialize the SampleTransformer."""
         self.unique_samples = {}
         self.sample_conflicts = {}
         self.package_to_sample_map = defaultdict(list)
@@ -34,21 +31,19 @@ class SampleTransformer:
         Returns:
             bool: True if the package was processed successfully
         """
-        # Check if the package has sample data
+
         if "sample" not in package.mapped_metadata:
             logger.warning(f"Package {package.id} has no sample section")
             return False
             
         sample_data = package.mapped_metadata["sample"]
         
-        # Check if the sample has a name
         if "sample_name" not in sample_data:
             logger.warning(f"Package {package.id} has no sample_name")
             return False
             
         sample_name = sample_data["sample_name"]
         
-        # Get the package ID from experiment section if available
         package_id = package.id
         if "experiment" in package.mapped_metadata:
             if "bpa_package_id" in package.mapped_metadata["experiment"]:
@@ -87,9 +82,7 @@ class SampleTransformer:
         """
         conflicts = []
         
-        # Check all fields in the new sample
         for field, new_value in new_sample.items():
-            # Skip the sample_name field as it's the key
             if field == "sample_name":
                 continue
                 
@@ -121,10 +114,8 @@ def main():
     args = parse_args_for_transform()
     setup_logger(args.log_level)
     
-    # Initialize the transformer
     transformer = SampleTransformer()
     
-    # Process all packages
     input_data = read_input(args.input)
     n_packages = 0
     n_processed = 0
@@ -138,10 +129,8 @@ def main():
     
     logger.info(f"Processed {n_processed} of {n_packages} packages")
     
-    # Get the results
     results = transformer.get_results()
     
-    # Write the unique samples to output
     if not args.dry_run:
         if args.output:
             logger.info(f"Writing unique samples to {args.output}")
@@ -155,7 +144,6 @@ def main():
             logger.info(f"Writing package to sample map to {args.package_map}")
             write_json(results["package_to_sample_map"], args.package_map)
     
-    # Print summary
     n_unique = len(results["unique_samples"])
     n_conflicts = len(results["sample_conflicts"])
     logger.info(f"Found {n_unique} unique samples")
