@@ -7,53 +7,64 @@ This script processes mapped metadata packages to:
 3. Track which packages (bpa_package_id) relate to each unique sample
 """
 
-import logging
+from .arg_parser import parse_args_for_transform
+from .io import read_input, write_json
+from .logger import logger, setup_logger
 import json
-import gzip
-import sys
-import jsonlines
 import os
 from collections import defaultdict
 
-from atol_bpa_datamapper.arg_parser import parse_args_for_transform
-
 
 class SampleTransformer:
+    """Class for transforming mapped metadata into unique samples."""
+
     def __init__(self):
+        """Initialize the SampleTransformer."""
         self.unique_samples = {}
         self.sample_conflicts = {}
-        self.package_map = defaultdict(list)
+        self.package_to_sample_map = defaultdict(list)
 
     def process_package(self, package):
-        if "sample" not in package:
-            return
+        """
+        Process a single package to extract sample information.
         
-        sample = package.get("sample")
-        if not sample:
-            return
-        
-        sample_name = sample.get("sample_name")
-        if not sample_name:
-            return
-        
-        package_id = None
-        if "experiment" in package and "bpa_package_id" in package["experiment"]:
-            package_id = package["experiment"]["bpa_package_id"]
-        else:
-            package_id = package.get("id")
-        
-        if package_id:
-            if sample_name not in self.package_map:
-                self.package_map[sample_name] = []
-            if package_id not in self.package_map[sample_name]:
-                self.package_map[sample_name].append(package_id)
-        
-        if sample_name not in self.unique_samples:
-            self.unique_samples[sample_name] = sample
-            return
+        Args:
+            package: A package object with mapped_metadata
             
+        Returns:
+            bool: True if the package was processed successfully
+        """
+        # Check if the package has sample data
+        if "sample" not in package.mapped_metadata:
+            logger.warning(f"Package {package.id} has no sample section")
+            return False
+            
+        sample_data = package.mapped_metadata["sample"]
+        
+        # Check if the sample has a name
+        if "sample_name" not in sample_data:
+            logger.warning(f"Package {package.id} has no sample_name")
+            return False
+            
+        sample_name = sample_data["sample_name"]
+        
+        # Get the package ID from experiment section if available
+        package_id = package.id
+        if "experiment" in package.mapped_metadata:
+            if "bpa_package_id" in package.mapped_metadata["experiment"]:
+                package_id = package.mapped_metadata["experiment"]["bpa_package_id"]
+        
+        # Track which package relates to this sample
+        self.package_to_sample_map[sample_name].append(package_id)
+        
+        # If this is a new sample, add it to unique samples
+        if sample_name not in self.unique_samples:
+            self.unique_samples[sample_name] = sample_data
+            return True
+            
+        # If the sample already exists, check for conflicts
         existing_sample = self.unique_samples[sample_name]
-        conflicts = self._check_conflicts(sample_name, existing_sample, sample)
+        conflicts = self._check_conflicts(sample_name, existing_sample, sample_data)
         
         if conflicts:
             if sample_name not in self.sample_conflicts:
@@ -63,15 +74,30 @@ class SampleTransformer:
         return True
     
     def _check_conflicts(self, sample_name, existing_sample, new_sample):
+        """
+        Check for conflicts between existing and new sample data.
+        
+        Args:
+            sample_name: The name of the sample
+            existing_sample: The existing sample data
+            new_sample: The new sample data
+            
+        Returns:
+            list: A list of conflict records
+        """
         conflicts = []
         
+        # Check all fields in the new sample
         for field, new_value in new_sample.items():
+            # Skip the sample_name field as it's the key
             if field == "sample_name":
                 continue
                 
+            # If the field exists in the existing sample, check for conflicts
             if field in existing_sample:
                 existing_value = existing_sample[field]
                 
+                # If the values are different, record a conflict
                 if existing_value != new_value:
                     conflicts.append({
                         "sample_name": sample_name,
@@ -82,62 +108,58 @@ class SampleTransformer:
         
         return conflicts
     
-    def get_unique_samples(self):
-        return self.unique_samples
-    
-    def get_conflicts(self):
-        return self.sample_conflicts
-    
-    def get_package_map(self):
-        return dict(self.package_map)
+    def get_results(self):
+        return {
+            "unique_samples": self.unique_samples,
+            "sample_conflicts": self.sample_conflicts,
+            "package_to_sample_map": dict(self.package_to_sample_map)
+        }
 
-
-def read_mapped_data(input_source):
-    with gzip.open(input_source, "rt") as f:
-        reader = jsonlines.Reader(f)
-        for obj in reader:
-            yield obj
 
 def main():
+    """Main function to transform mapped metadata."""
     args = parse_args_for_transform()
+    setup_logger(args.log_level)
     
-    logging.basicConfig(
-        level=getattr(logging, args.log_level),
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
-    logger = logging.getLogger("atol_bpa_datamapper")
-    
+    # Initialize the transformer
     transformer = SampleTransformer()
     
-    logger.info(f"Reading input from {args.input}")
-    input_data = read_mapped_data(args.input)
+    # Process all packages
+    input_data = read_input(args.input)
+    n_packages = 0
+    n_processed = 0
     
     for package in input_data:
-        transformer.process_package(package)
+        logger.debug(f"Processing package {package.id}")
+        n_packages += 1
+        
+        if transformer.process_package(package):
+            n_processed += 1
     
-    unique_samples = transformer.get_unique_samples()
-    conflicts = transformer.get_conflicts()
-    package_map = transformer.get_package_map()
+    logger.info(f"Processed {n_processed} of {n_packages} packages")
     
+    # Get the results
+    results = transformer.get_results()
+    
+    # Write the unique samples to output
     if not args.dry_run:
-        logger.info(f"Writing {len(unique_samples)} unique samples to {args.output}")
-        with gzip.open(args.output, "wt") as f:
-            json.dump(unique_samples, f)
+        if args.output:
+            logger.info(f"Writing unique samples to {args.output}")
+            write_json(results["unique_samples"], args.output)
         
         if args.conflicts:
-            logger.info(f"Writing {len(conflicts)} conflicts to {args.conflicts}")
-            with gzip.open(args.conflicts, "wt") as f:
-                json.dump(conflicts, f)
+            logger.info(f"Writing sample conflicts to {args.conflicts}")
+            write_json(results["sample_conflicts"], args.conflicts)
         
         if args.package_map:
-            logger.info(f"Writing package map to {args.package_map}")
-            with gzip.open(args.package_map, "wt") as f:
-                json.dump(package_map, f)
-    else:
-        logger.info("Dry run, not writing output files")
-        logger.info(f"Would write {len(unique_samples)} unique samples to {args.output}")
-        logger.info(f"Would write {len(conflicts)} conflicts to {args.conflicts}")
-        logger.info(f"Would write package map to {args.package_map}")
+            logger.info(f"Writing package to sample map to {args.package_map}")
+            write_json(results["package_to_sample_map"], args.package_map)
+    
+    # Print summary
+    n_unique = len(results["unique_samples"])
+    n_conflicts = len(results["sample_conflicts"])
+    logger.info(f"Found {n_unique} unique samples")
+    logger.info(f"Found {n_conflicts} samples with conflicts")
 
 
 if __name__ == "__main__":
