@@ -36,6 +36,21 @@ def parse_args_for_transform():
         help="File to record the transformation changes made during sample merging",
     )
     
+    transform_group.add_argument(
+        "--unique-organisms",
+        help="File to record unique organisms extracted from the data",
+    )
+    
+    transform_group.add_argument(
+        "--organism-conflicts",
+        help="File to record conflicts between organisms with the same organism_grouping_key",
+    )
+    
+    transform_group.add_argument(
+        "--organism-package-map",
+        help="File to record which packages relate to each unique organism",
+    )
+    
     # Set default input file if not provided
     for action in input_group._group_actions:
         if action.dest == "input":

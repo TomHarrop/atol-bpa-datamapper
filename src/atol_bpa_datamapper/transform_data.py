@@ -16,6 +16,128 @@ from collections import defaultdict
 from datetime import datetime
 
 
+class OrganismTransformer:
+    """
+    Transform organism data from multiple packages into unique organisms.
+    Organisms are identified by their organism_grouping_key, which is generated
+    in the organism_mapper.py module.
+    """
+    
+    def __init__(self):
+        self.unique_organisms = {}
+        self.organism_conflicts = {}
+        self.organism_to_package_map = defaultdict(list)
+        self.transformation_changes = []
+    
+    def process_package(self, package):
+        """
+        Process a single package to extract organism information.
+        
+        Args:
+            package: A raw package dictionary with organism data
+        
+        Returns:
+            bool: True if the package was processed successfully
+        """
+        package_id = package.get("experiment", {}).get("bpa_package_id", "unknown")
+        
+        if "organism" not in package:
+            logger.warning(f"Package {package_id} has no organism section")
+            return False
+            
+        organism_data = package["organism"]
+        organism_key = organism_data.get("organism_grouping_key")
+        
+        if not organism_key:
+            logger.warning(f"Package {package_id} has no organism_grouping_key")
+            return False
+            
+        self.organism_to_package_map[organism_key].append(package_id)
+        
+        if organism_key in self.unique_organisms:
+            conflicts = self._detect_conflicts(
+                organism_key, self.unique_organisms[organism_key], organism_data, package_id
+            )
+            if conflicts:
+                if organism_key not in self.organism_conflicts:
+                    self.organism_conflicts[organism_key] = {}
+                
+                for field, conflict_values in conflicts.items():
+                    if field not in self.organism_conflicts[organism_key]:
+                        self.organism_conflicts[organism_key][field] = []
+                    
+                    for value in conflict_values:
+                        if value not in self.organism_conflicts[organism_key][field]:
+                            self.organism_conflicts[organism_key][field].append(value)
+        else:
+            self.unique_organisms[organism_key] = organism_data
+            
+            self.transformation_changes.append({
+                "package_id": package_id,
+                "organism_key": organism_key,
+                "action": "add_organism",
+                "data": organism_data
+            })
+            
+        return True
+        
+    def _detect_conflicts(self, organism_key, existing_organism, new_organism, package_id):
+        """
+        Detect conflicts between existing and new organism data.
+        
+        Args:
+            organism_key: The organism_grouping_key
+            existing_organism: The existing organism data
+            new_organism: The new organism data
+            package_id: The package ID of the new data
+            
+        Returns:
+            dict: A dictionary of conflicts, or empty dict if no conflicts
+        """
+        conflicts = {}
+        
+        exclude_fields = ["organism_grouping_key", "mapped_metadata"]
+        
+        for field, new_value in new_organism.items():
+            if field in exclude_fields:
+                continue
+                
+            if field in existing_organism:
+                existing_value = existing_organism[field]
+                
+                if existing_value != new_value:
+                    if field not in conflicts:
+                        conflicts[field] = []
+                    
+                    if existing_value not in conflicts[field]:
+                        conflicts[field].append(existing_value)
+                    if new_value not in conflicts[field]:
+                        conflicts[field].append(new_value)
+        
+        return conflicts
+        
+    def get_results(self):
+        """
+        Get the results of the organism transformation.
+        
+        Returns:
+            dict: A dictionary containing unique organisms, conflicts, and package to organism map
+        """
+        unique_organisms_without_conflicts = {}
+        for organism_key, organism_data in self.unique_organisms.items():
+            if organism_key not in self.organism_conflicts:
+                unique_organisms_without_conflicts[organism_key] = organism_data
+            else:
+                logger.info(f"Removing organism {organism_key} from output due to conflicts")
+                
+        return {
+            "unique_organisms": unique_organisms_without_conflicts,
+            "organism_conflicts": self.organism_conflicts,
+            "organism_package_map": dict(self.organism_to_package_map),
+            "organism_transformation_changes": self.transformation_changes
+        }
+
+
 class SampleTransformer:
     """
     Transform sample data from multiple packages into unique samples.
@@ -40,7 +162,6 @@ class SampleTransformer:
         Returns:
             bool: True if the package was processed successfully
         """
-        # Extract package ID and validate required fields
         package_id = package.get("experiment", {}).get("bpa_package_id", "unknown")
         
         if "sample" not in package:
@@ -169,44 +290,73 @@ def main():
     args = parse_args_for_transform()
     setup_logger(args.log_level)
     
-    transformer = SampleTransformer()
+    sample_transformer = SampleTransformer()
+    organism_transformer = OrganismTransformer()
     
     input_data = read_mapped_data(args.input)
     n_packages = 0
-    n_processed = 0
+    n_processed_samples = 0
+    n_processed_organisms = 0
     
     for package in input_data:
-        logger.debug(f"Processing package {package.get('id', 'unknown')}")
+        package_id = package.get('id', 'unknown')
+        logger.debug(f"Processing package {package_id}")
         n_packages += 1
         
-        if transformer.process_package(package):
-            n_processed += 1
+        if sample_transformer.process_package(package):
+            n_processed_samples += 1
+        
+        if organism_transformer.process_package(package):
+            n_processed_organisms += 1
     
-    logger.info(f"Processed {n_processed} of {n_packages} packages")
+    logger.info(f"Processed {n_packages} packages")
+    logger.info(f"Extracted sample data from {n_processed_samples} packages")
+    logger.info(f"Extracted organism data from {n_processed_organisms} packages")
     
-    results = transformer.get_results()
+    sample_results = sample_transformer.get_results()
+    organism_results = organism_transformer.get_results()
     
     if not args.dry_run:
+        # Write sample outputs
         if args.output:
             logger.info(f"Writing unique samples to {args.output}")
-            write_json(results["unique_samples"], args.output)
+            write_json(sample_results["unique_samples"], args.output)
         
         if args.conflicts:
             logger.info(f"Writing sample conflicts to {args.conflicts}")
-            write_json(results["sample_conflicts"], args.conflicts)
+            write_json(sample_results["sample_conflicts"], args.conflicts)
         
         if args.package_map:
             logger.info(f"Writing sample to package map to {args.package_map}")
-            write_json(results["package_map"], args.package_map)
+            write_json(sample_results["package_map"], args.package_map)
         
         if args.transformation_changes:
             logger.info(f"Writing transformation changes to {args.transformation_changes}")
-            write_json(results["transformation_changes"], args.transformation_changes)
+            write_json(sample_results["transformation_changes"], args.transformation_changes)
+        
+        # Write organism outputs
+        if args.unique_organisms:
+            logger.info(f"Writing unique organisms to {args.unique_organisms}")
+            write_json(organism_results["unique_organisms"], args.unique_organisms)
+        
+        if args.organism_conflicts:
+            logger.info(f"Writing organism conflicts to {args.organism_conflicts}")
+            write_json(organism_results["organism_conflicts"], args.organism_conflicts)
+        
+        if args.organism_package_map:
+            logger.info(f"Writing organism to package map to {args.organism_package_map}")
+            write_json(organism_results["organism_package_map"], args.organism_package_map)
     
-    n_unique = len(results["unique_samples"])
-    n_conflicts = len(results["sample_conflicts"])
-    logger.info(f"Found {n_unique} unique samples")
-    logger.info(f"Found {n_conflicts} samples with conflicts")
+    # Log summary statistics
+    n_unique_samples = len(sample_results["unique_samples"])
+    n_sample_conflicts = len(sample_results["sample_conflicts"])
+    n_unique_organisms = len(organism_results["unique_organisms"])
+    n_organism_conflicts = len(organism_results["organism_conflicts"])
+    
+    logger.info(f"Found {n_unique_samples} unique samples")
+    logger.info(f"Found {n_sample_conflicts} samples with conflicts")
+    logger.info(f"Found {n_unique_organisms} unique organisms")
+    logger.info(f"Found {n_organism_conflicts} organisms with conflicts")
 
 
 if __name__ == "__main__":
