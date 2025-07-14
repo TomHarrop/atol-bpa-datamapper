@@ -58,6 +58,8 @@
             ],
             "size fractionation": [
                 "20kb template prep_blue pippin",
+                "Pippin size selection, shearing and HiFi prep",
+                "Pippin size slection, shearing and HiFi prep",
                 "size fractionation"
             ],
             "unspecified": [
@@ -217,6 +219,7 @@
                 "fungi-ont-promethion",
                 "gap-ont-minion",
                 "gap-ont-promethion",
+                "ipm-ont-promethion",
                 "omg-ont-promethion",
                 "pp-ont-promethion"
             ],
@@ -267,6 +270,9 @@
             ],
             "cipps": [
                 "cipps"
+            ],
+            "forest-resilience": [
+                "forest-resilience"
             ],
             "fungi": [
                 "fungi"

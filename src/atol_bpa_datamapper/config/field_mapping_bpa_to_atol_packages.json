@@ -163,28 +163,12 @@
         "specimen_id": [
             "specimen_id"
         ],
-        "material_extracted_by": [
-            "material_extracted_by",
-            "dna_extracted_by",
-            "genomic_material_prepared_by"
-        ],
-        "material_extraction_date": [
-            "material_extraction_date",
-            "dna_extraction_date"
-        ],
         "sample_submitter": [
             "sample_submitter",
             "sample_submitter_name"
         ],
         "sample_submission_date": [
             "sample_submission_date"
-        ],
-        "GAL": [
-            "sequencing_facility",
-            "facility",
-            "library_location",
-            "resources.facility_id",
-            "resources.facility"
         ],
         "data_context": [
             "data_context",
@@ -195,9 +179,6 @@
         ],
         "bioplatforms_project_code": [
             "bioplatforms_project_code"
-        ],
-        "sample_access_date": [
-            "access_control_date"
         ],
         "bpa_initiative": [
             "bioplatforms_project",
@@ -221,21 +202,6 @@
         "preservation_temperature": [
             "tissue_preservation_temperature"
         ],
-        "extraction_method": [
-            "material_extraction_method",
-            "dna_extraction_method",
-            "extract_protocol",
-            "dna_extraction_protocol"
-        ],
-        "nucleic_acid_treatment": [
-            "dna_treatment"
-        ],
-        "extraction_protocol_DOI": [],
-        "nucleic_acid_conc": [
-            "material_conc_ng_ul",
-            "dna_concentration"
-        ],
-        "nucleic_acid_volume": [],
         "project_name": [],
         "biosample_accession": [],
         "project_lead": [
@@ -390,6 +356,36 @@
         ],
         "bpa_package_id": [
             "id"
+        ],
+        "data_owner": [
+            "project_lead",
+            "data_custodian",
+            "sample_custodian"
+        ],
+        "extraction_method": [
+            "material_extraction_method",
+            "dna_extraction_method",
+            "extract_protocol",
+            "dna_extraction_protocol"
+        ],
+        "nucleic_acid_treatment": [
+            "dna_treatment"
+        ],
+        "extraction_protocol_DOI": [],
+        "nucleic_acid_conc": [
+            "material_conc_ng_ul",
+            "dna_concentration"
+        ],
+        "nucleic_acid_volume": [],
+        "GAL": [
+            "sequencing_facility",
+            "facility",
+            "library_location",
+            "resources.facility_id",
+            "resources.facility"
+        ],
+        "sample_access_date": [
+            "access_control_date"
         ]
     }
 }
