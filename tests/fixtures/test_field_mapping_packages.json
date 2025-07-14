@@ -1,0 +1,11 @@
+{
+  "organism": {
+    "scientific_name": ["scientific_name", "species_name", "taxon_or_organism"]
+  },
+  "sample": {
+    "data_context": ["project_aim", "data_context"]
+  },
+  "dataset": {
+    "bpa_id": ["id"]
+  }
+}

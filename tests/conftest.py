@@ -81,7 +81,12 @@ def test_fixtures_dir():
 @pytest.fixture
 def field_mapping_file(test_fixtures_dir):
     """Return the path to the test field mapping file."""
-    return os.path.join(test_fixtures_dir, "test_field_mapping.json")
+    return os.path.join(test_fixtures_dir, "test_field_mapping_packages.json")
+
+@pytest.fixture
+def field_mapping_file_resources(test_fixtures_dir):
+    """Return the path to the test field mapping file."""
+    return os.path.join(test_fixtures_dir, "test_field_mapping_resources.json")
 
 
 @pytest.fixture
@@ -109,7 +114,13 @@ def invalid_structure_file(test_fixtures_dir):
 
 
 @pytest.fixture
-def metadata_map(field_mapping_file, value_mapping_file):
-    """Create a MetadataMap instance for testing."""
+def package_metadata_map(field_mapping_file, value_mapping_file):
+    """Create a package-level MetadataMap instance for testing."""
     from atol_bpa_datamapper.config_parser import MetadataMap
     return MetadataMap(field_mapping_file, value_mapping_file)
+
+@pytest.fixture
+def resource_metadata_map(field_mapping_file_resources, value_mapping_file):
+    """Create a resource-level MetadataMap instance for testing."""
+    from atol_bpa_datamapper.config_parser import MetadataMap
+    return MetadataMap(field_mapping_file_resources, value_mapping_file)
