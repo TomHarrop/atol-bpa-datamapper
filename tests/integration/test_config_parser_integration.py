@@ -176,7 +176,8 @@ def test_sanitize_value(test_fixtures_dir):
             "integer_sanitization": {
                 "description": "Ensure integer values, remove decimals"
             }
-        }
+        },
+        "null_values": ["", "null", "NULL", "None", "none", "NA", "na", "N/A", "n/a"]
     }
     
     sanitization_config_path = os.path.join(test_fixtures_dir, "temp_sanitization_config.json")

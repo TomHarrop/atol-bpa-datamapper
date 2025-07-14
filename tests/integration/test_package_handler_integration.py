@@ -209,15 +209,15 @@ def test_resource_map_metadata(bpa_package, resource_metadata_map, package_data)
     (["scientific_name"], ["Unknown Species"], "Homo sapiens", "scientific_name", False),
 ])
 def test_choose_value(bpa_package, fields_to_check, accepted_values, expected_value, expected_field, expected_keep):
-    """Test the choose_value method with parameterized inputs."""
+    """Test the _choose_value method with parameterized inputs."""
     # This test verifies that:
-    # 1. The choose_value method correctly selects values based on field priority
+    # 1. The _choose_value method correctly selects values based on field priority
     # 2. The method correctly applies controlled vocabulary constraints
     # 3. The method returns the expected value, field name, and keep decision
     # 4. The method handles missing fields and non-matching values correctly
     
-    # Call the choose_value method
-    value, field, keep = bpa_package.choose_value(fields_to_check, accepted_values)
+    # Call the _choose_value method
+    value, field, keep = bpa_package._choose_value(fields_to_check, accepted_values)
     assert value == expected_value
     assert field == expected_field
     assert keep == expected_keep
@@ -231,16 +231,23 @@ def test_choose_value(bpa_package, fields_to_check, accepted_values, expected_va
     (["type"], ["pacbio-hifi"], 0, "illumina-shortread", "type", False),
 ])
 def test_choose_value_from_resource(bpa_package, fields_to_check, accepted_values, resource_index, expected_value, expected_field, expected_keep):
-    """Test the choose_value method with resource parameter."""
+    """Test the _choose_value method with resource parameter."""
     # This test verifies that:
-    # 1. The choose_value method correctly selects values from a specific resource
+    # 1. The _choose_value method correctly selects values from a specific resource
     # 2. The method correctly applies controlled vocabulary constraints
     # 3. The method returns the expected value, field name, and keep decision
     # 4. The method handles missing fields and non-matching values correctly
     
-    # Get the resource
+    # Get the resource and add an id attribute to it
     resource = bpa_package["resources"][resource_index]
-    value, field, keep = bpa_package.choose_value(fields_to_check, accepted_values, resource)
+    # Convert the dictionary to an object with an id attribute
+    class ResourceWithId(dict):
+        def __init__(self, resource_dict, resource_id):
+            super().__init__(resource_dict)
+            self.id = resource_id
+    
+    resource_with_id = ResourceWithId(resource, f"resource_{resource_index}")
+    value, field, keep = bpa_package._choose_value(fields_to_check, accepted_values, resource_with_id)
     assert value == expected_value
     assert field == expected_field
     assert keep == expected_keep

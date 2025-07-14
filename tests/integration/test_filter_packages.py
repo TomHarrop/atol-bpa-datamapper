@@ -45,8 +45,8 @@ def apply_filtering_logic(package_data, metadata_map):
         bpa_field_list = metadata_map[atol_field]["bpa_fields"]
         accepted_values = metadata_map.get_allowed_values(atol_field)
         
-        # Use the choose_value method to get the value, field, and keep decision
-        value, bpa_field, keep = package.choose_value(bpa_field_list, accepted_values)
+        # Use the _choose_value method to get the value, field, and keep decision
+        value, bpa_field, keep = package._choose_value(bpa_field_list, accepted_values)
         
         # Handle genome_data override for data_context
         if (

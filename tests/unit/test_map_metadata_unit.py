@@ -1,17 +1,22 @@
 """Unit tests for map_metadata.py."""
 
 import pytest
-from unittest.mock import patch, MagicMock, mock_open
+from unittest.mock import patch, MagicMock, mock_open, ANY
 
 from atol_bpa_datamapper.map_metadata import main
 from atol_bpa_datamapper.package_handler import BpaPackage
 
 
+@patch('atol_bpa_datamapper.map_metadata.NcbiTaxdump')
 @patch('atol_bpa_datamapper.map_metadata.MetadataMap')
 @patch('atol_bpa_datamapper.map_metadata.read_input')
 @patch('atol_bpa_datamapper.map_metadata.OutputWriter')
 @patch('atol_bpa_datamapper.map_metadata.parse_args_for_mapping')
-def test_map_metadata_basic(mock_parse_args, mock_output_writer, mock_read_input, mock_metadata_map):
+@patch('atol_bpa_datamapper.organism_mapper.compute_sha256')
+@patch('atol_bpa_datamapper.organism_mapper.read_taxdump_file')
+def test_map_metadata_basic(mock_read_taxdump_file, mock_compute_sha256, mock_parse_args, mock_output_writer, mock_read_input, mock_metadata_map, mock_ncbi_taxdump):
+    # Configure the NcbiTaxdump mock to prevent file I/O operations
+    mock_ncbi_taxdump.return_value = MagicMock()
     """Test basic functionality of map_metadata."""
     # This test verifies that:
     # 1. The map_metadata main function correctly processes input packages
@@ -91,6 +96,19 @@ def test_map_metadata_basic(mock_parse_args, mock_output_writer, mock_read_input
     # Configure parse_args to return our mock args
     mock_parse_args.return_value = args
     
+    # Add mock values for NcbiTaxdump initialization to prevent file I/O
+    args.nodes = MagicMock()
+    args.names = MagicMock()
+    args.cache_dir = "MagicMock"
+    
+    # Add mock values for output files to prevent file I/O errors
+    args.grouped_packages = None
+    args.grouping_log = None
+    
+    # Configure NcbiTaxdump mock
+    mock_ncbi_taxdump_instance = MagicMock()
+    mock_ncbi_taxdump.return_value = mock_ncbi_taxdump_instance
+    
     # Call the function
     main()
     
@@ -112,12 +130,14 @@ def test_map_metadata_basic(mock_parse_args, mock_output_writer, mock_read_input
 
 @patch('atol_bpa_datamapper.map_metadata.write_mapping_log_to_csv')
 @patch('atol_bpa_datamapper.map_metadata.write_json')
+@patch('atol_bpa_datamapper.map_metadata.NcbiTaxdump')
 @patch('atol_bpa_datamapper.map_metadata.MetadataMap')
 @patch('atol_bpa_datamapper.map_metadata.read_input')
 @patch('atol_bpa_datamapper.map_metadata.OutputWriter')
 @patch('atol_bpa_datamapper.map_metadata.parse_args_for_mapping')
-def test_map_metadata_dry_run(mock_parse_args, mock_output_writer, mock_read_input, mock_metadata_map, 
-                             mock_write_json, mock_write_mapping_log):
+@patch('atol_bpa_datamapper.organism_mapper.compute_sha256')
+@patch('atol_bpa_datamapper.organism_mapper.read_taxdump_file')
+def test_map_metadata_dry_run(mock_read_taxdump_file, mock_compute_sha256, mock_parse_args, mock_output_writer, mock_read_input, mock_metadata_map, mock_ncbi_taxdump, mock_write_json, mock_write_mapping_log):
     """Test map_metadata with dry_run=True."""
     # This test verifies that:
     # 1. The map_metadata function correctly handles dry run mode
@@ -193,6 +213,20 @@ def test_map_metadata_dry_run(mock_parse_args, mock_output_writer, mock_read_inp
     # Configure parse_args to return our mock args
     mock_parse_args.return_value = args
     
+    # Add mock values for NcbiTaxdump initialization to prevent file I/O
+    args.log_level = "INFO"
+    args.nodes = MagicMock()
+    args.names = MagicMock()
+    args.cache_dir = "MagicMock"
+    
+    # Add mock values for output files to prevent file I/O errors
+    args.grouped_packages = None
+    args.grouping_log = None
+    
+    # Configure NcbiTaxdump mock
+    mock_ncbi_taxdump_instance = MagicMock()
+    mock_ncbi_taxdump.return_value = mock_ncbi_taxdump_instance
+    
     # Call the function
     main()
     
@@ -213,13 +247,14 @@ def test_map_metadata_dry_run(mock_parse_args, mock_output_writer, mock_read_inp
     mock_write_mapping_log.assert_not_called()
 
 
+@patch('atol_bpa_datamapper.map_metadata.NcbiTaxdump')
 @patch('atol_bpa_datamapper.map_metadata.MetadataMap')
 @patch('atol_bpa_datamapper.map_metadata.read_input')
 @patch('atol_bpa_datamapper.map_metadata.OutputWriter')
 @patch('atol_bpa_datamapper.map_metadata.write_mapping_log_to_csv')
 @patch('atol_bpa_datamapper.map_metadata.write_json')
 @patch('atol_bpa_datamapper.map_metadata.parse_args_for_mapping')
-def test_map_metadata_with_output_files(mock_parse_args, mock_write_json, mock_write_mapping_log, mock_output_writer, mock_read_input, mock_metadata_map):
+def test_map_metadata_with_output_files(mock_parse_args, mock_write_json, mock_write_mapping_log, mock_output_writer, mock_read_input, mock_metadata_map, mock_ncbi_taxdump):
     """Test map_metadata with output files."""
     # This test verifies that:
     # 1. The map_metadata function correctly handles output file arguments
@@ -301,6 +336,14 @@ def test_map_metadata_with_output_files(mock_parse_args, mock_write_json, mock_w
     # Configure parse_args to return our mock args
     mock_parse_args.return_value = args
     
+    # Add mock values for NcbiTaxdump initialization to prevent file I/O
+    args.log_level = "INFO"
+    mock_ncbi_taxdump.return_value = MagicMock()
+    
+    # Add mock values for output files to prevent file I/O errors
+    args.grouped_packages = None
+    args.grouping_log = None
+    
     # Call the function
     main()
     
@@ -316,11 +359,18 @@ def test_map_metadata_with_output_files(mock_parse_args, mock_write_json, mock_w
     # Verify that map_metadata was called on the resource with resource-level map
     resource1.map_metadata.assert_called_once_with(mock_resource_metadata_map, package1)
     
+    # Verify that the mapped metadata was written to output
+    mock_output_writer_instance.write_data.assert_called_once()
+
+
+@patch('atol_bpa_datamapper.map_metadata.NcbiTaxdump')
 @patch('atol_bpa_datamapper.map_metadata.MetadataMap')
 @patch('atol_bpa_datamapper.map_metadata.read_input')
 @patch('atol_bpa_datamapper.map_metadata.OutputWriter')
 @patch('atol_bpa_datamapper.map_metadata.parse_args_for_mapping')
-def test_map_metadata_with_different_section_types(mock_parse_args, mock_output_writer, mock_read_input, mock_metadata_map):
+def test_map_metadata_with_different_section_types(mock_parse_args, mock_output_writer, mock_read_input, mock_metadata_map, mock_ncbi_taxdump):
+    # Configure the NcbiTaxdump mock to prevent file I/O operations
+    mock_ncbi_taxdump.return_value = MagicMock()
     """Test map_metadata with different section types (dict and list)."""
     # This test verifies that:
     # 1. The map_metadata function correctly handles different section types
@@ -411,6 +461,20 @@ def test_map_metadata_with_different_section_types(mock_parse_args, mock_output_
     
     # Configure parse_args to return our mock args
     mock_parse_args.return_value = args
+    
+    # Add mock values for NcbiTaxdump initialization to prevent file I/O
+    args.log_level = "INFO"
+    args.nodes = MagicMock()
+    args.names = MagicMock()
+    args.cache_dir = "MagicMock"
+    
+    # Add mock values for output files to prevent file I/O errors
+    args.grouped_packages = None
+    args.grouping_log = None
+    
+    # Configure NcbiTaxdump mock
+    mock_ncbi_taxdump_instance = MagicMock()
+    mock_ncbi_taxdump.return_value = mock_ncbi_taxdump_instance
     
     # Call the function
     main()

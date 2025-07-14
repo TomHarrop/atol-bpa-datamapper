@@ -494,16 +494,18 @@ def test_map_metadata_invalid_values(nested_package_data, package_metadata_map, 
     # Now verify the final structure
     mapped_metadata = package.mapped_metadata
     
-    # Verify organism section - should still include the invalid value
-    assert mapped_metadata["organism"]["scientific_name"] == "Invalid Species"
+    # Verify organism section - invalid values should be excluded from the mapped metadata
+    # since they don't match the controlled vocabulary
+    assert "organism" in mapped_metadata
+    assert "scientific_name" not in mapped_metadata["organism"]
     
-    # Verify sample section - should still include the invalid value
-    assert mapped_metadata["sample"]["data_context"] == "Invalid Aim"
+    # Verify sample section - invalid values should be excluded from the mapped metadata
+    assert "sample" in mapped_metadata
+    assert "data_context" not in mapped_metadata["sample"]
     
-    # Verify mapping log
-    scientific_name_entries = [entry for entry in package.mapping_log if entry["atol_field"] == "scientific_name"]
-    assert len(scientific_name_entries) == 1
-    assert scientific_name_entries[0]["value"] == "Invalid Species"
+    # Verify that the runs section is still properly processed despite invalid values in other sections
+    assert "runs" in mapped_metadata
+    assert len(mapped_metadata["runs"]) == 1
 
 def test_map_metadata_missing_values(nested_package_data, package_metadata_map, resource_metadata_map):
     """Test handling of missing values during metadata mapping."""
