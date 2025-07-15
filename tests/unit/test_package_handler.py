@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import MagicMock
 from atol_bpa_datamapper.package_handler import BpaPackage, get_nested_value
-from .test_helpers import create_mock_metadata_map
+from test_helpers import create_mock_metadata_map
 
 
 def test_bpa_package_initialization():
