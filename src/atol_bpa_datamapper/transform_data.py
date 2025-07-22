@@ -23,7 +23,7 @@ class OrganismTransformer:
     in the organism_mapper.py module.
     """
     
-    def __init__(self):
+    def __init__(self, ignored_fields=None):
         self.unique_organisms = {}
         self.organism_conflicts = {}
         self.organism_to_package_map = defaultdict(list)
