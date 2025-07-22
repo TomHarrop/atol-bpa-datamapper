@@ -135,7 +135,7 @@ Mapping options:
 ### transform-data
 
 ```
-usage: transform-data [-h] [-i INPUT] [-o OUTPUT] [-l {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [-n] [--conflicts CONFLICTS] [--package-map PACKAGE_MAP] [--transformation-changes TRANSFORMATION_CHANGES]
+usage: transform-data [-h] [-i INPUT] [-o OUTPUT] [-l {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [-n] [--conflicts CONFLICTS] [--package-map PACKAGE_MAP] [--transformation-changes TRANSFORMATION_CHANGES] [--unique-organisms UNIQUE_ORGANISMS] [--organism-conflicts ORGANISM_CONFLICTS] [--organism-package-map ORGANISM_PACKAGE_MAP]
 
 Transform mapped metadata to extract unique samples
 

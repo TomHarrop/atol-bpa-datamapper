@@ -28,6 +28,7 @@ class OrganismTransformer:
         self.organism_conflicts = {}
         self.organism_to_package_map = defaultdict(list)
         self.transformation_changes = []
+        self.ignored_fields = ignored_fields or []
     
     def process_package(self, package):
         """
@@ -55,7 +56,7 @@ class OrganismTransformer:
         self.organism_to_package_map[organism_key].append(package_id)
         
         if organism_key in self.unique_organisms:
-            conflicts = self._detect_conflicts(
+            conflicts, critical_conflicts = self._detect_conflicts(
                 organism_key, self.unique_organisms[organism_key], organism_data, package_id
             )
             if conflicts:
@@ -95,8 +96,9 @@ class OrganismTransformer:
             dict: A dictionary of conflicts, or empty dict if no conflicts
         """
         conflicts = {}
+        critical_conflicts = False
         
-        exclude_fields = ["organism_grouping_key", "mapped_metadata"]
+        exclude_fields = ["organism_grouping_key"]
         
         for field, new_value in new_organism.items():
             if field in exclude_fields:
@@ -113,8 +115,16 @@ class OrganismTransformer:
                         conflicts[field].append(existing_value)
                     if new_value not in conflicts[field]:
                         conflicts[field].append(new_value)
+                    
+                    # If this field is not in the ignored list, mark as a critical conflict
+                    if field not in self.ignored_fields:
+                        critical_conflicts = True
+                    else:
+                        # For ignored fields with conflicts, set the value to null in the unique organism
+                        existing_organism[field] = None
         
-        return conflicts
+        # Return conflicts dictionary and whether there are critical conflicts
+        return conflicts, critical_conflicts
         
     def get_results(self):
         """
@@ -123,15 +133,23 @@ class OrganismTransformer:
         Returns:
             dict: A dictionary containing unique organisms, conflicts, and package to organism map
         """
-        unique_organisms_without_conflicts = {}
+        unique_organisms_without_critical_conflicts = {}
         for organism_key, organism_data in self.unique_organisms.items():
-            if organism_key not in self.organism_conflicts:
-                unique_organisms_without_conflicts[organism_key] = organism_data
+            # Check if this organism has any non-ignored conflicts
+            has_critical_conflicts = False
+            if organism_key in self.organism_conflicts:
+                for field in self.organism_conflicts[organism_key]:
+                    if field not in self.ignored_fields:
+                        has_critical_conflicts = True
+                        break
+            
+            if not has_critical_conflicts:
+                unique_organisms_without_critical_conflicts[organism_key] = organism_data
             else:
-                logger.info(f"Removing organism {organism_key} from output due to conflicts")
+                logger.info(f"Removing organism {organism_key} from output due to critical conflicts")
                 
         return {
-            "unique_organisms": unique_organisms_without_conflicts,
+            "unique_organisms": unique_organisms_without_critical_conflicts,
             "organism_conflicts": self.organism_conflicts,
             "organism_package_map": dict(self.organism_to_package_map),
             "organism_transformation_changes": self.transformation_changes
@@ -143,14 +161,20 @@ class SampleTransformer:
     Transform sample data from multiple packages into unique samples.
     """
     
-    def __init__(self):
+    def __init__(self, ignored_fields=None):
         """
         Initialize the SampleTransformer.
+        
+        Args:
+            ignored_fields: List of field names that should be ignored when determining uniqueness
+                           (conflicts in these fields will still be reported but won't prevent
+                           inclusion in the unique samples list)
         """
         self.unique_samples = {}
         self.sample_conflicts = {}
         self.sample_to_package_map = defaultdict(list)
         self.transformation_changes = []
+        self.ignored_fields = ignored_fields or []
 
     def process_package(self, package):
         """
@@ -181,6 +205,7 @@ class SampleTransformer:
         
         # Create transformation change record
         has_conflicts = False
+        has_critical_conflicts = False
         
         # Check if this is a new sample or if we need to check for conflicts
         if sample_name not in self.unique_samples:
@@ -189,7 +214,7 @@ class SampleTransformer:
         else:
             # Existing sample - check for conflicts
             existing_sample = self.unique_samples[sample_name]
-            field_conflicts = self._check_conflicts(sample_name, existing_sample, sample_data)
+            field_conflicts, has_critical_conflicts = self._check_conflicts(sample_name, existing_sample, sample_data)
             
             # If we found conflicts, add them to our conflicts dictionary
             if field_conflicts:
@@ -201,7 +226,8 @@ class SampleTransformer:
             "sample_name": sample_name,
             "package_id": package_id,
             "action": "merge",
-            "conflicts": has_conflicts
+            "conflicts": has_conflicts,
+            "critical_conflicts": has_critical_conflicts
         }
         self.transformation_changes.append(transformation_change)
         
@@ -216,9 +242,12 @@ class SampleTransformer:
             new_sample: The new sample data
             
         Returns:
-            dict: A dictionary of conflicts grouped by field
+            tuple: (conflicts_dict, has_critical_conflicts)
+                  conflicts_dict: A dictionary of conflicts grouped by field
+                  has_critical_conflicts: Boolean indicating if there are conflicts in non-ignored fields
         """
         conflicts = {}
+        has_critical_conflicts = False
         
         # Skip sample_name field and only check fields that exist in both samples
         common_fields = set(new_sample.keys()) & set(existing_sample.keys()) - {'sample_name'}
@@ -240,8 +269,15 @@ class SampleTransformer:
                 for value in (existing_value, new_value):
                     if value not in conflicts[field]:
                         conflicts[field].append(value)
+                
+                # Check if this is a critical conflict (not in ignored fields)
+                if field not in self.ignored_fields:
+                    has_critical_conflicts = True
+                else:
+                    # For ignored fields with conflicts, set the value to null in the existing sample
+                    existing_sample[field] = None
         
-        return conflicts
+        return conflicts, has_critical_conflicts
 
     def _update_access_date(self, existing_sample, field, existing_value, new_value):
         """Helper method to handle sample_access_date special case"""
@@ -269,16 +305,24 @@ class SampleTransformer:
         Returns:
             dict: A dictionary containing unique samples, conflicts, and package to sample map
         """
-        # Remove samples with conflicts from unique_samples
-        unique_samples_without_conflicts = {}
+        # Remove samples with critical conflicts from unique_samples
+        unique_samples_without_critical_conflicts = {}
         for sample_name, sample_data in self.unique_samples.items():
-            if sample_name not in self.sample_conflicts:
-                unique_samples_without_conflicts[sample_name] = sample_data
+            # Check if this sample has any non-ignored conflicts
+            has_critical_conflicts = False
+            if sample_name in self.sample_conflicts:
+                for field in self.sample_conflicts[sample_name]:
+                    if field not in self.ignored_fields:
+                        has_critical_conflicts = True
+                        break
+            
+            if not has_critical_conflicts:
+                unique_samples_without_critical_conflicts[sample_name] = sample_data
             else:
-                logger.info(f"Removing sample {sample_name} from output due to conflicts")
+                logger.info(f"Removing sample {sample_name} from output due to critical conflicts")
                 
         return {
-            "unique_samples": unique_samples_without_conflicts,
+            "unique_samples": unique_samples_without_critical_conflicts,
             "sample_conflicts": self.sample_conflicts,
             "package_map": dict(self.sample_to_package_map),
             "transformation_changes": self.transformation_changes
@@ -290,8 +334,19 @@ def main():
     args = parse_args_for_transform()
     setup_logger(args.log_level)
     
-    sample_transformer = SampleTransformer()
-    organism_transformer = OrganismTransformer()
+    # Parse ignored fields if provided
+    sample_ignored_fields = []
+    organism_ignored_fields = []
+    if hasattr(args, 'sample_ignored_fields') and args.sample_ignored_fields:
+        sample_ignored_fields = args.sample_ignored_fields.split(',')
+        logger.info(f"Ignoring sample fields: {sample_ignored_fields}")
+    
+    if hasattr(args, 'organism_ignored_fields') and args.organism_ignored_fields:
+        organism_ignored_fields = args.organism_ignored_fields.split(',')
+        logger.info(f"Ignoring organism fields: {organism_ignored_fields}")
+    
+    sample_transformer = SampleTransformer(ignored_fields=sample_ignored_fields)
+    organism_transformer = OrganismTransformer(ignored_fields=organism_ignored_fields)
     
     input_data = read_mapped_data(args.input)
     n_packages = 0

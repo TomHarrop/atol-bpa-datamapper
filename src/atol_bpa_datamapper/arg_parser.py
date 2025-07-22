@@ -51,11 +51,15 @@ def parse_args_for_transform():
         help="File to record which packages relate to each unique organism",
     )
     
-    # Set default input file if not provided
-    for action in input_group._group_actions:
-        if action.dest == "input":
-            action.default = "src/output/map/mapped.jsonl.gz"
-            action.help = "Input file (default: src/output/map/mapped.jsonl.gz)"
+    transform_group.add_argument(
+        "--sample-ignored-fields",
+        help="Comma-separated list of sample fields to ignore when determining uniqueness. Conflicts in these fields will still be reported but won't prevent inclusion in the unique samples list.",
+    )
+    
+    transform_group.add_argument(
+        "--organism-ignored-fields",
+        help="Comma-separated list of organism fields to ignore when determining uniqueness. Conflicts in these fields will still be reported but won't prevent inclusion in the unique organisms list.",
+    )
     
     return parser.parse_args()
 
