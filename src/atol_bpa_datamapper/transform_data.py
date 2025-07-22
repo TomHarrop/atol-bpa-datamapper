@@ -5,6 +5,7 @@ This script processes mapped metadata packages to:
 1. Extract unique samples based on sample_name
 2. Detect and report conflicts in sample attributes
 3. Track which packages (bpa_package_id) relate to each unique sample
+4. Extract unique organisms based on organism_grouping_key
 """
 
 from .arg_parser import parse_args_for_transform
@@ -14,232 +15,111 @@ import json
 import os
 from collections import defaultdict
 from datetime import datetime
+from abc import ABC, abstractmethod
 
 
-class OrganismTransformer:
+class EntityTransformer(ABC):
     """
-    Transform organism data from multiple packages into unique organisms.
-    Organisms are identified by their organism_grouping_key, which is generated
-    in the organism_mapper.py module.
+    Abstract base class for transforming entity data from multiple packages into unique entities.
+    
+    This class provides common functionality for extracting unique entities,
+    detecting conflicts, and tracking relationships between entities and packages.
     """
     
-    def __init__(self, ignored_fields=None):
-        self.unique_organisms = {}
-        self.organism_conflicts = {}
-        self.organism_to_package_map = defaultdict(list)
-        self.transformation_changes = []
-        self.ignored_fields = ignored_fields or []
-    
-    def process_package(self, package):
+    def __init__(self, entity_type, key_field, ignored_fields=None):
         """
-        Process a single package to extract organism information.
+        Initialize the EntityTransformer.
         
         Args:
-            package: A raw package dictionary with organism data
-        
-        Returns:
-            bool: True if the package was processed successfully
-        """
-        package_id = package.get("experiment", {}).get("bpa_package_id", "unknown")
-        
-        if "organism" not in package:
-            logger.warning(f"Package {package_id} has no organism section")
-            return False
-            
-        organism_data = package["organism"]
-        organism_key = organism_data.get("organism_grouping_key")
-        
-        if not organism_key:
-            logger.warning(f"Package {package_id} has no organism_grouping_key")
-            return False
-            
-        self.organism_to_package_map[organism_key].append(package_id)
-        
-        if organism_key in self.unique_organisms:
-            conflicts, critical_conflicts = self._detect_conflicts(
-                organism_key, self.unique_organisms[organism_key], organism_data, package_id
-            )
-            if conflicts:
-                if organism_key not in self.organism_conflicts:
-                    self.organism_conflicts[organism_key] = {}
-                
-                for field, conflict_values in conflicts.items():
-                    if field not in self.organism_conflicts[organism_key]:
-                        self.organism_conflicts[organism_key][field] = []
-                    
-                    for value in conflict_values:
-                        if value not in self.organism_conflicts[organism_key][field]:
-                            self.organism_conflicts[organism_key][field].append(value)
-        else:
-            self.unique_organisms[organism_key] = organism_data
-            
-            self.transformation_changes.append({
-                "package_id": package_id,
-                "organism_key": organism_key,
-                "action": "add_organism",
-                "data": organism_data
-            })
-            
-        return True
-        
-    def _detect_conflicts(self, organism_key, existing_organism, new_organism, package_id):
-        """
-        Detect conflicts between existing and new organism data.
-        
-        Args:
-            organism_key: The organism_grouping_key
-            existing_organism: The existing organism data
-            new_organism: The new organism data
-            package_id: The package ID of the new data
-            
-        Returns:
-            dict: A dictionary of conflicts, or empty dict if no conflicts
-        """
-        conflicts = {}
-        critical_conflicts = False
-        
-        exclude_fields = ["organism_grouping_key"]
-        
-        for field, new_value in new_organism.items():
-            if field in exclude_fields:
-                continue
-                
-            if field in existing_organism:
-                existing_value = existing_organism[field]
-                
-                if existing_value != new_value:
-                    if field not in conflicts:
-                        conflicts[field] = []
-                    
-                    if existing_value not in conflicts[field]:
-                        conflicts[field].append(existing_value)
-                    if new_value not in conflicts[field]:
-                        conflicts[field].append(new_value)
-                    
-                    # If this field is not in the ignored list, mark as a critical conflict
-                    if field not in self.ignored_fields:
-                        critical_conflicts = True
-                    else:
-                        # For ignored fields with conflicts, set the value to null in the unique organism
-                        existing_organism[field] = None
-        
-        # Return conflicts dictionary and whether there are critical conflicts
-        return conflicts, critical_conflicts
-        
-    def get_results(self):
-        """
-        Get the results of the organism transformation.
-        
-        Returns:
-            dict: A dictionary containing unique organisms, conflicts, and package to organism map
-        """
-        unique_organisms_without_critical_conflicts = {}
-        for organism_key, organism_data in self.unique_organisms.items():
-            # Check if this organism has any non-ignored conflicts
-            has_critical_conflicts = False
-            if organism_key in self.organism_conflicts:
-                for field in self.organism_conflicts[organism_key]:
-                    if field not in self.ignored_fields:
-                        has_critical_conflicts = True
-                        break
-            
-            if not has_critical_conflicts:
-                unique_organisms_without_critical_conflicts[organism_key] = organism_data
-            else:
-                logger.info(f"Removing organism {organism_key} from output due to critical conflicts")
-                
-        return {
-            "unique_organisms": unique_organisms_without_critical_conflicts,
-            "organism_conflicts": self.organism_conflicts,
-            "organism_package_map": dict(self.organism_to_package_map),
-            "organism_transformation_changes": self.transformation_changes
-        }
-
-
-class SampleTransformer:
-    """
-    Transform sample data from multiple packages into unique samples.
-    """
-    
-    def __init__(self, ignored_fields=None):
-        """
-        Initialize the SampleTransformer.
-        
-        Args:
+            entity_type: The type of entity being transformed (e.g., 'organism', 'sample')
+            key_field: The field used as the unique identifier for this entity type
             ignored_fields: List of field names that should be ignored when determining uniqueness
-                           (conflicts in these fields will still be reported but won't prevent
-                           inclusion in the unique samples list)
         """
-        self.unique_samples = {}
-        self.sample_conflicts = {}
-        self.sample_to_package_map = defaultdict(list)
+        self.entity_type = entity_type
+        self.key_field = key_field
+        self.unique_entities = {}
+        self.entity_conflicts = {}
+        self.entity_to_package_map = defaultdict(list)
         self.transformation_changes = []
         self.ignored_fields = ignored_fields or []
-
+        self.exclude_fields = [key_field]
+    
     def process_package(self, package):
         """
-        Process a single package to extract sample information.
+        Process a single package to extract entity information.
         
         Args:
-            package: A raw package dictionary with sample data
+            package: A raw package dictionary with entity data
         
         Returns:
             bool: True if the package was processed successfully
         """
         package_id = package.get("experiment", {}).get("bpa_package_id", "unknown")
         
-        if "sample" not in package:
-            logger.warning(f"Package {package_id} has no sample section")
+        # Check if the entity section exists in the package
+        if self.entity_type not in package:
+            logger.warning(f"Package {package_id} has no {self.entity_type} section")
             return False
             
-        sample_data = package["sample"]
+        entity_data = package[self.entity_type]
         
-        if "sample_name" not in sample_data:
-            logger.warning(f"Package {package_id} has no sample_name")
+        # Get the entity key (identifier)
+        entity_key = self._get_entity_key(entity_data)
+        if not entity_key:
+            logger.warning(f"Package {package_id} has no valid {self.key_field}")
             return False
             
-        sample_name = sample_data["sample_name"]
+        # Track entity to package map
+        self.entity_to_package_map[entity_key].append(package_id)
         
-        # Track sample to package map
-        self.sample_to_package_map[sample_name].append(package_id)
+        # Process entity-specific data before conflict detection
+        self._pre_process_entity(entity_key, entity_data, package_id)
         
-        # Create transformation change record
+        # Check for conflicts or add as new entity
         has_conflicts = False
         has_critical_conflicts = False
         
-        # Check if this is a new sample or if we need to check for conflicts
-        if sample_name not in self.unique_samples:
-            # New sample - just add it
-            self.unique_samples[sample_name] = sample_data.copy()
-        else:
-            # Existing sample - check for conflicts
-            existing_sample = self.unique_samples[sample_name]
-            field_conflicts, has_critical_conflicts = self._check_conflicts(sample_name, existing_sample, sample_data)
+        if entity_key in self.unique_entities:
+            # Entity already exists, check for conflicts
+            existing_entity = self.unique_entities[entity_key]
+            conflicts, has_critical_conflicts = self._detect_conflicts(
+                entity_key, existing_entity, entity_data, package_id
+            )
             
-            # If we found conflicts, add them to our conflicts dictionary
-            if field_conflicts:
-                self.sample_conflicts[sample_name] = field_conflicts
+            if conflicts:
                 has_conflicts = True
+                if entity_key not in self.entity_conflicts:
+                    self.entity_conflicts[entity_key] = {}
+                
+                for field, conflict_values in conflicts.items():
+                    if field not in self.entity_conflicts[entity_key]:
+                        self.entity_conflicts[entity_key][field] = []
+                    
+                    for value in conflict_values:
+                        if value not in self.entity_conflicts[entity_key][field]:
+                            self.entity_conflicts[entity_key][field].append(value)
+        else:
+            # New entity, just add it
+            self.unique_entities[entity_key] = entity_data.copy()
+            
+            # Record the transformation change
+            self._record_new_entity(entity_key, entity_data, package_id)
         
-        # Add transformation change record
-        transformation_change = {
-            "sample_name": sample_name,
-            "package_id": package_id,
-            "action": "merge",
-            "conflicts": has_conflicts,
-            "critical_conflicts": has_critical_conflicts
-        }
-        self.transformation_changes.append(transformation_change)
-        
+        # Record the transformation change for existing entities
+        if entity_key in self.unique_entities and entity_key != package_id:
+            self._record_entity_change(entity_key, package_id, has_conflicts, has_critical_conflicts)
+            
         return True
-    def _check_conflicts(self, sample_name, existing_sample, new_sample):
+    
+    def _detect_conflicts(self, entity_key, existing_entity, new_entity, package_id):
         """
-        Check for conflicts between existing and new sample data.
+        Detect conflicts between existing and new entity data.
         
         Args:
-            sample_name: The name of the sample
-            existing_sample: The existing sample data
-            new_sample: The new sample data
+            entity_key: The entity key (identifier)
+            existing_entity: The existing entity data
+            new_entity: The new entity data
+            package_id: The package ID of the new data
             
         Returns:
             tuple: (conflicts_dict, has_critical_conflicts)
@@ -249,16 +129,17 @@ class SampleTransformer:
         conflicts = {}
         has_critical_conflicts = False
         
-        # Skip sample_name field and only check fields that exist in both samples
-        common_fields = set(new_sample.keys()) & set(existing_sample.keys()) - {'sample_name'}
+        # Find common fields, excluding the key field
+        common_fields = set(new_entity.keys()) & set(existing_entity.keys())
+        common_fields = common_fields - set(self.exclude_fields)
         
         for field in common_fields:
-            existing_value = existing_sample[field]
-            new_value = new_sample[field]
+            existing_value = existing_entity[field]
+            new_value = new_entity[field]
             
             if existing_value != new_value:
-                # Special handling for sample_access_date
-                if field == "sample_access_date" and self._update_access_date(existing_sample, field, existing_value, new_value):
+                # Check for field-specific handling
+                if self._handle_special_field(existing_entity, field, existing_value, new_value):
                     continue
                     
                 # Add the conflict
@@ -274,12 +155,170 @@ class SampleTransformer:
                 if field not in self.ignored_fields:
                     has_critical_conflicts = True
                 else:
-                    # For ignored fields with conflicts, set the value to null in the existing sample
-                    existing_sample[field] = None
+                    # For ignored fields with conflicts, set the value to null in the existing entity
+                    existing_entity[field] = None
         
         return conflicts, has_critical_conflicts
+    
+    def get_results(self):
+        """
+        Get the results of the entity transformation.
+        
+        Returns:
+            dict: A dictionary containing unique entities, conflicts, and package to entity map
+        """
+        # Remove entities with critical conflicts
+        unique_entities_without_critical_conflicts = {}
+        for entity_key, entity_data in self.unique_entities.items():
+            # Check if this entity has any non-ignored conflicts
+            has_critical_conflicts = False
+            if entity_key in self.entity_conflicts:
+                for field in self.entity_conflicts[entity_key]:
+                    if field not in self.ignored_fields:
+                        has_critical_conflicts = True
+                        break
+            
+            if not has_critical_conflicts:
+                unique_entities_without_critical_conflicts[entity_key] = entity_data
+            else:
+                logger.info(f"Removing {self.entity_type} {entity_key} from output due to critical conflicts")
+        
+        # Build the results dictionary with entity-specific keys
+        results = self._build_results(unique_entities_without_critical_conflicts)
+        return results
+    
+    @abstractmethod
+    def _get_entity_key(self, entity_data):
+        """
+        Extract the entity key from the entity data.
+        
+        Args:
+            entity_data: The entity data dictionary
+            
+        Returns:
+            str: The entity key (identifier)
+        """
+        pass
+    
+    @abstractmethod
+    def _build_results(self, unique_entities):
+        """
+        Build the results dictionary with entity-specific keys.
+        
+        Args:
+            unique_entities: Dictionary of unique entities without critical conflicts
+            
+        Returns:
+            dict: Results dictionary with entity-specific keys
+        """
+        pass
+    
+    def _pre_process_entity(self, entity_key, entity_data, package_id):
+        """
+        Perform any entity-specific pre-processing before conflict detection.
+        
+        Args:
+            entity_key: The entity key (identifier)
+            entity_data: The entity data dictionary
+            package_id: The package ID
+        """
+        # Default implementation does nothing
+        pass
+    
+    def _handle_special_field(self, existing_entity, field, existing_value, new_value):
+        """
+        Handle special fields that require custom conflict resolution.
+        
+        Args:
+            existing_entity: The existing entity data
+            field: The field name
+            existing_value: The existing value
+            new_value: The new value
+            
+        Returns:
+            bool: True if the conflict was handled, False otherwise
+        """
+        # Default implementation does not handle any special fields
+        return False
+    
+    def _record_new_entity(self, entity_key, entity_data, package_id):
+        """
+        Record a transformation change for a new entity.
+        
+        Args:
+            entity_key: The entity key (identifier)
+            entity_data: The entity data dictionary
+            package_id: The package ID
+        """
+        # Default implementation adds a generic record
+        self.transformation_changes.append({
+            "package_id": package_id,
+            f"{self.entity_type}_key": entity_key,
+            "action": f"add_{self.entity_type}",
+            "data": entity_data
+        })
+    
+    def _record_entity_change(self, entity_key, package_id, has_conflicts, has_critical_conflicts):
+        """
+        Record a transformation change for an existing entity.
+        
+        Args:
+            entity_key: The entity key (identifier)
+            package_id: The package ID
+            has_conflicts: Whether there are any conflicts
+            has_critical_conflicts: Whether there are any critical conflicts
+        """
+        # Default implementation adds a generic record
+        self.transformation_changes.append({
+            f"{self.entity_type}_key": entity_key,
+            "package_id": package_id,
+            "action": "merge",
+            "conflicts": has_conflicts,
+            "critical_conflicts": has_critical_conflicts
+        })
 
-    def _update_access_date(self, existing_sample, field, existing_value, new_value):
+
+class OrganismTransformer(EntityTransformer):
+    """
+    Transform organism data from multiple packages into unique organisms.
+    Organisms are identified by their organism_grouping_key, which is generated
+    in the organism_mapper.py module.
+    """
+    
+    def __init__(self, ignored_fields=None):
+        super().__init__("organism", "organism_grouping_key", ignored_fields)
+    
+    def _get_entity_key(self, entity_data):
+        return entity_data.get("organism_grouping_key")
+    
+    def _build_results(self, unique_entities):
+        return {
+            "unique_organisms": unique_entities,
+            "organism_conflicts": self.entity_conflicts,
+            "organism_package_map": dict(self.entity_to_package_map),
+            "organism_transformation_changes": self.transformation_changes
+        }
+
+
+class SampleTransformer(EntityTransformer):
+    """
+    Transform sample data from multiple packages into unique samples.
+    Samples are identified by their sample_name.
+    """
+    
+    def __init__(self, ignored_fields=None):
+        super().__init__("sample", "sample_name", ignored_fields)
+    
+    def _get_entity_key(self, entity_data):
+        return entity_data.get("sample_name")
+    
+    def _handle_special_field(self, existing_entity, field, existing_value, new_value):
+        # Special handling for sample_access_date
+        if field == "sample_access_date":
+            return self._update_access_date(existing_entity, field, existing_value, new_value)
+        return False
+    
+    def _update_access_date(self, existing_entity, field, existing_value, new_value):
         """Helper method to handle sample_access_date special case"""
         try:
             # Try to parse the dates
@@ -289,7 +328,7 @@ class SampleTransformer:
             # Update to the most recent date
             if new_date > existing_date:
                 logger.info(f"Updating sample_access_date from {existing_value} to {new_value}")
-                existing_sample[field] = new_value
+                existing_entity[field] = new_value
             
             # Successfully handled the date conflict
             return True
@@ -298,33 +337,21 @@ class SampleTransformer:
             logger.warning(f"Could not parse dates for sample_access_date: {existing_value} and {new_value}")
             return False
     
-    def get_results(self):
-        """
-        Get the results of the transformation.
-        
-        Returns:
-            dict: A dictionary containing unique samples, conflicts, and package to sample map
-        """
-        # Remove samples with critical conflicts from unique_samples
-        unique_samples_without_critical_conflicts = {}
-        for sample_name, sample_data in self.unique_samples.items():
-            # Check if this sample has any non-ignored conflicts
-            has_critical_conflicts = False
-            if sample_name in self.sample_conflicts:
-                for field in self.sample_conflicts[sample_name]:
-                    if field not in self.ignored_fields:
-                        has_critical_conflicts = True
-                        break
-            
-            if not has_critical_conflicts:
-                unique_samples_without_critical_conflicts[sample_name] = sample_data
-            else:
-                logger.info(f"Removing sample {sample_name} from output due to critical conflicts")
-                
+    def _record_entity_change(self, entity_key, package_id, has_conflicts, has_critical_conflicts):
+        # Override to use sample_name instead of sample_key
+        self.transformation_changes.append({
+            "sample_name": entity_key,
+            "package_id": package_id,
+            "action": "merge",
+            "conflicts": has_conflicts,
+            "critical_conflicts": has_critical_conflicts
+        })
+    
+    def _build_results(self, unique_entities):
         return {
-            "unique_samples": unique_samples_without_critical_conflicts,
-            "sample_conflicts": self.sample_conflicts,
-            "package_map": dict(self.sample_to_package_map),
+            "unique_samples": unique_entities,
+            "sample_conflicts": self.entity_conflicts,
+            "package_map": dict(self.entity_to_package_map),
             "transformation_changes": self.transformation_changes
         }
 
