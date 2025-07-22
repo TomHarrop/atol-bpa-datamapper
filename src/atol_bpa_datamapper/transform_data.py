@@ -377,13 +377,13 @@ def main():
             logger.info(f"Writing unique samples to {args.output}")
             write_json(sample_results["unique_samples"], args.output)
         
-        if args.conflicts:
-            logger.info(f"Writing sample conflicts to {args.conflicts}")
-            write_json(sample_results["sample_conflicts"], args.conflicts)
+        if args.sample_conflicts:
+            logger.info(f"Writing sample conflicts to {args.sample_conflicts}")
+            write_json(sample_results["sample_conflicts"], args.sample_conflicts)
         
-        if args.package_map:
-            logger.info(f"Writing sample to package map to {args.package_map}")
-            write_json(sample_results["package_map"], args.package_map)
+        if args.sample_package_map:
+            logger.info(f"Writing sample to package map to {args.sample_package_map}")
+            write_json(sample_results["package_map"], args.sample_package_map)
         
         if args.transformation_changes:
             logger.info(f"Writing transformation changes to {args.transformation_changes}")

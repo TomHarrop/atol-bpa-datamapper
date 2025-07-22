@@ -22,12 +22,12 @@ def parse_args_for_transform():
     transform_group = parser.add_argument_group("Transform options")
     
     transform_group.add_argument(
-        "--conflicts",
+        "--sample-conflicts",
         help="File to record conflicts between samples with the same sample_name",
     )
     
     transform_group.add_argument(
-        "--package-map",
+        "--sample-package-map",
         help="File to record which packages relate to each unique sample",
     )
     
