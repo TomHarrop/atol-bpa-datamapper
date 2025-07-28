@@ -1,20 +1,17 @@
 {
     "experiment": {
         "instrument_model": {
-            "Revio": [
-                "PacBio Revio",
-                "Revio"
+            "1000": [
+                "1000"
             ],
-            "Illumina NovaSeq X Plus": [
-                "Illumina NovaSeq X Plus",
-                "NovaSeq X Plus",
-                "X Plus",
-                "X-Plus"
+            "Illumina HiSeq 2500": [
+                "HiSeq 2500",
+                "HiSeq2500",
+                "Illumina HiSeq 2500"
             ],
-            "Illumina NovaSeq X": [
-                "Illumina NovaSeq X",
-                "NovaSeq X",
-                "NovaSeq X Series"
+            "Illumina MiSeq": [
+                "Illumina MiSeq",
+                "MiSeq"
             ],
             "Illumina NovaSeq 6000": [
                 "6000",
@@ -45,19 +42,52 @@
                 "Illumina NovaSeq 6024",
                 "Illumina NovaSeq 6025",
                 "Illumina NovaSeq 6026",
+                "NovaSeq 6000",
+                "NovaSeq 6000 S2 2x150bp_Flowcell",
                 "NovaSeq 6000 SP, 300 cycle"
             ],
+            "Illumina NovaSeq X": [
+                "Illumina NovaSeq X",
+                "NovaSeq X",
+                "NovaSeq X 1.5B",
+                "NovaSeq X Series"
+            ],
+            "Illumina NovaSeq X Plus": [
+                "Illumina NovaSeq X Plus",
+                "NovaSeq X Plus",
+                "X Plus",
+                "X-Plus"
+            ],
+            "NextSeq 500": [
+                "NextSeq 500",
+                "NextSeq500"
+            ],
+            "NextSeq 550": [
+                "Illumina NextSeq 550",
+                "NextSeq 550"
+            ],
+            "NextSeq 2000": [
+                "NextSeq 2000"
+            ],
+            "PacBio RS II": [
+                "PacBio RS II",
+                "PacBio RSII",
+                "PacBioRSII"
+            ],
+            "PromethION": [
+                "ONT PromethION",
+                "PromethION",
+                "PromethION 24",
+                "PromethION24",
+                "Promethion"
+            ],
+            "Revio": [
+                "PacBio Revio",
+                "Revio"
+            ],
             "Sequel II": [
-                "PacBio Sequel II"
-            ],
-            "Illumina MiSeq": [
-                "Illumina MiSeq"
-            ],
-            "1000": [
-                "1000"
-            ],
-            "Illumina NextSeq 550": [
-                "Illumina NextSeq 550"
+                "PacBio Sequel II",
+                "PacBio Sequel II HiFi"
             ]
         },
         "library_layout": {
@@ -65,6 +95,7 @@
                 null
             ],
             "PAIRED": [
+                "PE",
                 "Paired end",
                 "Paired-End",
                 "paierd-end"
@@ -487,6 +518,7 @@
         "lifestage": {
             "adult": [
                 "Adult",
+                "Mature organism",
                 "Middle age",
                 "adult organism",
                 "adult plant",
@@ -596,34 +628,6 @@
             ],
             "null": [
                 null
-            ]
-        },
-        "bpa_initiative": {
-            "ARC for Innovations in Peptide and Protein Science": [
-                "ARC for Innovations in Peptide and Protein Science (CIPPS)",
-                "CIPPS"
-            ],
-            "Australian Amphibian and Reptile Genomics": [
-                "Australian Amphibian and Reptile Genomics"
-            ],
-            "Australian Avian Genomics Initiative": [
-                "Australian Avian Genomics Initiative (AVIAN)"
-            ],
-            "Australian Functional Fungi Initiative": [
-                "Australian Functional Fungi Initiative",
-                "Fungi"
-            ],
-            "Australian Grasslands Initiative": [
-                "Australian Grasslands Initiative (AG)"
-            ],
-            "Genomics for Australian Plants": [
-                "Genomics for Australian Plants"
-            ],
-            "Plant Pathogen Initiative": [
-                "Plant Pathogen Initiative"
-            ],
-            "Threatened Species Initiative": [
-                "Threatened Species Initiative"
             ]
         }
     }
