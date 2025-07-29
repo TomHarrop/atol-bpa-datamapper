@@ -95,3 +95,19 @@ def write_mapping_log_to_csv(mapping_log, file_path):
 def write_json(data, file):
     with gzip.open(file, "wb") as f:
         jsonlines.Writer(f).write(data)
+
+
+def read_mapped_data(input_source):
+    """
+    Read mapped metadata from a gzipped jsonlines file without using BpaPackage (the mapped metadata isn't compatable with BpaPackage & we don't require the full functionality)
+    """
+    logger.info(f"Reading mapped data from {input_source}")
+    with gzip.open(input_source, "rt") as f:
+        reader = jsonlines.Reader(f)
+        for obj in reader:
+            # Ensure the object has the expected structure
+            if isinstance(obj, dict):
+                yield obj
+            else:
+                logger.warning(f"Skipping non-dictionary object: {obj}")
+                continue
