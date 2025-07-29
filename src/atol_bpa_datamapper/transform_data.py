@@ -13,6 +13,7 @@ from .io import read_mapped_data, write_json
 from .logger import logger, setup_logger
 import json
 import os
+import gzip
 from collections import defaultdict
 from datetime import datetime
 from abc import ABC, abstractmethod
@@ -417,6 +418,50 @@ class SampleTransformer(EntityTransformer):
         }
 
 
+def extract_experiment(experiments_data, package):
+    
+    logger.debug(f"Processing package: {package}")
+    try:
+            # Skip if no experiment section
+            if "experiment" not in package:
+                logger.warning(f"No experiment section found in package, skipping")
+                return
+            
+            # Create experiment object with all experiment fields
+            experiment = package["experiment"].copy()
+            
+            # Skip if no bpa_sample_id in sample section
+            if "sample" not in package or "bpa_sample_id" not in package["sample"]:
+                logger.warning(f"No bpa_sample_id found in package, skipping")
+                return
+                
+            bpa_sample_id = package["sample"]["bpa_sample_id"]
+            
+            # Skip if no bpa_package_id
+            if "bpa_package_id" not in experiment:
+                logger.warning(f"No bpa_package_id found in experiment, skipping")
+                return
+
+            # Get the bpa_package_id to use as key
+            bpa_package_id = experiment["bpa_package_id"]
+            
+            # Add runs if present
+            if "runs" in package:
+                experiment["runs"] = package["runs"]
+            else:
+                experiment["runs"] = []
+            
+            # Add bpa_sample_id to experiment for linking in database
+            experiment["bpa_sample_id"] = bpa_sample_id
+                
+            # Add to dictionary with bpa_package_id as key
+            experiments_data[bpa_package_id] = experiment
+    except json.JSONDecodeError:
+        logger.error(f"Line {line_count}: Invalid JSON, skipping")    
+    except Exception as e:
+        logger.error(f"Error processing package: {str(e)}")
+        
+
 def main():
     """Main function to transform mapped metadata."""
     args = parse_args_for_transform()
@@ -440,6 +485,9 @@ def main():
     n_packages = 0
     n_processed_samples = 0
     n_processed_organisms = 0
+    n_processed_experiments = 0
+
+    experiments_data = {}
     
     for package in input_data:
         package_id = package.get('id', 'unknown')
@@ -451,11 +499,15 @@ def main():
         
         if organism_transformer.process_package(package):
             n_processed_organisms += 1
+        
+        extract_experiment(experiments_data, package)
+        n_processed_experiments += 1
     
     logger.info(f"Processed {n_packages} packages")
     logger.info(f"Extracted sample data from {n_processed_samples} packages")
     logger.info(f"Extracted organism data from {n_processed_organisms} packages")
-    
+    logger.info(f"Extracted experiment data from {n_processed_experiments} packages")
+        
     sample_results = sample_transformer.get_results()
     organism_results = organism_transformer.get_results()
     
@@ -489,6 +541,9 @@ def main():
         if args.organism_package_map:
             logger.info(f"Writing organism to package map to {args.organism_package_map}")
             write_json(organism_results["organism_package_map"], args.organism_package_map)
+        if args.experiments_output:
+            logger.info(f"Writing experiments data to {args.experiments_output}")
+            write_json(experiments_data, args.experiments_output)
     
     # Log summary statistics
     n_unique_samples = len(sample_results["unique_samples"])
@@ -500,6 +555,7 @@ def main():
     logger.info(f"Found {n_sample_conflicts} samples with conflicts")
     logger.info(f"Found {n_unique_organisms} unique organisms")
     logger.info(f"Found {n_organism_conflicts} organisms with conflicts")
+    logger.info(f"Found {len(experiments_data)} experiments")
 
 
 if __name__ == "__main__":
