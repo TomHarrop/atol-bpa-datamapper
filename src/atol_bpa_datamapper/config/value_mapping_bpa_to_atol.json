@@ -156,6 +156,7 @@
                 "20kb template prep_blue pippin",
                 "Pippin size selection, shearing and HiFi prep",
                 "Pippin size slection, shearing and HiFi prep",
+                "blue pippin size selection of pooled libraries",
                 "size fractionation"
             ],
             "unspecified": [
@@ -326,6 +327,7 @@
                 "ausarg-pacbio-hifi",
                 "avian-pacbio-hifi",
                 "cipps-pacbio-hifi",
+                "fish-pacbio-hifi",
                 "forest-pacbio-hifi",
                 "gap-pacbio-hifi",
                 "grasslands-pacbio-hifi",
@@ -349,6 +351,9 @@
         "bioplatforms_project_id": {
             "aus-avian": [
                 "aus-avian"
+            ],
+            "aus-fish": [
+                "aus-fish"
             ],
             "ausarg": [
                 "ausarg"

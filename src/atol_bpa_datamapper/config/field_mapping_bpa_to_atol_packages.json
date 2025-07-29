@@ -309,7 +309,9 @@
             "sequencing_platform",
             "sequencer",
             "sequencing_model",
-            "sequencing_technology"
+            "sequencing_technology",
+            "nucleic_acid_treatment",
+            "dna_treatment"
         ],
         "library_layout": [
             "library_layout"
