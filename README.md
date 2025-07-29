@@ -156,7 +156,7 @@ General options:
 
 Transform options:
   --sample-conflicts SAMPLE_CONFLICTS
-                        File to record conflicts between samples with the same sample_name
+                        File to record conflicts between samples with the same bpa_sample_id
   --sample-package-map SAMPLE_PACKAGE_MAP
                         File to record which packages relate to each unique sample
   --unique-organisms UNIQUE_ORGANISMS

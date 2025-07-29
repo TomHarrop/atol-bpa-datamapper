@@ -2,7 +2,7 @@
 Transform data from mapped metadata packages.
 
 This script processes mapped metadata packages to:
-1. Extract unique samples based on sample_name
+1. Extract unique samples based on bpa_sample_id
 2. Detect and report conflicts in sample attributes
 3. Track which packages (bpa_package_id) relate to each unique sample
 4. Extract unique organisms based on organism_grouping_key
@@ -303,14 +303,14 @@ class OrganismTransformer(EntityTransformer):
 class SampleTransformer(EntityTransformer):
     """
     Transform sample data from multiple packages into unique samples.
-    Samples are identified by their sample_name.
+    Samples are identified by their bpa_sample_id.
     """
     
     def __init__(self, ignored_fields=None):
-        super().__init__("sample", "sample_name", ignored_fields)
+        super().__init__("sample", "bpa_sample_id", ignored_fields)
     
     def _get_entity_key(self, entity_data):
-        return entity_data.get("sample_name")
+        return entity_data.get("bpa_sample_id")
     
     def _pre_process_entity(self, entity_key, entity_data, package_id):
         """
@@ -399,9 +399,9 @@ class SampleTransformer(EntityTransformer):
             return False
     
     def _record_entity_change(self, entity_key, package_id, has_conflicts, has_critical_conflicts):
-        # Override to use sample_name instead of sample_key
+        # Override to use bpa_sample_id instead of sample_key
         self.transformation_changes.append({
-            "sample_name": entity_key,
+            "bpa_sample_id": entity_key,
             "package_id": package_id,
             "action": "merge",
             "conflicts": has_conflicts,

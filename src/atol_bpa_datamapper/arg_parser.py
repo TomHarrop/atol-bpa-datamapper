@@ -23,7 +23,7 @@ def parse_args_for_transform():
     
     transform_group.add_argument(
         "--sample-conflicts",
-        help="File to record conflicts between samples with the same sample_name",
+        help="File to record conflicts between samples with the same bpa_sample_id",
     )
     
     transform_group.add_argument(
