@@ -49,7 +49,8 @@
             "common_name"
         ],
         "atol_scientific_name": [],
-        "organism_grouping_key": []
+        "organism_grouping_key": [],
+        "tax_string": []
     },
     "sample": {
         "specimen_voucher": [
@@ -179,9 +180,6 @@
         ],
         "bioplatforms_project_code": [
             "bioplatforms_project_code"
-        ],
-        "sample_access_date": [
-            "access_control_date"
         ],
         "bpa_initiative": [
             "bioplatforms_project",
@@ -360,12 +358,10 @@
         "bpa_package_id": [
             "id"
         ],
-        "GAL": [
-            "sequencing_facility",
-            "facility",
-            "library_location",
-            "resources.facility_id",
-            "resources.facility"
+        "data_owner": [
+            "project_lead",
+            "data_custodian",
+            "sample_custodian"
         ],
         "extraction_method": [
             "material_extraction_method",
@@ -381,6 +377,16 @@
             "material_conc_ng_ul",
             "dna_concentration"
         ],
-        "nucleic_acid_volume": []
+        "nucleic_acid_volume": [],
+        "GAL": [
+            "sequencing_facility",
+            "facility",
+            "library_location",
+            "resources.facility_id",
+            "resources.facility"
+        ],
+        "sample_access_date": [
+            "access_control_date"
+        ]
     }
 }

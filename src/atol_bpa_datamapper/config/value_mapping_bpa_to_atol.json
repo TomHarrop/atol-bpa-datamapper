@@ -1,8 +1,104 @@
 {
     "experiment": {
+        "instrument_model": {
+            "1000": [
+                "1000"
+            ],
+            "Illumina HiSeq 2500": [
+                "HiSeq 2500",
+                "HiSeq2500",
+                "Illumina HiSeq 2500"
+            ],
+            "Illumina MiSeq": [
+                "Illumina MiSeq",
+                "MiSeq"
+            ],
+            "Illumina NovaSeq 6000": [
+                "6000",
+                "Illumina NovaSeq 6000",
+                "Illumina NovaSeq 6001",
+                "Illumina NovaSeq 6002",
+                "Illumina NovaSeq 6003",
+                "Illumina NovaSeq 6004",
+                "Illumina NovaSeq 6005",
+                "Illumina NovaSeq 6006",
+                "Illumina NovaSeq 6007",
+                "Illumina NovaSeq 6008",
+                "Illumina NovaSeq 6009",
+                "Illumina NovaSeq 6010",
+                "Illumina NovaSeq 6011",
+                "Illumina NovaSeq 6012",
+                "Illumina NovaSeq 6013",
+                "Illumina NovaSeq 6014",
+                "Illumina NovaSeq 6015",
+                "Illumina NovaSeq 6016",
+                "Illumina NovaSeq 6017",
+                "Illumina NovaSeq 6018",
+                "Illumina NovaSeq 6019",
+                "Illumina NovaSeq 6020",
+                "Illumina NovaSeq 6021",
+                "Illumina NovaSeq 6022",
+                "Illumina NovaSeq 6023",
+                "Illumina NovaSeq 6024",
+                "Illumina NovaSeq 6025",
+                "Illumina NovaSeq 6026",
+                "NovaSeq 6000",
+                "NovaSeq 6000 S2 2x150bp_Flowcell",
+                "NovaSeq 6000 SP, 300 cycle"
+            ],
+            "Illumina NovaSeq X": [
+                "Illumina NovaSeq X",
+                "NovaSeq X",
+                "NovaSeq X 1.5B",
+                "NovaSeq X Series"
+            ],
+            "Illumina NovaSeq X Plus": [
+                "Illumina NovaSeq X Plus",
+                "NovaSeq X Plus",
+                "X Plus",
+                "X-Plus"
+            ],
+            "NextSeq 500": [
+                "NextSeq 500",
+                "NextSeq500"
+            ],
+            "NextSeq 550": [
+                "Illumina NextSeq 550",
+                "NextSeq 550"
+            ],
+            "NextSeq 2000": [
+                "NextSeq 2000"
+            ],
+            "PacBio RS II": [
+                "PacBio RS II",
+                "PacBio RSII",
+                "PacBioRSII"
+            ],
+            "PromethION": [
+                "ONT PromethION",
+                "PromethION",
+                "PromethION 24",
+                "PromethION24",
+                "Promethion"
+            ],
+            "Revio": [
+                "PacBio Revio",
+                "Revio"
+            ],
+            "Sequel II": [
+                "PacBio Sequel II",
+                "PacBio Sequel II HiFi"
+            ]
+        },
         "library_layout": {
             "null": [
                 null
+            ],
+            "PAIRED": [
+                "PE",
+                "Paired end",
+                "Paired-End",
+                "paierd-end"
             ]
         },
         "library_selection": {
@@ -58,6 +154,8 @@
             ],
             "size fractionation": [
                 "20kb template prep_blue pippin",
+                "Pippin size selection, shearing and HiFi prep",
+                "Pippin size slection, shearing and HiFi prep",
                 "size fractionation"
             ],
             "unspecified": [
@@ -67,6 +165,7 @@
         "library_source": {
             "GENOMIC": [
                 "DNA",
+                "Extracted DNA",
                 "GENOMIC",
                 "Genome DNA",
                 "gDNA"
@@ -217,6 +316,7 @@
                 "fungi-ont-promethion",
                 "gap-ont-minion",
                 "gap-ont-promethion",
+                "ipm-ont-promethion",
                 "omg-ont-promethion",
                 "pp-ont-promethion"
             ],
@@ -267,6 +367,9 @@
             ],
             "cipps": [
                 "cipps"
+            ],
+            "forest-resilience": [
+                "forest-resilience"
             ],
             "fungi": [
                 "fungi"
@@ -415,8 +518,13 @@
         "lifestage": {
             "adult": [
                 "Adult",
+                "Mature organism",
+                "Middle age",
                 "adult organism",
-                "adult plant"
+                "adult plant",
+                "mature",
+                "mature plant",
+                "prime adult stage"
             ],
             "egg": [
                 "egg"
@@ -433,7 +541,7 @@
             "inflorescence emergence stage": [
                 "Floret emergence"
             ],
-            "juvenile stage": [
+            "juvenile": [
                 "Hatchling",
                 "immature",
                 "juvenile",
@@ -443,11 +551,6 @@
             "larva": [
                 "Tadpole",
                 "larva"
-            ],
-            "mature": [
-                "Middle age",
-                "mature",
-                "mature plant"
             ],
             "missing: control sample": [
                 "missing: control sample"
@@ -489,20 +592,12 @@
             "not provided": [
                 "not provided"
             ],
-            "prime adult stage": [
-                "prime adult stage"
-            ],
             "pupa": [
                 "pupa",
                 "pupae"
             ],
             "seedling": [
                 "seedling"
-            ],
-            "sexually immature stage": [
-                "sub-adult",
-                "sub-adult organism",
-                "subadult"
             ],
             "spore-bearing structure": [
                 "spore-bearing structure"
