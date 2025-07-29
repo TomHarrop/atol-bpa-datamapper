@@ -135,7 +135,7 @@ Mapping options:
 ### transform-data
 
 ```
-usage: transform-data [-h] [-i INPUT] [-o OUTPUT] [-l {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [-n] [--conflicts CONFLICTS] [--package-map PACKAGE_MAP] [--transformation-changes TRANSFORMATION_CHANGES] [--unique-organisms UNIQUE_ORGANISMS] [--organism-conflicts ORGANISM_CONFLICTS] [--organism-package-map ORGANISM_PACKAGE_MAP]
+usage: transform-data [-h] [-i INPUT] [-o OUTPUT] [-l {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [-n] [--sample-conflicts SAMPLE_CONFLICTS] [--sample-package-map SAMPLE_PACKAGE_MAP] [--transformation-changes TRANSFORMATION_CHANGES] [--unique-organisms UNIQUE_ORGANISMS] [--organism-conflicts ORGANISM_CONFLICTS] [--organism-package-map ORGANISM_PACKAGE_MAP] [--sample-ignored-fields SAMPLE_IGNORED_FIELDS] [--organism-ignored-fields ORGANISM_IGNORED_FIELDS]
 
 Transform mapped metadata to extract unique samples
 
@@ -144,7 +144,7 @@ options:
 
 Input:
   -i INPUT, --input INPUT
-                        Input file (default: src/output/map/mapped.jsonl.gz)
+                        Input file (default: stdin)
 
 Output:
   -o OUTPUT, --output OUTPUT
@@ -156,12 +156,22 @@ General options:
   -n, --dry-run         Test mode. Output will be uncompressed jsonlines.
 
 Transform options:
-  --conflicts CONFLICTS
+  --sample-conflicts SAMPLE_CONFLICTS
                         File to record conflicts between samples with the same sample_name
-  --package-map PACKAGE_MAP
+  --sample-package-map SAMPLE_PACKAGE_MAP
                         File to record which packages relate to each unique sample
   --transformation-changes TRANSFORMATION_CHANGES
                         File to record the transformation changes made during sample merging
+  --unique-organisms UNIQUE_ORGANISMS
+                        File to record unique organisms extracted from the data
+  --organism-conflicts ORGANISM_CONFLICTS
+                        File to record conflicts between organisms with the same organism_grouping_key
+  --organism-package-map ORGANISM_PACKAGE_MAP
+                        File to record which packages relate to each unique organism
+  --sample-ignored-fields SAMPLE_IGNORED_FIELDS
+                        Comma-separated list of sample fields to ignore when determining uniqueness. Conflicts in these fields will still be reported but won't prevent inclusion in the unique samples list.
+  --organism-ignored-fields ORGANISM_IGNORED_FIELDS
+                        Comma-separated list of organism fields to ignore when determining uniqueness. Conflicts in these fields will still be reported but won't prevent inclusion in the unique organisms list.
 ```
 
 ### Deployment
@@ -181,4 +191,4 @@ A typical workflow would involve running the three steps in sequence:
 
 2. **map-metadata**: Map the filtered data to AToL format
 
-3. **transform-data**: Extract unique samples and track package relationships
+3. **transform-data**: Extract unique samples and organisms and track package relationships
