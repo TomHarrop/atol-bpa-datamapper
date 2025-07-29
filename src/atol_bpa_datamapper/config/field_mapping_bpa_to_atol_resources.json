@@ -1,6 +1,6 @@
 {
     "runs": {
-        "dataset_name": [
+        "bpa_dataset_id": [
             "bioplatforms_dataset_id",
             "bpa_dataset_id",
             "dataset_id",

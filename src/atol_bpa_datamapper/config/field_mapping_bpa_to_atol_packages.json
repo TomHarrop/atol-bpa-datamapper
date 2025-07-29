@@ -153,7 +153,7 @@
             "collection_permit"
         ],
         "atol_sample_id": [],
-        "sample_name": [
+        "bpa_sample_id": [
             "bioplatforms_sample_id",
             "sample_id",
             "bpa_sample_id",
@@ -224,7 +224,7 @@
         "design_description": [
             "experimental_design"
         ],
-        "library_name": [
+        "bpa_library_id": [
             "bioplatforms_library_id",
             "bpa_library_id",
             "library_id",
