@@ -4,8 +4,9 @@ Map data from the BPA data portal for AToL's Genome Engine.
 
 The pipeline consists of three main steps:
 1. **filter-packages**: Filter packages based on controlled vocabularies
-2. **map-metadata**: Map BPA metadata to AToL format
-3. **transform-data**: Extract unique samples and track package relationships
+2. **map-metadata**: Map BPA metadata to [AToL's metadata
+schema](https://docs.google.com/spreadsheets/d/1ml5hASZ-qlAuuTrwHeGzNVqqe1mXsmmoDTekd6d9pto)
+3. **transform-data**: Extract unique samples and organisms and track their relationships to BPA packages
 
 ## Installation
 
@@ -137,7 +138,7 @@ Mapping options:
 ```
 usage: transform-data [-h] [-i INPUT] [-o OUTPUT] [-l {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [-n] [--sample-conflicts SAMPLE_CONFLICTS] [--sample-package-map SAMPLE_PACKAGE_MAP] [--transformation-changes TRANSFORMATION_CHANGES] [--unique-organisms UNIQUE_ORGANISMS] [--organism-conflicts ORGANISM_CONFLICTS] [--organism-package-map ORGANISM_PACKAGE_MAP] [--sample-ignored-fields SAMPLE_IGNORED_FIELDS] [--organism-ignored-fields ORGANISM_IGNORED_FIELDS]
 
-Transform mapped metadata to extract unique samples
+Transform mapped metadata to extract unique samples and organisms
 
 options:
   -h, --help            show this help message and exit
@@ -146,13 +147,11 @@ Input:
   -i INPUT, --input INPUT
                         Input file (default: stdin)
 
-Output:
+Outputs:
   -o OUTPUT, --output OUTPUT
-                        Output file (default: stdout)
+                        Output file of unique samples (default: stdout)
 
 General options:
-  -l {DEBUG,INFO,WARNING,ERROR,CRITICAL}, --log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
-                        Set the logging level (default: INFO)
   -n, --dry-run         Test mode. Output will be uncompressed jsonlines.
 
 Transform options:
@@ -160,14 +159,14 @@ Transform options:
                         File to record conflicts between samples with the same sample_name
   --sample-package-map SAMPLE_PACKAGE_MAP
                         File to record which packages relate to each unique sample
-  --transformation-changes TRANSFORMATION_CHANGES
-                        File to record the transformation changes made during sample merging
   --unique-organisms UNIQUE_ORGANISMS
                         File to record unique organisms extracted from the data
   --organism-conflicts ORGANISM_CONFLICTS
                         File to record conflicts between organisms with the same organism_grouping_key
   --organism-package-map ORGANISM_PACKAGE_MAP
                         File to record which packages relate to each unique organism
+  --transformation-changes TRANSFORMATION_CHANGES
+                        File to record the transformation changes made during sample & organism merging
   --sample-ignored-fields SAMPLE_IGNORED_FIELDS
                         Comma-separated list of sample fields to ignore when determining uniqueness. Conflicts in these fields will still be reported but won't prevent inclusion in the unique samples list.
   --organism-ignored-fields ORGANISM_IGNORED_FIELDS
@@ -182,13 +181,3 @@ mapping spec can be generated from [AToL's metadata
 schema](https://docs.google.com/spreadsheets/d/1ml5hASZ-qlAuuTrwHeGzNVqqe1mXsmmoDTekd6d9pto)
 using the script at
 [`dev/scripts/read_atol_schemas.py`](dev/scripts/read_atol_schemas.py).
-
-## Pipeline Workflow
-
-A typical workflow would involve running the three steps in sequence:
-
-1. **filter-packages**: Filter the raw BPA packages based on required metadata fields and controlled vocabularies (as defined in src/atol_bpa_datamapper/config/*)
-
-2. **map-metadata**: Map the filtered data to AToL format
-
-3. **transform-data**: Extract unique samples and organisms and track package relationships
