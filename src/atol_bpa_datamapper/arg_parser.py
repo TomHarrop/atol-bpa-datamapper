@@ -10,6 +10,61 @@ def get_config_filepath(filename):
     return pkg_resources.files(config).joinpath(filename)
 
 
+def parse_args_for_transform():
+    parser, input_group, output_group, options_group = shared_args()
+    parser.description = "Transform mapped metadata to extract unique samples"
+    
+    # Remove mapping file arguments that aren't needed for transform
+    for action in list(options_group._group_actions):
+        if action.dest in ["package_field_mapping_file", "resource_field_mapping_file", "value_mapping_file"]:
+            options_group._group_actions.remove(action)
+    
+    transform_group = parser.add_argument_group("Transform options")
+    
+    transform_group.add_argument(
+        "--sample-conflicts",
+        help="File to record conflicts between samples with the same bpa_sample_id",
+    )
+    
+    transform_group.add_argument(
+        "--sample-package-map",
+        help="File to record which packages relate to each unique sample",
+    )
+    
+    transform_group.add_argument(
+        "--transformation-changes",
+        help="File to record the transformation changes made during sample merging",
+    )
+    
+    
+    transform_group.add_argument(
+        "--unique-organisms",
+        help="File to record unique organisms extracted from the data",
+    )
+    
+    transform_group.add_argument(
+        "--organism-conflicts",
+        help="File to record conflicts between organisms with the same organism_grouping_key",
+    )
+    
+    transform_group.add_argument(
+        "--organism-package-map",
+        help="File to record which packages relate to each unique organism",
+    )
+    
+    transform_group.add_argument(
+        "--sample-ignored-fields",
+        help="Comma-separated list of sample fields to ignore when determining uniqueness. Conflicts in these fields will still be reported but won't prevent inclusion in the unique samples list.",
+    )
+    
+    transform_group.add_argument(
+        "--organism-ignored-fields",
+        help="Comma-separated list of organism fields to ignore when determining uniqueness. Conflicts in these fields will still be reported but won't prevent inclusion in the unique organisms list.",
+    )
+    
+    return parser.parse_args()
+
+
 def parse_args_for_filtering():
     parser, input_group, output_group, options_group, counter_group = field_value_args()
     parser.description = "Filter packages from jsonlines.gz"

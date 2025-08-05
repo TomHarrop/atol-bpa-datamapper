@@ -2,6 +2,12 @@
 
 Map data from the BPA data portal for AToL's Genome Engine.
 
+The pipeline consists of three main steps:
+1. **filter-packages**: Filter packages based on controlled vocabularies
+2. **map-metadata**: Map BPA metadata to [AToL's metadata
+schema](https://docs.google.com/spreadsheets/d/1ml5hASZ-qlAuuTrwHeGzNVqqe1mXsmmoDTekd6d9pto)
+3. **transform-data**: Extract unique samples and organisms and track their relationships to BPA packages
+
 ## Installation
 
 ### Recommended: Use the [BioContainer](https://quay.io/repository/biocontainers/atol-bpa-datamapper?tab=tags)
@@ -127,6 +133,46 @@ Mapping options:
                         JSON file of Package IDs grouped by organism grouping_key
 ```
 
+### transform-data
+
+```
+usage: transform-data [-h] [-i INPUT] [-o OUTPUT] [-l {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [-n] [--sample-conflicts SAMPLE_CONFLICTS] [--sample-package-map SAMPLE_PACKAGE_MAP] [--transformation-changes TRANSFORMATION_CHANGES] [--unique-organisms UNIQUE_ORGANISMS] [--organism-conflicts ORGANISM_CONFLICTS] [--organism-package-map ORGANISM_PACKAGE_MAP] [--sample-ignored-fields SAMPLE_IGNORED_FIELDS] [--organism-ignored-fields ORGANISM_IGNORED_FIELDS]
+
+Transform mapped metadata to extract unique samples and organisms
+
+options:
+  -h, --help            show this help message and exit
+
+Input:
+  -i INPUT, --input INPUT
+                        Input file (default: stdin)
+
+Outputs:
+  -o OUTPUT, --output OUTPUT
+                        Output file of unique samples (default: stdout)
+
+General options:
+  -n, --dry-run         Test mode. Output will be uncompressed jsonlines.
+
+Transform options:
+  --sample-conflicts SAMPLE_CONFLICTS
+                        File to record conflicts between samples with the same bpa_sample_id
+  --sample-package-map SAMPLE_PACKAGE_MAP
+                        File to record which packages relate to each unique sample
+  --unique-organisms UNIQUE_ORGANISMS
+                        File to record unique organisms extracted from the data
+  --organism-conflicts ORGANISM_CONFLICTS
+                        File to record conflicts between organisms with the same organism_grouping_key
+  --organism-package-map ORGANISM_PACKAGE_MAP
+                        File to record which packages relate to each unique organism
+  --transformation-changes TRANSFORMATION_CHANGES
+                        File to record the transformation changes made during sample & organism merging
+  --sample-ignored-fields SAMPLE_IGNORED_FIELDS
+                        Comma-separated list of sample fields to ignore when determining uniqueness. Conflicts in these fields will still be reported but won't prevent inclusion in the unique samples list.
+  --organism-ignored-fields ORGANISM_IGNORED_FIELDS
+                        Comma-separated list of organism fields to ignore when determining uniqueness. Conflicts in these fields will still be reported but won't prevent inclusion in the unique organisms list.
+```
+
 ### Deployment
 
 The package comes with metadata mapping specifications in
@@ -135,4 +181,3 @@ mapping spec can be generated from [AToL's metadata
 schema](https://docs.google.com/spreadsheets/d/1ml5hASZ-qlAuuTrwHeGzNVqqe1mXsmmoDTekd6d9pto)
 using the script at
 [`dev/scripts/read_atol_schemas.py`](dev/scripts/read_atol_schemas.py).
-

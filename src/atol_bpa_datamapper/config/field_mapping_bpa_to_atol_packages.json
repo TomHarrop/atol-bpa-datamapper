@@ -49,7 +49,8 @@
             "common_name"
         ],
         "atol_scientific_name": [],
-        "organism_grouping_key": []
+        "organism_grouping_key": [],
+        "tax_string": []
     },
     "sample": {
         "specimen_voucher": [
@@ -152,7 +153,7 @@
             "collection_permit"
         ],
         "atol_sample_id": [],
-        "sample_name": [
+        "bpa_sample_id": [
             "bioplatforms_sample_id",
             "sample_id",
             "bpa_sample_id",
@@ -223,7 +224,7 @@
         "design_description": [
             "experimental_design"
         ],
-        "library_name": [
+        "bpa_library_id": [
             "bioplatforms_library_id",
             "bpa_library_id",
             "library_id",
@@ -257,8 +258,7 @@
             "sequencing_platform",
             "sequencer",
             "sequencing_model",
-            "sequencing_technology",
-            "library_type"
+            "sequencing_technology"
         ],
         "library_source": [
             "library_source",
@@ -308,7 +308,9 @@
             "sequencing_platform",
             "sequencer",
             "sequencing_model",
-            "sequencing_technology"
+            "sequencing_technology",
+            "nucleic_acid_treatment",
+            "dna_treatment"
         ],
         "library_layout": [
             "library_layout"
