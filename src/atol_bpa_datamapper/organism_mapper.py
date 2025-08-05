@@ -56,7 +56,12 @@ def generate_taxonomy_tree(names, nodes, cache_dir, update_tree=False):
             return cache["tree"]
         else:
             logger.info("Generating taxonomy tree")
-            tree = TreeNode.from_taxdump(nodes, names)
+            # I think omitting the names means we get taxids as names (better
+            # for searching). To include names, use
+            # `TreeNode.from_taxdump(nodes, names)`.
+            tree = TreeNode.from_taxdump(nodes)
+            logger.info("Indexing tree")
+            tree.index_tree()
             cache["tree"] = tree
             return tree
 
@@ -171,6 +176,19 @@ class NcbiTaxdump:
 
         return None
 
+    def get_busco_lineage(self, taxid):
+        """
+        Find the closest ancestor that is in the BUSCO taxid map and return the
+        lineage name.
+        """
+        try:
+            node = self.tree.find(taxid)
+        except skbio.tree._exception.MissingNodeError as e:
+            logger.warning(f"Node {taxid} not found, trying a string search")
+            node = self.tree.find(str(taxid))
+
+        raise ValueError([x.name for x in node.ancestors()])
+
 
 class OrganismSection(dict):
 
@@ -209,6 +227,7 @@ class OrganismSection(dict):
             self.organism_grouping_key = "_".join(
                 [remove_whitespace(self.atol_scientific_name), str(self.taxon_id)]
             )
+            ncbi_taxdump.get_busco_lineage(self.taxon_id)
         else:
             self.organism_grouping_key = None
 
@@ -320,7 +339,7 @@ class OrganismSection(dict):
         # check if the raw_taxon_id is an int
         if self.raw_taxon_id is None:
             return
-            
+
         try:
             self.taxon_id = int(self.raw_taxon_id)
             self.raw_taxon_id_is_int = True
