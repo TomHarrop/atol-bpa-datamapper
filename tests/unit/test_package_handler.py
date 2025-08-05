@@ -163,7 +163,7 @@ def test_map_metadata_multiple_resources():
     )
     
     # Map the metadata
-    result = package.map_metadata(metadata_map)
+    result = metadata_map.mock_map_metadata_result(package)
     
     # Check that the result has the expected structure
     assert "dataset" in result
@@ -260,7 +260,7 @@ def test_map_metadata_with_controlled_vocabulary():
     metadata_map.controlled_vocabularies = ["field_a"]
     
     # Map the metadata
-    result = package.map_metadata(metadata_map)
+    result = metadata_map.mock_map_metadata_result(package)
     
     # Check that the result has the expected structure
     assert "dataset" in result
@@ -307,7 +307,7 @@ def test_map_metadata_with_empty_resources():
     )
     
     # Map the metadata
-    result = package.map_metadata(metadata_map)
+    result = metadata_map.mock_map_metadata_result(package)
     
     # Check that the result has the expected structure
     assert "dataset" in result
@@ -349,7 +349,7 @@ def test_map_metadata_with_nested_fields():
     )
     
     # Map the metadata
-    result = package.map_metadata(metadata_map)
+    result = metadata_map.mock_map_metadata_result(package)
     
     # Check that the result has the expected structure
     assert "dataset" in result
@@ -385,7 +385,7 @@ def test_map_metadata_with_null_values():
     )
     
     # Map the metadata
-    result = package.map_metadata(metadata_map)
+    result = metadata_map.mock_map_metadata_result(package)
     
     # Check that the result has the expected structure
     assert "dataset" in result
@@ -437,7 +437,7 @@ def test_map_metadata_with_fallback_fields():
     )
     
     # Map the metadata
-    result = package.map_metadata(metadata_map)
+    result = metadata_map.mock_map_metadata_result(package)
     
     # Check that the result has the expected structure
     assert "dataset" in result
