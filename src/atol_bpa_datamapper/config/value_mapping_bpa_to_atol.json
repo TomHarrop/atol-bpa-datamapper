@@ -1,20 +1,37 @@
 {
     "experiment": {
         "instrument_model": {
-            "1000": [
-                "1000"
-            ],
             "Illumina HiSeq 2500": [
                 "HiSeq 2500",
+                "HiSeq 2501",
+                "HiSeq 2502",
+                "HiSeq 2503",
+                "HiSeq 2504",
+                "HiSeq 2505",
+                "HiSeq 2506",
+                "HiSeq 2507",
+                "HiSeq 2508",
+                "HiSeq 2509",
+                "HiSeq 2510",
+                "HiSeq 2511",
+                "HiSeq 2512",
+                "HiSeq 2513",
+                "HiSeq 2514",
+                "HiSeq 2515",
+                "HiSeq 2516",
+                "HiSeq 2518",
+                "HiSeq 2519",
+                "HiSeq 2520",
                 "HiSeq2500",
                 "Illumina HiSeq 2500"
             ],
             "Illumina MiSeq": [
-                "Illumina MiSeq",
+                "HiSeq 2517",
                 "MiSeq"
             ],
             "Illumina NovaSeq 6000": [
                 "6000",
+                "6000.0",
                 "Illumina NovaSeq 6000",
                 "Illumina NovaSeq 6001",
                 "Illumina NovaSeq 6002",
@@ -44,7 +61,17 @@
                 "Illumina NovaSeq 6026",
                 "NovaSeq 6000",
                 "NovaSeq 6000 S2 2x150bp_Flowcell",
-                "NovaSeq 6000 SP, 300 cycle"
+                "NovaSeq 6000 SP, 300 cycle",
+                "NovaSeq 6027",
+                "NovaSeq 6028",
+                "NovaSeq 6029",
+                "NovaSeq 6030",
+                "NovaSeq 6031",
+                "NovaSeq 6032",
+                "NovaSeq 6033",
+                "NovaSeq 6034",
+                "NovaSeq 6035",
+                "NovaSeq 6036"
             ],
             "Illumina NovaSeq X": [
                 "Illumina NovaSeq X",
@@ -58,11 +85,12 @@
                 "X Plus",
                 "X-Plus"
             ],
-            "NextSeq 500": [
+            "Illumina NextSeq 500": [
+                "Illumina NextSeq 500",
                 "NextSeq 500",
                 "NextSeq500"
             ],
-            "NextSeq 550": [
+            "Illumina NextSeq 550": [
                 "Illumina NextSeq 550",
                 "NextSeq 550"
             ],
@@ -87,7 +115,214 @@
             ],
             "Sequel II": [
                 "PacBio Sequel II",
-                "PacBio Sequel II HiFi"
+                "PacBio Sequel II HiFi",
+                "Sequel II"
+            ],
+            "MinION": [
+                "MinION",
+                "ONT MinION"
+            ],
+            "GridION": [
+                "GridION"
+            ],
+            "454 GS": [
+                "454 GS"
+            ],
+            "454 GS 20": [
+                "454 GS 20"
+            ],
+            "454 GS FLX": [
+                "454 GS FLX"
+            ],
+            "454 GS FLX+": [
+                "454 GS FLX+"
+            ],
+            "454 GS FLX Titatnium": [
+                "454 GS FLX Titatnium"
+            ],
+            "454 GS Junior": [
+                "454 GS Junior"
+            ],
+            "Illumina Genome Analyzer": [
+                "Illumina Genome Analyzer"
+            ],
+            "Illumina Genome Analyzer II": [
+                "Illumina Genome Analyzer II"
+            ],
+            "Illumina Genome Analyzer Iix": [
+                "Illumina Genome Analyzer Iix"
+            ],
+            "Illumina HiSeq 1000": [
+                "Illumina HiSeq 1000"
+            ],
+            "Illumina HiSeq 1500": [
+                "Illumina HiSeq 1500"
+            ],
+            "Illumina HiSeq 2000": [
+                "Illumina HiSeq 2000"
+            ],
+            "Illumina HiSeq 3000": [
+                "Illumina HiSeq 3000"
+            ],
+            "Illumina HiSeq 4000": [
+                "Illumina HiSeq 4000"
+            ],
+            "Illumina iSeq 100": [
+                "Illumina iSeq 100"
+            ],
+            "Illumina HiScanSQ": [
+                "Illumina HiScanSQ"
+            ],
+            "Illumina HiSeq X Five": [
+                "Illumina HiSeq X Five"
+            ],
+            "Illumina HiSeq X Ten": [
+                "Illumina HiSeq X Ten"
+            ],
+            "Illumina MiniSeq": [
+                "Illumina MiniSeq"
+            ],
+            "NextSeq 1000": [
+                "NextSeq 1000"
+            ],
+            "AB SOLiD System": [
+                "AB SOLiD System"
+            ],
+            "AB SOLiD System 2.0": [
+                "AB SOLiD System 2.0"
+            ],
+            "AB SOLiD System 3.0": [
+                "AB SOLiD System 3.0"
+            ],
+            "AB SOLiD 3 Plus System": [
+                "AB SOLiD 3 Plus System"
+            ],
+            "AB SOLiD 4 System": [
+                "AB SOLiD 4 System"
+            ],
+            "AB SOLiD 4hq System": [
+                "AB SOLiD 4hq System"
+            ],
+            "AB SOLiD PI System": [
+                "AB SOLiD PI System"
+            ],
+            "AB 5500 Genetic Analyzer": [
+                "AB 5500 Genetic Analyzer"
+            ],
+            "AB 5500xl Genetic Analyzer": [
+                "AB 5500xl Genetic Analyzer"
+            ],
+            "AB 500xl-W Genetic Analysis System": [
+                "AB 500xl-W Genetic Analysis System"
+            ],
+            "Ion Torrent PGM": [
+                "Ion Torrent PGM"
+            ],
+            "Ion Torrent Proton": [
+                "Ion Torrent Proton"
+            ],
+            "Ion Torrent S5": [
+                "Ion Torrent S5"
+            ],
+            "Ion Torrent S5 XL": [
+                "Ion Torrent S5 XL"
+            ],
+            "Complete Genomics": [
+                "Complete Genomics"
+            ],
+            "Onso": [
+                "Onso"
+            ],
+            "PacBio RS": [
+                "PacBio RS"
+            ],
+            "Sequel": [
+                "PacBio Sequel",
+                "Sequel"
+            ],
+            "Sequel IIe": [
+                "Sequel Iie"
+            ],
+            "AB 3730xL Genetic Analyzer": [
+                "AB 3730xL Genetic Analyzer"
+            ],
+            "AB 3730 Genetic Analyzer": [
+                "AB 3730 Genetic Analyzer"
+            ],
+            "AB 3500xL Genetic Analyzer": [
+                "AB 3500xL Genetic Analyzer"
+            ],
+            "AB 3130xL Genetic Analyzer": [
+                "AB 3130xL Genetic Analyzer"
+            ],
+            "AB 3130 Genetic Analyzer": [
+                "AB 3130 Genetic Analyzer"
+            ],
+            "AB 310 Genetic Analyzer": [
+                "AB 310 Genetic Analyzer"
+            ],
+            "BGISEQ-500": [
+                "BGISEQ-500"
+            ],
+            "DNBSEQ-T7": [
+                "DNBSEQ-T7"
+            ],
+            "DNBSEQ-G400": [
+                "DNBSEQ-G400"
+            ],
+            "DNBSEQ-G50": [
+                "DNBSEQ-G50"
+            ],
+            "DNBSEQ-G400 FAST": [
+                "DNBSEQ-G400 FAST"
+            ],
+            "DNBSEQ-T10x4RS": [
+                "DNBSEQ-T10x4RS"
+            ],
+            "Ion GeneStudio S5 Prime": [
+                "Ion GeneStudio S5 Prime"
+            ],
+            "Ion GeneStudio S5 Plus": [
+                "Ion GeneStudio S5 Plus"
+            ],
+            "Ion GeneStudio S5": [
+                "Ion GeneStudio S5"
+            ],
+            "Ion Torrent Genexus": [
+                "Ion Torrent Genexus"
+            ],
+            "Illumina HiSeq X": [
+                "Illumina HiSeq X"
+            ],
+            "NGISEQ-2000RS": [
+                "NGISEQ-2000RS"
+            ],
+            "Element AVITI": [
+                "Element AVITI"
+            ],
+            "UG 100": [
+                "UG 100"
+            ],
+            "Sentosa SQ301": [
+                "Sentosa SQ301"
+            ],
+            "GENIUS": [
+                "GENIUS"
+            ],
+            "Genapsys Sequencer": [
+                "Genapsys Sequencer"
+            ],
+            "GS111": [
+                "GS111"
+            ],
+            "GenoCare 1600": [
+                "GenoCare 1600"
+            ],
+            "FASTASeq 300": [
+                "FASTASeq 300"
+            ],
+            "Tapestri": [
+                "Tapestri"
             ]
         },
         "library_layout": {
@@ -95,10 +330,14 @@
                 null
             ],
             "PAIRED": [
+                "PAIRED",
                 "PE",
                 "Paired end",
                 "Paired-End",
                 "paierd-end"
+            ],
+            "SINGLE": [
+                "SINGLE"
             ]
         },
         "library_selection": {
@@ -156,10 +395,29 @@
                 "20kb template prep_blue pippin",
                 "Pippin size selection, shearing and HiFi prep",
                 "Pippin size slection, shearing and HiFi prep",
+                "Short read eliminator",
                 "blue pippin size selection of pooled libraries",
                 "size fractionation"
             ],
             "unspecified": [
+                "DNA",
+                "Duplex UMI with Adapter Ligation of DNA",
+                "PCR-based Ligation",
+                "RNA",
+                "TruSeq RNA library",
+                "TruSeq smRNA library",
+                "Whole Transcriptome Library",
+                "ausarg-illumina-fastq",
+                "ausarg-ont-promethion",
+                "avian-illumina-shortread",
+                "fungi-illumina-shortread",
+                "gDNA",
+                "gap-hi-c",
+                "gap-ont-promethion",
+                "grasslands-illumina-shortread",
+                "grasslands-pacbio-hifi",
+                "illumina-shortread",
+                "samples were barcoded and pooled based on different time points and replicates",
                 "unspecified"
             ]
         },
@@ -169,7 +427,12 @@
                 "Extracted DNA",
                 "GENOMIC",
                 "Genome DNA",
-                "gDNA"
+                "HiC",
+                "Illumina TruSeq DNA Nano",
+                "TruSeq DNA Nano",
+                "TruSeq DNA PCR-Free",
+                "gDNA",
+                "illumina-hic"
             ],
             "GENOMIC SINGLE CELL": [
                 "GENOMIC SINGLE CELL"
@@ -179,6 +442,8 @@
             ],
             "TRANSCRIPTOMIC": [
                 "RNA",
+                "RNA-Seq and small RNA",
+                "RNASeq",
                 "TRANSCRIPTOMIC",
                 "illumina-transcriptomics"
             ],
@@ -217,9 +482,11 @@
             ],
             "RNA-Seq": [
                 "Illumina TruSeq Total RNA",
+                "RNA",
                 "RNA-Seq",
                 "RNA-Seq and small RNA",
                 "RNASeq",
+                "Total RNA",
                 "Whole Transcriptome Sequencing",
                 "cDNA ligated with Nanopore native adapters",
                 "illumina-transcriptomics"
@@ -246,7 +513,10 @@
                 "WGA"
             ],
             "WGS": [
+                "HiFi SMRTbell\u00c2\u00ae Libraries using the SMRTbell Express Template Prep Kit 2.0 primer V5 PN 101-853-100 Version 04 (April 2021) with custom steps",
+                "PacBio Preparing >30kb Libraries using SMRTbell Express Template Preparation kit 1.0",
                 "WGS",
+                "WGS Tagmentation",
                 "Whole Genome Sequencing"
             ],
             "WXS": [
@@ -319,7 +589,8 @@
                 "gap-ont-promethion",
                 "ipm-ont-promethion",
                 "omg-ont-promethion",
-                "pp-ont-promethion"
+                "pp-ont-promethion",
+                "tsi-ont-promethion"
             ],
             "PACBIO_SMRT": [
                 "PACBIO_SMRT",
@@ -517,7 +788,8 @@
                 "Ramaciotti, UNSW",
                 "Ramaciotti/Garvan",
                 "RamaciottiGarvan",
-                "Ramaciotti_UNSW"
+                "Ramaciotti_UNSW",
+                "UNSW_Ramaciotti Centre for Genomics"
             ]
         },
         "lifestage": {
