@@ -261,7 +261,7 @@ class OrganismSection(dict):
 
         # generate a key for grouping the organisms
         # TODO: this should be some sort of UUID
-        if self.has_taxid_at_accepted_level:
+        if self.has_taxid_at_accepted_level and self.scientific_name_source == "ncbi":
             self.organism_grouping_key = "_".join(
                 [remove_whitespace(self.atol_scientific_name), str(self.taxon_id)]
             )
@@ -344,12 +344,16 @@ class OrganismSection(dict):
             )
             logger.debug("Accepted ranks: {ncbi_taxdump.accepted_ranks}")
             self.has_subspecies_information = True
-            subspecies_sanitised = sanitise_string(self.get("infraspecific_epithet"))
-            self.atol_scientific_name = " ".join(
-                [self.scientific_name, subspecies_sanitised]
-            )
             self.subspecies_source = "parsed"
-            logger.debug("Assigning {self.atol_scientific_name}")
+
+            # Using the BPA subspecies info is disabled, see
+            # https://github.com/TomHarrop/atol-bpa-datamapper/issues/26
+            # subspecies_sanitised = sanitise_string(self.get("infraspecific_epithet"))
+            # self.atol_scientific_name = " ".join(
+            #     [self.scientific_name, subspecies_sanitised]
+            # )
+            # logger.debug("Assigning {self.atol_scientific_name}")
+
             return
 
         self.atol_scientific_name = self.scientific_name
