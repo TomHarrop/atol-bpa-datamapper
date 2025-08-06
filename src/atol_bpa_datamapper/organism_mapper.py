@@ -353,7 +353,7 @@ class OrganismSection(dict):
             #     [self.scientific_name, subspecies_sanitised]
             # )
             # logger.debug("Assigning {self.atol_scientific_name}")
-
+            self.atol_scientific_name = self.scientific_name
             return
 
         self.atol_scientific_name = self.scientific_name
