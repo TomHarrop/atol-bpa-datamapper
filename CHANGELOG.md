@@ -1,5 +1,81 @@
 # Changelog
 
+## (unreleased)
+
+### New
+
+* Get BUSCO lineage from NCBI taxonomy.
+
+  new: Get BUSCO lineage from NCBI taxonomy
+
+### Other
+
+* Only use NCBI taxid and scientific_name for grouping key (fixes #26)
+
+* Only use NCBI taxid and scientific_name for grouping key (fixes #26)
+
+## v0.1.10 (2025-07-29)
+
+### Other
+
+* Update README.md and code to match updated schema.
+
+* Update README.md.
+
+* Merge pull request #24 from TomHarrop/extract-unique-sample-objects.
+
+  new: Extract unique sample and organism objects
+
+* Merge branch 'main' into extract-unique-sample-objects.
+
+* Update io.py.
+
+* Merge branch 'main' into extract-unique-sample-objects.
+
+# Conflicts
+
+# src/atol_bpa_datamapper/config/field_mapping_bpa_to_atol_packages.json
+
+* Update vocab.
+
+* Sync config files with AToL schema spreadsheets.
+
+* Add recursive safe_get function.
+
+* Update README.md with the transform-data args.
+
+* Add organism_grouping_key to unique samples output.
+
+* Abstract out a base EntityTransformer class to handle overlapping logic in OrganismTransformer and SampleTransformer.
+
+* Revert an accidental code change.
+
+* Update transform-data arg names for consistency.
+
+* Ignore any inconsistencies for specified fields between the same representations of the same entities (for both organisms and samples)
+
+* Add logic to extract unique organisms and log conflicts.
+
+* Update config (to be updated in source spreadsheet)
+
+* Update README.md.
+
+* Change package_map format.
+
+* Fix recording transformation changes.
+
+* Update conflict dict to be more readable.
+
+* Ignore conflicting samples from output and log; if conflict is on sample_access_date, take most recent date to both preserve privacy and prevent throwing out usable samples.
+
+* Make transform_data an executable script in pyproject.toml, update io.py to handle input of the format matching the output from map-metadata, add output file to track changes during transform_data step.
+
+* Added some auto-generated code comments, have edited comments for accuracy and brevity.
+
+* Added some auto-generated code comments, have edited comments for accuracy and brevity.
+
+* Extract samples with the same sample_name, detect and report any conflicts between metadata fields for samples with the same sample_name attribute, report bpa_package_id where each sample is found.
+
 ## v0.1.9 (2025-07-04)
 
 ### New
