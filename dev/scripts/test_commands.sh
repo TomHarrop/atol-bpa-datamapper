@@ -26,6 +26,7 @@ python3 -m cProfile -o "results/${RESULT_DIR}/map.stats" \
     -m atol_bpa_datamapper.map_metadata \
     --nodes "dev/taxdump/nodes.dmp" \
     --names "dev/taxdump/names.dmp" \
+    --taxids_to_busco_dataset_mapping "dev/mapping_taxids-busco_dataset_name.eukaryota_odb10.2019-12-16.txt.tar.gz" \
     --raw_field_usage "results/${RESULT_DIR}/raw_field_usage_mapping.jsonl.gz" \
     --raw_value_usage "results/${RESULT_DIR}/raw_value_usage.jsonl.gz" \
     --mapped_field_usage "results/${RESULT_DIR}/mapped_field_usage.jsonl.gz" \

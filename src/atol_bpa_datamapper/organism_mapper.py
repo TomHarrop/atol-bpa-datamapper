@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 
+from .io import read_gzip_textfile
 from .logger import logger
 from pathlib import Path
+from skbio.tree import TreeNode
 import hashlib
 import pandas as pd
 import shelve
 import skbio.io
-from skbio.tree import TreeNode
+
 import re
 
 
@@ -111,6 +113,17 @@ def split_scientific_name(scientific_name, null_values):
     return name_parts
 
 
+def read_busco_mapping(taxids_to_busco_dataset_mapping):
+    dataset_mapping = read_gzip_textfile(taxids_to_busco_dataset_mapping)
+    next(dataset_mapping)  # skip the header
+    taxid_to_dataset = {}
+    for mapping in dataset_mapping:
+        splits = mapping.strip().split(maxsplit=1)
+        taxid_to_dataset[int(splits[0])] = str(splits[1])
+    logger.debug(taxid_to_dataset)
+    return taxid_to_dataset
+
+
 def remove_whitespace(string):
     allowed_chars = re.compile("[a-zA-Z0-9]")
     return re.sub(r"[^a-zA-Z0-9]+", "_", string)
@@ -118,7 +131,15 @@ def remove_whitespace(string):
 
 class NcbiTaxdump:
 
-    def __init__(self, nodes_file, names_file, cache_dir, resolve_to_rank="species"):
+    def __init__(
+        self,
+        nodes_file,
+        names_file,
+        taxids_to_busco_dataset_mapping,
+        cache_dir,
+        resolve_to_rank="species",
+    ):
+
         logger.info(f"Reading NCBI taxonomy from {nodes_file}")
         self.nodes, nodes_changed = read_taxdump_file(
             nodes_file, cache_dir, "nodes_slim"
@@ -146,6 +167,14 @@ class NcbiTaxdump:
         self.accepted_ranks = find_lower_ranks(self.tree, self.resolve_to_rank)
         logger.debug(
             f"Accepted ranks including and below {self.resolve_to_rank}:\n{self.accepted_ranks}"
+        )
+
+        logger.info(
+            f"Reading BUSCO to dataset mapping from {taxids_to_busco_dataset_mapping}"
+        )
+        self.busco_mapping = read_busco_mapping(taxids_to_busco_dataset_mapping)
+        logger.info(
+            f"    ... found {len(self.busco_mapping.keys())} datasets in BUSCO mapping file"
         )
 
     def get_rank(self, taxid):
@@ -187,7 +216,14 @@ class NcbiTaxdump:
             logger.warning(f"Node {taxid} not found, trying a string search")
             node = self.tree.find(str(taxid))
 
-        raise ValueError([x.name for x in node.ancestors()])
+        ancestor_taxids = [x.name for x in node.ancestors()]
+        logger.warning(ancestor_taxids)
+        logger.warning(self.busco_mapping.keys())
+        for taxid in ancestor_taxids:
+            if int(taxid) in self.busco_mapping.keys():
+                return self.busco_mapping[int(taxid)]
+            if taxid in self.busco_mapping.keys():
+                return self.busco_mapping[taxid]
 
 
 class OrganismSection(dict):
@@ -227,7 +263,8 @@ class OrganismSection(dict):
             self.organism_grouping_key = "_".join(
                 [remove_whitespace(self.atol_scientific_name), str(self.taxon_id)]
             )
-            ncbi_taxdump.get_busco_lineage(self.taxon_id)
+            x = ncbi_taxdump.get_busco_lineage(self.taxon_id)
+            raise ValueError(x)
         else:
             self.organism_grouping_key = None
 

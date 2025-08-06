@@ -4,6 +4,7 @@ import csv
 import gzip
 import jsonlines
 import sys
+import tarfile
 
 
 class OutputWriter:
@@ -52,6 +53,27 @@ class OutputWriter:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._close_file()
+
+
+def _extract_tarfile(file_path):
+    with tarfile.open(file_path, "r:gz") as tar:
+        for member in tar.getmembers():
+            if member.isfile() and not member.name.startswith("."):
+                for line in tar.extractfile(member).read().decode().splitlines():
+                    yield (line)
+
+
+def read_gzip_textfile(file_path):
+
+    if file_path.endswith(".tar.gz") or file_path.endswith(".tgz"):
+        f = _extract_tarfile(file_path)
+    else:
+        f = gzip.open(file_path, "rt")
+
+    for i, line in enumerate(f, 1):
+        if "\x00" in line:
+            raise ValueError(f"Null bytes at line {i} of {file_path}")
+        yield line
 
 
 def read_input(input_source):
