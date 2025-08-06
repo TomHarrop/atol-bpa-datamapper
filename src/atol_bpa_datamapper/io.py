@@ -4,6 +4,7 @@ import csv
 import gzip
 import jsonlines
 import sys
+import tarfile
 
 
 class OutputWriter:
@@ -54,12 +55,47 @@ class OutputWriter:
         self._close_file()
 
 
+def _extract_tarfile(file_path):
+    with tarfile.open(file_path, "r:gz") as tar:
+        for member in tar.getmembers():
+            if member.isfile() and not member.name.startswith("."):
+                for line in tar.extractfile(member).read().decode().splitlines():
+                    yield (line)
+
+
+def read_gzip_textfile(file_path):
+    if file_path.endswith(".tar.gz") or file_path.endswith(".tgz"):
+        f = _extract_tarfile(file_path)
+    else:
+        f = gzip.open(file_path, "rt")
+
+    for i, line in enumerate(f, 1):
+        if "\x00" in line:
+            raise ValueError(f"Null bytes at line {i} of {file_path}")
+        yield line
+
+
 def read_input(input_source):
+    """
+    Construct BpaPackage objects from BPA metadata .jsonl.gz files.
+    """
+    for obj in read_jsonl_file(input_source):
+        yield BpaPackage(obj)
+
+
+def read_jsonl_file(input_source):
+    """
+    Read generic jsonl.gz objects.
+    """
     logger.info(f"Reading input from {input_source.name}")
     with gzip.open(input_source, "rt") as f:
         reader = jsonlines.Reader(f)
         for obj in reader:
-            yield BpaPackage(obj)
+            if isinstance(obj, dict):
+                yield obj
+            else:
+                logger.warning(f"Skipping non-dictionary object: {obj}")
+                continue
 
 
 def write_decision_log_to_csv(decision_log, file_path):
@@ -95,19 +131,3 @@ def write_mapping_log_to_csv(mapping_log, file_path):
 def write_json(data, file):
     with gzip.open(file, "wb") as f:
         jsonlines.Writer(f).write(data)
-
-
-def read_mapped_data(input_source):
-    """
-    Read mapped metadata from a gzipped jsonlines file without using BpaPackage (the mapped metadata isn't compatable with BpaPackage & we don't require the full functionality)
-    """
-    logger.info(f"Reading mapped data from {input_source}")
-    with gzip.open(input_source, "rt") as f:
-        reader = jsonlines.Reader(f)
-        for obj in reader:
-            # Ensure the object has the expected structure
-            if isinstance(obj, dict):
-                yield obj
-            else:
-                logger.warning(f"Skipping non-dictionary object: {obj}")
-                continue
