@@ -119,7 +119,7 @@ def read_busco_mapping(taxids_to_busco_dataset_mapping):
     taxid_to_dataset = {}
     for mapping in dataset_mapping:
         splits = mapping.strip().split(maxsplit=1)
-        taxid_to_dataset[int(splits[0])] = str(splits[1])
+        taxid_to_dataset.update({int(splits[0]): str(splits[1])})
     logger.debug(taxid_to_dataset)
     return taxid_to_dataset
 
@@ -210,15 +210,17 @@ class NcbiTaxdump:
         Find the closest ancestor that is in the BUSCO taxid map and return the
         lineage name.
         """
+
+        logger.debug(f"Looking up BUSCO dataset name for taxid {taxid}")
+
         try:
             node = self.tree.find(taxid)
         except skbio.tree._exception.MissingNodeError as e:
-            logger.warning(f"Node {taxid} not found, trying a string search")
+            logger.debug(f"Node {taxid} not found, trying a string search")
             node = self.tree.find(str(taxid))
 
         ancestor_taxids = [x.name for x in node.ancestors()]
-        logger.warning(ancestor_taxids)
-        logger.warning(self.busco_mapping.keys())
+        logger.debug(f"ancestor_taxids: {ancestor_taxids}")
         for taxid in ancestor_taxids:
             if int(taxid) in self.busco_mapping.keys():
                 return self.busco_mapping[int(taxid)]
@@ -263,8 +265,7 @@ class OrganismSection(dict):
             self.organism_grouping_key = "_".join(
                 [remove_whitespace(self.atol_scientific_name), str(self.taxon_id)]
             )
-            x = ncbi_taxdump.get_busco_lineage(self.taxon_id)
-            raise ValueError(x)
+            self.busco_dataset_name = ncbi_taxdump.get_busco_lineage(self.taxon_id)
         else:
             self.organism_grouping_key = None
 

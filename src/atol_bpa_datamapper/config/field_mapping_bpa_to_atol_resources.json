@@ -33,6 +33,12 @@
         "reads_access_date": [
             "access_control_date"
         ],
+        "read_number": [
+            "read"
+        ],
+        "lane_number": [
+            "lane"
+        ],
         "sra_run_accession": [],
         "run_read_count": [],
         "run_base_count": []

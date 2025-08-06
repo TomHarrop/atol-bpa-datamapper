@@ -64,7 +64,6 @@ def _extract_tarfile(file_path):
 
 
 def read_gzip_textfile(file_path):
-
     if file_path.endswith(".tar.gz") or file_path.endswith(".tgz"):
         f = _extract_tarfile(file_path)
     else:
