@@ -1,6 +1,6 @@
 # Changelog
 
-## (unreleased)
+## v0.1.11 (2025-08-06)
 
 ### New
 
