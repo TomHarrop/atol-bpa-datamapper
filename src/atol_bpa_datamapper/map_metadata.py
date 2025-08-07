@@ -27,9 +27,10 @@ def main():
 
     # set up taxonomy data
     ncbi_taxdump = NcbiTaxdump(
-        args.nodes,
-        args.names,
-        args.cache_dir,
+        nodes_file=args.nodes,
+        names_file=args.names,
+        taxids_to_busco_dataset_mapping=args.taxids_to_busco_dataset_mapping,
+        cache_dir=args.cache_dir,
         resolve_to_rank="species",
     )
 

@@ -144,6 +144,12 @@ def parse_args_for_mapping():
         help="NCBI names.dmp file from taxdump",
     )
 
+    input_group.add_argument(
+        "--taxids_to_busco_dataset_mapping",
+        required=True,
+        help="BUSCO placement file from https://busco-data.ezlab.org/v5/data/placement_files/",
+    )
+
     mapping_group.add_argument(
         "--grouping_log",
         help="Compressed CSV file to record derived organism info for each package",
