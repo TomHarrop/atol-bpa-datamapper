@@ -142,46 +142,36 @@ def test_filter_packages_counter_output_integration(tmp_path, test_input_data, f
     with open(value_mapping_file, "w") as f:
         json.dump(value_mapping_data, f)
 
-    # Set up command line arguments
-    import sys
-    original_argv = sys.argv.copy()
-    sys.argv = [
-        "filter_packages.py",
-        "-i", str(input_file),
-        "-o", str(output_file),
-        "-f", str(package_field_mapping_file),
-        "-r", str(resource_field_mapping_file),
-        "-v", str(value_mapping_file),
-        "-l", "INFO",
-        "--decision_log", str(decision_log_file),
-        "--raw_field_usage", str(raw_field_usage_file),
-        "--bpa_field_usage", str(bpa_field_usage_file),
-        "--bpa_value_usage", str(bpa_value_usage_file)
-    ]
-
-    # Create a function to run filter_packages with our test files
+    # Import necessary modules from filter_packages and related modules
     from atol_bpa_datamapper.config_parser import MetadataMap
     from atol_bpa_datamapper.io import write_json, write_decision_log_to_csv
-    from atol_bpa_datamapper.logger import setup_logger
+    from atol_bpa_datamapper.logger import setup_logger, logger
     from atol_bpa_datamapper.package_handler import BpaPackage
     from collections import Counter
+    import io
+    import os
+    from pathlib import Path
+    from unittest.mock import patch
     
-    # Set up logging
+    # Set up logging - this is what filter_packages.main() does
     setup_logger("INFO")
     
-    # Create metadata maps
-    package_level_map = MetadataMap(str(package_field_mapping_file), str(value_mapping_file))
-    resource_level_map = MetadataMap(str(resource_field_mapping_file), str(value_mapping_file))
+    # Create metadata maps - using the same code as in filter_packages.main()
+    package_level_map = MetadataMap(
+        str(package_field_mapping_file), str(value_mapping_file)
+    )
+    resource_level_map = MetadataMap(
+        str(resource_field_mapping_file), str(value_mapping_file)
+    )
     
     # Read input data directly instead of using read_input
     input_data = []
     with open(input_file, "r") as f:
         for line in f:
-            if line.strip():
-                package_data = json.loads(line)
-                input_data.append(BpaPackage(package_data))
+            package_data = json.loads(line.strip())
+            input_data.append(BpaPackage(package_data))
     
-    # Set up counters
+    # Set up counters - using the same code as in filter_packages.main()
     all_controlled_vocabularies = sorted(
         set(
             package_level_map.controlled_vocabularies
@@ -198,62 +188,74 @@ def test_filter_packages_counter_output_integration(tmp_path, test_input_data, f
         },
     }
     
-    # Set up decision log
+    # Set up decision log - same as filter_packages.main()
     decision_log = {}
     
     n_packages = 0
     n_kept = 0
     
-    # Process packages
-    filtered_packages = []
-    for package in input_data:
-        n_packages += 1
-        
-        # Filter package-level fields
-        package.filter(package_level_map)
-        
-        # Update counters for package-level fields
-        for field in package.fields:
-            counters["raw_field_usage"][field] += 1
-        
-        for atol_field, bpa_field in package.bpa_fields.items():
-            if bpa_field:
-                counters["bpa_field_usage"][atol_field][bpa_field] += 1
-        
-        for atol_field, value in package.bpa_values.items():
-            if value:
-                counters["bpa_value_usage"][atol_field][value] += 1
-        
-        # Filter resource-level fields
-        for resource in package.resources.values():
-            resource.filter(resource_level_map, package)
+    # Process packages - using the same logic as filter_packages.main()
+    with open(output_file, "w") as output_file_handle:
+        # Process each package
+        for package in input_data:
+            n_packages += 1
             
-            # Update counters for resource-level fields
-            for field in resource.fields:
-                counters["raw_field_usage"][field] += 1
+            # Count raw field usage
+            counters["raw_field_usage"].update(package.fields)
             
-            for atol_field, bpa_field in resource.bpa_fields.items():
-                if bpa_field:
-                    counters["bpa_field_usage"][atol_field][bpa_field] += 1
+            # Filter package-level fields
+            package.filter(package_level_map)
+            for atol_field, bpa_field in package.bpa_fields.items():
+                counters["bpa_field_usage"][atol_field].update([bpa_field])
+            for atol_field, bpa_value in package.bpa_values.items():
+                counters["bpa_value_usage"][atol_field].update([bpa_value])
             
-            for atol_field, value in resource.bpa_values.items():
-                if value:
-                    counters["bpa_value_usage"][atol_field][value] += 1
-        
-        # Record decisions
-        decision_log[package.id] = package.decisions
-        
-        # Keep or discard package
-        if package.keep:
-            n_kept += 1
-            filtered_packages.append(package)
+            # Filter resource-level fields
+            dropped_resources = []
+            kept_resources = []
+            for resource_id, resource in package.resources.items():
+                resource.filter(resource_level_map, package)
+                
+                if resource.keep is True:
+                    kept_resources.append(resource.id)
+                if resource.keep is False:
+                    dropped_resources.append(resource.id)
+                
+                # Count raw field usage for resources
+                counters["raw_field_usage"].update(resource.fields)
+                
+                # Count BPA field and value usage for resources
+                for atol_field, bpa_field in resource.bpa_fields.items():
+                    counters["bpa_field_usage"][atol_field].update([bpa_field])
+                
+                for atol_field, value in resource.bpa_values.items():
+                    if value:
+                        counters["bpa_value_usage"][atol_field][value] += 1
+            
+            # Drop unwanted resources
+            for resource_id in dropped_resources:
+                package.resources.pop(resource_id)
+            
+            # Remove packages with no resources
+            if len(kept_resources) > 0:
+                package["resources"] = [
+                    package.resources[resource_id] for resource_id in kept_resources
+                ]
+                package.decisions["kept_resources"] = True
+            else:
+                package.decisions["kept_resources"] = False
+                package.keep = False
+            
+            # Record decisions
+            decision_log[package.id] = package.decisions
+            
+            # Keep or discard package
+            if package.keep:
+                n_kept += 1
+                # Write directly to the output file
+                output_file_handle.write(json.dumps(dict(package)) + "\n")
     
-    # Write filtered packages to output file
-    with open(output_file, "w") as f:
-        for package in filtered_packages:
-            f.write(json.dumps(dict(package)) + "\n")
-    
-    # Write stats to files
+    # Write stats to files - using the same functions as filter_packages.main()
     write_json(counters["raw_field_usage"], str(raw_field_usage_file))
     write_json(counters["bpa_field_usage"], str(bpa_field_usage_file))
     write_json(counters["bpa_value_usage"], str(bpa_value_usage_file))
@@ -375,5 +377,3 @@ def test_filter_packages_counter_output_integration(tmp_path, test_input_data, f
     assert "package1" in decision_data
     assert "package2" in decision_data
     assert "package3" in decision_data
-    # Restore original command line arguments
-    sys.argv = original_argv
