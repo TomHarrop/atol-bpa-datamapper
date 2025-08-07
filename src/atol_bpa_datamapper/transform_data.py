@@ -9,10 +9,11 @@ This script processes mapped metadata packages to:
 """
 
 from .arg_parser import parse_args_for_transform
-from .io import read_mapped_data, write_json
+from .io import read_jsonl_file, write_json
 from .logger import logger, setup_logger
 import json
 import os
+import gzip
 from collections import defaultdict
 from datetime import datetime
 from abc import ABC, abstractmethod
@@ -417,89 +418,144 @@ class SampleTransformer(EntityTransformer):
         }
 
 
+def extract_experiment(experiments_data, package):
+    
+    logger.debug(f"Processing package: {package}")
+    try:
+            # Skip if no experiment section
+            if "experiment" not in package:
+                logger.warning(f"No experiment section found in package, skipping")
+                return
+            
+            # Create experiment object with all experiment fields
+            experiment = package["experiment"].copy()
+            
+            # Skip if no bpa_sample_id in sample section
+            if "sample" not in package or "bpa_sample_id" not in package["sample"]:
+                logger.warning(f"No bpa_sample_id found in package, skipping")
+                return
+                
+            bpa_sample_id = package["sample"]["bpa_sample_id"]
+            
+            # Skip if no bpa_package_id
+            if "bpa_package_id" not in experiment:
+                logger.warning(f"No bpa_package_id found in experiment, skipping")
+                return
+
+            # Get the bpa_package_id to use as key
+            bpa_package_id = experiment["bpa_package_id"]
+            
+            # Add runs if present
+            if "runs" in package:
+                experiment["runs"] = package["runs"]
+            else:
+                experiment["runs"] = []
+            
+            # Add bpa_sample_id to experiment for linking in database
+            experiment["bpa_sample_id"] = bpa_sample_id
+                
+            # Add to dictionary with bpa_package_id as key
+            experiments_data[bpa_package_id] = experiment
+    except json.JSONDecodeError:
+        logger.error(f"Line {line_count}: Invalid JSON, skipping")    
+    except Exception as e:
+        logger.error(f"Error processing package: {str(e)}")
+        
+
 def main():
     """Main function to transform mapped metadata."""
     args = parse_args_for_transform()
     setup_logger(args.log_level)
-    
+
     # Parse ignored fields if provided
     sample_ignored_fields = []
     organism_ignored_fields = []
     if hasattr(args, 'sample_ignored_fields') and args.sample_ignored_fields:
         sample_ignored_fields = args.sample_ignored_fields.split(',')
         logger.info(f"Ignoring sample fields: {sample_ignored_fields}")
-    
+
     if hasattr(args, 'organism_ignored_fields') and args.organism_ignored_fields:
         organism_ignored_fields = args.organism_ignored_fields.split(',')
         logger.info(f"Ignoring organism fields: {organism_ignored_fields}")
-    
+
     sample_transformer = SampleTransformer(ignored_fields=sample_ignored_fields)
     organism_transformer = OrganismTransformer(ignored_fields=organism_ignored_fields)
-    
-    input_data = read_mapped_data(args.input)
+
+    input_data = read_jsonl_file(args.input)
     n_packages = 0
     n_processed_samples = 0
     n_processed_organisms = 0
+    n_processed_experiments = 0
+
+    experiments_data = {}
     
     for package in input_data:
         package_id = package.get('id', 'unknown')
         logger.debug(f"Processing package {package_id}")
         n_packages += 1
-        
+
         if sample_transformer.process_package(package):
             n_processed_samples += 1
-        
+
         if organism_transformer.process_package(package):
             n_processed_organisms += 1
+        
+        extract_experiment(experiments_data, package)
+        n_processed_experiments += 1
     
     logger.info(f"Processed {n_packages} packages")
     logger.info(f"Extracted sample data from {n_processed_samples} packages")
     logger.info(f"Extracted organism data from {n_processed_organisms} packages")
-    
+    logger.info(f"Extracted experiment data from {n_processed_experiments} packages")
+        
     sample_results = sample_transformer.get_results()
     organism_results = organism_transformer.get_results()
-    
+
     if not args.dry_run:
         # Write sample outputs
         if args.output:
             logger.info(f"Writing unique samples to {args.output}")
             write_json(sample_results["unique_samples"], args.output)
-        
+
         if args.sample_conflicts:
             logger.info(f"Writing sample conflicts to {args.sample_conflicts}")
             write_json(sample_results["sample_conflicts"], args.sample_conflicts)
-        
+
         if args.sample_package_map:
             logger.info(f"Writing sample to package map to {args.sample_package_map}")
             write_json(sample_results["package_map"], args.sample_package_map)
-        
+
         if args.transformation_changes:
             logger.info(f"Writing transformation changes to {args.transformation_changes}")
             write_json(sample_results["transformation_changes"], args.transformation_changes)
-        
+
         # Write organism outputs
         if args.unique_organisms:
             logger.info(f"Writing unique organisms to {args.unique_organisms}")
             write_json(organism_results["unique_organisms"], args.unique_organisms)
-        
+
         if args.organism_conflicts:
             logger.info(f"Writing organism conflicts to {args.organism_conflicts}")
             write_json(organism_results["organism_conflicts"], args.organism_conflicts)
-        
+
         if args.organism_package_map:
             logger.info(f"Writing organism to package map to {args.organism_package_map}")
             write_json(organism_results["organism_package_map"], args.organism_package_map)
+        if args.experiments_output:
+            logger.info(f"Writing experiments data to {args.experiments_output}")
+            write_json(experiments_data, args.experiments_output)
     
     # Log summary statistics
     n_unique_samples = len(sample_results["unique_samples"])
     n_sample_conflicts = len(sample_results["sample_conflicts"])
     n_unique_organisms = len(organism_results["unique_organisms"])
     n_organism_conflicts = len(organism_results["organism_conflicts"])
-    
+
     logger.info(f"Found {n_unique_samples} unique samples")
     logger.info(f"Found {n_sample_conflicts} samples with conflicts")
     logger.info(f"Found {n_unique_organisms} unique organisms")
     logger.info(f"Found {n_organism_conflicts} organisms with conflicts")
+    logger.info(f"Found {len(experiments_data)} experiments")
 
 
 if __name__ == "__main__":

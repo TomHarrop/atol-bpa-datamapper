@@ -1,0 +1,54 @@
+[
+  {
+    "dataset": {"dataset_id": "dataset1"},
+    "experiment": {"bpa_package_id": "bpa-123"},
+    "sample": {
+      "sample_name": "sample1",
+      "collection_date": "2023-01-01",
+      "location": "Site A"
+    },
+    "runs": [{"run_id": "run1"}]
+  },
+  {
+    "dataset": {"dataset_id": "dataset2"},
+    "experiment": {"bpa_package_id": "bpa-456"},
+    "sample": {
+      "sample_name": "sample1",
+      "collection_date": "2023-01-01",
+      "location": "Site A"
+    },
+    "runs": [{"run_id": "run2"}]
+  },
+  {
+    "dataset": {"dataset_id": "dataset3"},
+    "experiment": {"bpa_package_id": "bpa-789"},
+    "sample": {
+      "sample_name": "sample2",
+      "collection_date": "2023-02-01",
+      "location": "Site B"
+    },
+    "runs": [{"run_id": "run3"}]
+  },
+  {
+    "dataset": {"dataset_id": "dataset4"},
+    "experiment": {"bpa_package_id": "bpa-101"},
+    "sample": {
+      "sample_name": "sample3",
+      "collection_date": "2023-03-01",
+      "location": "Site C",
+      "extra_field": "value1"
+    },
+    "runs": [{"run_id": "run4"}]
+  },
+  {
+    "dataset": {"dataset_id": "dataset5"},
+    "experiment": {"bpa_package_id": "bpa-102"},
+    "sample": {
+      "sample_name": "sample3",
+      "collection_date": "2023-03-01",
+      "location": "Site C",
+      "extra_field": "value2"
+    },
+    "runs": [{"run_id": "run5"}]
+  }
+]

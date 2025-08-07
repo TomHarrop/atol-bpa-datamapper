@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 
+from .io import read_gzip_textfile
 from .logger import logger
 from pathlib import Path
+from skbio.tree import TreeNode
 import hashlib
 import pandas as pd
 import shelve
 import skbio.io
-from skbio.tree import TreeNode
+
 import re
 
 
@@ -56,7 +58,12 @@ def generate_taxonomy_tree(names, nodes, cache_dir, update_tree=False):
             return cache["tree"]
         else:
             logger.info("Generating taxonomy tree")
-            tree = TreeNode.from_taxdump(nodes, names)
+            # I think omitting the names means we get taxids as names (better
+            # for searching). To include names, use
+            # `TreeNode.from_taxdump(nodes, names)`.
+            tree = TreeNode.from_taxdump(nodes)
+            logger.info("Indexing tree")
+            tree.index_tree()
             cache["tree"] = tree
             return tree
 
@@ -106,6 +113,17 @@ def split_scientific_name(scientific_name, null_values):
     return name_parts
 
 
+def read_busco_mapping(taxids_to_busco_dataset_mapping):
+    dataset_mapping = read_gzip_textfile(taxids_to_busco_dataset_mapping)
+    next(dataset_mapping)  # skip the header
+    taxid_to_dataset = {}
+    for mapping in dataset_mapping:
+        splits = mapping.strip().split(maxsplit=1)
+        taxid_to_dataset.update({int(splits[0]): str(splits[1])})
+    logger.debug(taxid_to_dataset)
+    return taxid_to_dataset
+
+
 def remove_whitespace(string):
     allowed_chars = re.compile("[a-zA-Z0-9]")
     return re.sub(r"[^a-zA-Z0-9]+", "_", string)
@@ -113,7 +131,15 @@ def remove_whitespace(string):
 
 class NcbiTaxdump:
 
-    def __init__(self, nodes_file, names_file, cache_dir, resolve_to_rank="species"):
+    def __init__(
+        self,
+        nodes_file,
+        names_file,
+        taxids_to_busco_dataset_mapping,
+        cache_dir,
+        resolve_to_rank="species",
+    ):
+
         logger.info(f"Reading NCBI taxonomy from {nodes_file}")
         self.nodes, nodes_changed = read_taxdump_file(
             nodes_file, cache_dir, "nodes_slim"
@@ -143,6 +169,14 @@ class NcbiTaxdump:
             f"Accepted ranks including and below {self.resolve_to_rank}:\n{self.accepted_ranks}"
         )
 
+        logger.info(
+            f"Reading BUSCO to dataset mapping from {taxids_to_busco_dataset_mapping}"
+        )
+        self.busco_mapping = read_busco_mapping(taxids_to_busco_dataset_mapping)
+        logger.info(
+            f"    ... found {len(self.busco_mapping.keys())} datasets in BUSCO mapping file"
+        )
+
     def get_rank(self, taxid):
         return self.nodes.at[taxid, "rank"]
 
@@ -170,6 +204,28 @@ class NcbiTaxdump:
             logger.debug(accepted_level_taxids)
 
         return None
+
+    def get_busco_lineage(self, taxid):
+        """
+        Find the closest ancestor that is in the BUSCO taxid map and return the
+        lineage name.
+        """
+
+        logger.debug(f"Looking up BUSCO dataset name for taxid {taxid}")
+
+        try:
+            node = self.tree.find(taxid)
+        except skbio.tree._exception.MissingNodeError as e:
+            logger.debug(f"Node {taxid} not found, trying a string search")
+            node = self.tree.find(str(taxid))
+
+        ancestor_taxids = [x.name for x in node.ancestors()]
+        logger.debug(f"ancestor_taxids: {ancestor_taxids}")
+        for taxid in ancestor_taxids:
+            if int(taxid) in self.busco_mapping.keys():
+                return self.busco_mapping[int(taxid)]
+            if taxid in self.busco_mapping.keys():
+                return self.busco_mapping[taxid]
 
 
 class OrganismSection(dict):
@@ -205,10 +261,11 @@ class OrganismSection(dict):
 
         # generate a key for grouping the organisms
         # TODO: this should be some sort of UUID
-        if self.has_taxid_at_accepted_level:
+        if self.has_taxid_at_accepted_level and self.scientific_name_source == "ncbi":
             self.organism_grouping_key = "_".join(
                 [remove_whitespace(self.atol_scientific_name), str(self.taxon_id)]
             )
+            self.busco_dataset_name = ncbi_taxdump.get_busco_lineage(self.taxon_id)
         else:
             self.organism_grouping_key = None
 
@@ -287,12 +344,16 @@ class OrganismSection(dict):
             )
             logger.debug("Accepted ranks: {ncbi_taxdump.accepted_ranks}")
             self.has_subspecies_information = True
-            subspecies_sanitised = sanitise_string(self.get("infraspecific_epithet"))
-            self.atol_scientific_name = " ".join(
-                [self.scientific_name, subspecies_sanitised]
-            )
             self.subspecies_source = "parsed"
-            logger.debug("Assigning {self.atol_scientific_name}")
+
+            # Using the BPA subspecies info is disabled, see
+            # https://github.com/TomHarrop/atol-bpa-datamapper/issues/26
+            # subspecies_sanitised = sanitise_string(self.get("infraspecific_epithet"))
+            # self.atol_scientific_name = " ".join(
+            #     [self.scientific_name, subspecies_sanitised]
+            # )
+            # logger.debug("Assigning {self.atol_scientific_name}")
+            self.atol_scientific_name = self.scientific_name
             return
 
         self.atol_scientific_name = self.scientific_name
@@ -320,7 +381,7 @@ class OrganismSection(dict):
         # check if the raw_taxon_id is an int
         if self.raw_taxon_id is None:
             return
-            
+
         try:
             self.taxon_id = int(self.raw_taxon_id)
             self.raw_taxon_id_is_int = True

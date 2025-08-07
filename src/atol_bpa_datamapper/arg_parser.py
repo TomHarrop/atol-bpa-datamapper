@@ -62,6 +62,11 @@ def parse_args_for_transform():
         help="Comma-separated list of organism fields to ignore when determining uniqueness. Conflicts in these fields will still be reported but won't prevent inclusion in the unique organisms list.",
     )
     
+    transform_group.add_argument(
+        "--experiments-output",
+        help="File to record extracted experiments data",
+    )
+    
     return parser.parse_args()
 
 
@@ -137,6 +142,12 @@ def parse_args_for_mapping():
         "--names",
         required=True,
         help="NCBI names.dmp file from taxdump",
+    )
+
+    input_group.add_argument(
+        "--taxids_to_busco_dataset_mapping",
+        required=True,
+        help="BUSCO placement file from https://busco-data.ezlab.org/v5/data/placement_files/",
     )
 
     mapping_group.add_argument(

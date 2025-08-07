@@ -22,13 +22,13 @@ def sample_bpa_package():
             {
                 "id": "resource1",
                 "type": "illumina",
-                "library_name": "lib_001",
+                "bpa_library_id": "lib_001",
                 "platform": "illumina"
             },
             {
                 "id": "resource2",
                 "type": "pacbio",
-                "library_name": "lib_002",
+                "bpa_library_id": "lib_002",
                 "platform": "pacbio"
             }
         ]
@@ -47,7 +47,7 @@ def field_mapping_data():
         },
         "runs": {
             "platform": ["resources.platform", "platform_type"],
-            "library_name": ["resources.library_name"],
+            "bpa_library_id": ["resources.bpa_library_id"],
             "type": ["resources.type"]
         }
     }
