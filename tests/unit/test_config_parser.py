@@ -34,7 +34,8 @@ def test_metadata_map_initialization():
         "dataset": {
             "field1": {
                 "new_value1": ["old_value1"],
-                "new_value2": ["old_value2"]
+                "new_value2": ["old_value2"],
+                "default_value_1": [None]
             }
         },
         "organism": {
@@ -42,8 +43,7 @@ def test_metadata_map_initialization():
                 "new_value3": ["old_value3"]
             }
         }
-    }
-    
+    }    
     # Mock the open function to return our test data
     with patch("builtins.open", mock_open()) as mock_file:
         # Configure the mock to return different content for different files
@@ -65,7 +65,9 @@ def test_metadata_map_initialization():
         assert metadata_map["field1"]["value_mapping"]["old_value1"] == "new_value1"
         assert metadata_map["field1"]["value_mapping"]["old_value2"] == "new_value2"
         assert metadata_map["field2"]["value_mapping"]["old_value3"] == "new_value3"
-        
+        # Assert defaults correctly assigned
+        assert metadata_map["field1"]["default"] == "default_value_1"
+        assert "default" not in metadata_map["field2"]
         # Test that the controlled vocabularies were set correctly
         assert set(metadata_map.controlled_vocabularies) == {"field1", "field2"}
         
@@ -182,6 +184,87 @@ def test_get_atol_section():
         metadata_map.get_atol_section("field4")
 
 
+def test_check_default_value():
+    """Test check_default_value method."""
+    # This test verifies that:
+    # 1. The check_default_value method correctly identifies fields with default values
+    # 2. The method returns the correct default value when one exists
+    # 3. The method correctly handles fields without default values
+    # 4. The method correctly handles non-existent fields
+    
+    metadata_map = MetadataMap.__new__(MetadataMap)  # Create instance without calling __init__
+    
+    # Set up the metadata map manually with fields that have default values
+    metadata_map.update({
+        "field1": {
+            "default": "default_value1"
+        },
+        "field2": {
+            "value_mapping": {}
+            # No default value
+        },
+        "field3": {}
+        # No value_mapping or default
+    })
+    
+    # Test field with default value
+    has_default, default_value = metadata_map.check_default_value("field1")
+    assert has_default is True
+    assert default_value == "default_value1"
+    
+    # Test field without default value but with value_mapping
+    has_default, default_value = metadata_map.check_default_value("field2")
+    assert has_default is False
+    assert default_value is None
+    
+    # Test field without value_mapping
+    has_default, default_value = metadata_map.check_default_value("field3")
+    assert has_default is False
+    assert default_value is None
+    
+    # Test non-existent field
+    has_default, default_value = metadata_map.check_default_value("field4")
+    assert has_default is False
+    assert default_value is None
+
+
+def test_keep_value():
+    """Test keep_value method."""
+    # This test verifies that:
+    # 1. The keep_value method correctly determines if a value should be kept based on controlled vocabulary
+    # 2. The method returns True for values in the allowed values list
+    # 3. The method returns False for values not in the allowed values list
+    # 4. The method returns True for any value when there is no controlled vocabulary
+    
+    metadata_map = MetadataMap.__new__(MetadataMap)  # Create instance without calling __init__
+    
+    # Set up the metadata map manually with fields that have controlled vocabularies
+    metadata_map.update({
+        "field1": {
+            "value_mapping": {
+                "old_value1": "new_value1",
+                "old_value2": "new_value2"
+            }
+        },
+        "field2": {
+            # No value_mapping - no controlled vocabulary
+        }
+    })
+    
+    # Test field with controlled vocabulary - value in allowed values
+    assert metadata_map.keep_value("field1", "old_value1") is True
+    assert metadata_map.keep_value("field1", "old_value2") is True
+    
+    # Test field with controlled vocabulary - value not in allowed values
+    assert metadata_map.keep_value("field1", "unknown_value") is False
+    
+    # Test field without controlled vocabulary - any value should be kept
+    assert metadata_map.keep_value("field2", "any_value") is True
+    
+    # Test non-existent field - should return True since get_allowed_values returns None
+    assert metadata_map.keep_value("field3", "any_value") is True
+
+
 def test_map_value():
     """Test map_value method."""
     # This test verifies that:
@@ -231,3 +314,73 @@ def test_map_value():
     # Test mapping None value - this will raise a KeyError in the actual implementation
     with pytest.raises(KeyError):
         metadata_map.map_value("field1", None)
+
+
+def test__sanitize_value():
+    """Test _sanitize_value method."""
+    # This test verifies that:
+    # 1. The _sanitize_value method correctly applies sanitization rules to values
+    # 2. The method returns both the sanitized value and a list of applied rules
+    # 3. The method correctly handles different types of sanitization rules
+    # 4. The method correctly handles None values and fields without sanitization rules
+    
+    metadata_map = MetadataMap.__new__(MetadataMap)  # Create instance without calling __init__
+    
+    # Set up the sanitization config
+    metadata_map.sanitization_config = {
+        "dataset": {
+            "field1": ["text_sanitization", "empty_string_sanitization"],
+            "field2": ["integer_sanitization"]
+        },
+        "organism": {
+            "field3": ["text_sanitization"]
+        },
+        "null_values": ["NULL", "N/A", ""]
+    }
+    
+    # Test text sanitization
+    value, applied_rules = metadata_map._sanitize_value("dataset", "field1", "  Multiple   spaces  ")
+    assert value == "Multiple spaces"
+    assert "text_sanitization" in applied_rules
+    
+    # Test empty string sanitization
+    value, applied_rules = metadata_map._sanitize_value("dataset", "field1", "N/A")
+    assert value is None
+    assert "empty_string_sanitization" in applied_rules
+    
+    # Test integer sanitization
+    value, applied_rules = metadata_map._sanitize_value("dataset", "field2", "123.45")
+    assert value == "123"
+    assert "integer_sanitization" in applied_rules
+    
+    # Test multiple rules applied
+    value, applied_rules = metadata_map._sanitize_value("dataset", "field1", "  N/A  ")
+    assert value is None
+    assert "text_sanitization" in applied_rules
+    assert "empty_string_sanitization" in applied_rules
+    
+    # Test no rules applied (value unchanged)
+    value, applied_rules = metadata_map._sanitize_value("dataset", "field1", "Normal value")
+    assert value == "Normal value"
+    assert len(applied_rules) == 0
+    
+    # Test None value
+    value, applied_rules = metadata_map._sanitize_value("dataset", "field1", None)
+    assert value is None
+    assert len(applied_rules) == 0
+    
+    # Test field without sanitization rules
+    value, applied_rules = metadata_map._sanitize_value("dataset", "field_without_rules", "Any value")
+    assert value == "Any value"
+    assert len(applied_rules) == 0
+    
+    # Test section without sanitization rules
+    value, applied_rules = metadata_map._sanitize_value("section_without_rules", "field1", "Any value")
+    assert value == "Any value"
+    assert len(applied_rules) == 0
+    
+    # Test with empty sanitization config
+    metadata_map.sanitization_config = {}
+    value, applied_rules = metadata_map._sanitize_value("dataset", "field1", "Any value")
+    assert value == "Any value"
+    assert len(applied_rules) == 0
