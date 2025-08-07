@@ -7,7 +7,9 @@ from collections import Counter
 
 def main():
 
+    # debugging options
     max_iterations = None
+    manual_record = None
 
     args = parse_args_for_filtering()
     setup_logger(args.log_level)
@@ -46,7 +48,15 @@ def main():
 
     with OutputWriter(args.output, args.dry_run) as output_writer:
         for package in input_data:
+
+            # debugging
+            if manual_record and package.id != manual_record:
+                continue
+            if max_iterations and n_packages >= max_iterations:
+                break
+
             n_packages += 1
+
             logger.debug(f"Processing package {package.id}")
             counters["raw_field_usage"].update(package.fields)
 
@@ -88,9 +98,6 @@ def main():
             if package.keep:
                 n_kept += 1
                 output_writer.write_data(package)
-
-            if max_iterations and n_packages >= max_iterations:
-                break
 
     logger.info(f"Processed {n_packages} packages")
     logger.info(f"Kept {n_kept} packages")

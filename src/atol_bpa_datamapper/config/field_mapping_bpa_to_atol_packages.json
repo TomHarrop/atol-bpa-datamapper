@@ -258,8 +258,7 @@
             "sequencing_platform",
             "sequencer",
             "sequencing_model",
-            "sequencing_technology",
-            "library_type"
+            "sequencing_technology"
         ],
         "library_source": [
             "library_source",
