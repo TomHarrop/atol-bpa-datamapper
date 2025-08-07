@@ -1,11 +1,11 @@
 {
   "organism": {
-    "scientific_name": ["scientific_name", "species_name", "taxon_or_organism"]
+    "scientific_name": ["Canis lupus", "Thymichthys politus", "Cracticus torquatus"]
   },
   "sample": {
-    "data_context": ["project_aim", "data_context"]
+    "data_context": ["genomics", "reference genome"]
   },
   "dataset": {
-    "bpa_id": ["id"]
+    "bpa_id": ["xyz_123"]
   }
 }

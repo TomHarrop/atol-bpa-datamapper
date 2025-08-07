@@ -400,3 +400,126 @@ def test_filter_packages_with_stats_output(mock_parse_args, mock_output_writer, 
         {package1.id: package1.decisions, package2.id: package2.decisions}, 
         args.decision_log
     )
+
+
+@patch('atol_bpa_datamapper.filter_packages.write_decision_log_to_csv')
+@patch('atol_bpa_datamapper.filter_packages.write_json')
+@patch('atol_bpa_datamapper.filter_packages.MetadataMap')
+@patch('atol_bpa_datamapper.filter_packages.read_input')
+@patch('atol_bpa_datamapper.filter_packages.OutputWriter')
+@patch('atol_bpa_datamapper.filter_packages.parse_args_for_filtering')
+def test_filter_packages_counter_output(mock_parse_args, mock_output_writer, mock_read_input, 
+                                      mock_metadata_map, mock_write_json, mock_write_decision_log):
+    """Test counter output functionality of filter_packages."""
+    # This test verifies that:
+    # 1. The filter_packages main function correctly counts field and value usage
+    # 2. The counters are correctly updated based on package content
+    # 3. The counter data is correctly written to the specified output files
+    # 4. The counter structure matches the expected format
+    
+    # Set up mock resources
+    resource1 = MagicMock()
+    resource1.id = "resource1"
+    resource1.keep = True
+    resource1.bpa_fields = {"platform": "resources.type", "library_type": "resources.library_type"}
+    resource1.bpa_values = {"platform": "illumina-shortread", "library_type": "paired"}
+    resource1.decisions = {"platform": "illumina-shortread", "platform_accepted": True, 
+                         "library_type": "paired", "library_type_accepted": True}
+    
+    # Set up mock packages
+    package1 = MagicMock(spec=BpaPackage)
+    package1.id = "package1"
+    package1.keep = True
+    package1.fields = ["field1", "field2"]
+    package1.bpa_fields = {"field1": "bpa_field1", "field2": "bpa_field2"}
+    package1.bpa_values = {"field1": "value1", "field2": "value2"}
+    package1.decisions = {"field1": True, "field1_accepted": True, "field2": "value2", "field2_accepted": True, "kept_resources": True}
+    package1.resources = {"resource1": resource1}
+    
+    package2 = MagicMock(spec=BpaPackage)
+    package2.id = "package2"
+    package2.keep = False
+    package2.fields = ["field1", "field3"]
+    package2.bpa_fields = {"field1": "bpa_field1", "field3": "bpa_field3"}
+    package2.bpa_values = {"field1": "value1", "field3": "value3"}
+    package2.decisions = {"field1": False, "field1_accepted": False, "field3": "value3", "field3_accepted": True, "kept_resources": False}
+    package2.resources = {}
+    
+    # Configure mocks
+    mock_read_input.return_value = [package1, package2]
+    
+    # Create two separate metadata map instances for package and resource level
+    mock_package_metadata_map = MagicMock()
+    mock_package_metadata_map.controlled_vocabularies = ["field1", "field2", "field3"]
+    
+    mock_resource_metadata_map = MagicMock()
+    mock_resource_metadata_map.controlled_vocabularies = ["platform", "library_type", "library_size"]
+    
+    # Configure the MetadataMap mock to return different instances based on arguments
+    def metadata_map_side_effect(field_mapping_file, value_mapping_file):
+        if field_mapping_file == "package_field_mapping.json":
+            return mock_package_metadata_map
+        elif field_mapping_file == "resource_field_mapping.json":
+            return mock_resource_metadata_map
+    
+    mock_metadata_map.side_effect = metadata_map_side_effect
+    
+    mock_output_writer_instance = MagicMock()
+    mock_output_writer.return_value.__enter__.return_value = mock_output_writer_instance
+    
+    # Create mock args
+    args = MagicMock()
+    args.input = "input.jsonl.gz"
+    args.output = "output.jsonl.gz"
+    args.package_field_mapping_file = "package_field_mapping.json"
+    args.resource_field_mapping_file = "resource_field_mapping.json"
+    args.value_mapping_file = "value_mapping.json"
+    args.log_level = "INFO"
+    args.dry_run = False
+    args.decision_log = "decision_log.csv"
+    args.raw_field_usage = "raw_field_usage.json"
+    args.bpa_field_usage = "bpa_field_usage.json"
+    args.bpa_value_usage = "bpa_value_usage.json"
+    
+    # Configure parse_args to return our mock args
+    mock_parse_args.return_value = args
+    
+    # Call the function
+    main()
+    
+    # Verify the function behavior (basic checks)
+    assert mock_metadata_map.call_count == 2
+    mock_read_input.assert_called_once_with(args.input)
+    
+    # Verify that stats were written - should be called 3 times for the 3 different stats files
+    assert mock_write_json.call_count == 3
+    
+    # Get all write_json calls
+    calls = mock_write_json.call_args_list
+    
+    # Extract and verify raw_field_usage counter
+    raw_field_usage_call = [call for call in calls if call[0][1] == args.raw_field_usage][0]
+    raw_field_counter = raw_field_usage_call[0][0]
+    
+    # Verify specific counter values
+    assert raw_field_counter["field1"] == 2  # field1 appears in both packages
+    assert raw_field_counter["field2"] == 1  # field2 appears in package1 only
+    assert raw_field_counter["field3"] == 1  # field3 appears in package2 only
+    
+    # Extract and verify bpa_field_usage counter
+    bpa_field_usage_call = [call for call in calls if call[0][1] == args.bpa_field_usage][0]
+    bpa_field_counter = bpa_field_usage_call[0][0]
+    
+    # Verify specific counter values
+    assert bpa_field_counter["field1"]["bpa_field1"] == 2
+    assert bpa_field_counter["field2"]["bpa_field2"] == 1
+    assert bpa_field_counter["field3"]["bpa_field3"] == 1
+    
+    # Extract and verify bpa_value_usage counter
+    bpa_value_usage_call = [call for call in calls if call[0][1] == args.bpa_value_usage][0]
+    bpa_value_counter = bpa_value_usage_call[0][0]
+    
+    # Verify specific counter values
+    assert bpa_value_counter["field1"]["value1"] == 2
+    assert bpa_value_counter["field2"]["value2"] == 1
+    assert bpa_value_counter["field3"]["value3"] == 1
