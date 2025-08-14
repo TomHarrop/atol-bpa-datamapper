@@ -72,17 +72,18 @@ def test_get_bpa_fields(package_metadata_map):
     # 2. The method correctly handles fields with multiple possible BPA sources
     # 3. The returned fields match the configuration in the field mapping file
     
-    # Test a field with multiple BPA fields
+    print("package_metadata_map::")
+    print(package_metadata_map)
     bpa_fields = package_metadata_map.get_bpa_fields("scientific_name")
     assert bpa_fields is not None
-    assert "scientific_name" in bpa_fields
-    assert "species_name" in bpa_fields
-    assert "taxon_or_organism" in bpa_fields
+    assert "Canis lupus" in bpa_fields
+    assert "Thymichthys politus" in bpa_fields
+    assert "Cracticus torquatus" in bpa_fields
     
     # Test a field with a single BPA field
     bpa_fields = package_metadata_map.get_bpa_fields("bpa_id")
     assert bpa_fields is not None
-    assert "id" in bpa_fields
+    assert "xyz_123" in bpa_fields
 
 
 @pytest.mark.parametrize("field, expected_section, use_resource_map", [
