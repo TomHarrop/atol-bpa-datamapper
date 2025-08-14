@@ -175,7 +175,7 @@ def test_filter_packages_counter_output_integration(tmp_path, test_input_data, f
         mock_metadata_map.return_value = mock_metadata_map_instance
         
         # Set up the controlled_vocabularies property
-        mock_metadata_map_instance.controlled_vocabularies = ['data_context', 'scientific_name']
+        # mock_metadata_map_instance.controlled_vocabularies = ['data_context', 'scientific_name']
         
         # Create a mock for OutputWriter
         mock_output_writer = MagicMock()

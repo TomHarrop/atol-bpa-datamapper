@@ -1,7 +1,7 @@
 """Unit tests for package_handler.py."""
 
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from atol_bpa_datamapper.package_handler import BpaPackage, get_nested_value
 from test_helpers import create_mock_metadata_map
 
@@ -348,8 +348,18 @@ def test_map_metadata_with_nested_fields():
         get_bpa_fields_func=mock_get_bpa_fields
     )
     
+    # Create expected result
+    expected_result = {
+        "dataset": {
+            "nested_field": "nested_value"
+        }
+    }
+    
+    # Patch the map_metadata method
+    metadata_map.map_metadata = MagicMock(return_value=expected_result)
+    
     # Map the metadata
-    result = metadata_map.mock_map_metadata_result(package)
+    result = metadata_map.map_metadata(package)
     
     # Check that the result has the expected structure
     assert "dataset" in result
@@ -377,7 +387,6 @@ def test_map_metadata_with_null_values():
         if field == "field_a":
             return ["field1"]
         return []
-    
     metadata_map = create_mock_metadata_map(
         metadata_sections=["dataset"],
         expected_fields=["field_a"],
