@@ -23,7 +23,7 @@
     {
       "id": "resource_2",
       "type": "illumina-shortread",
-      "library_type": "paired",
+      "library_type": "other",
       "library_size": "350",
       "name": "test_file_1.fastq.gz",
       "md5": "abcdef1234567890",

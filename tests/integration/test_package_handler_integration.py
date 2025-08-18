@@ -108,6 +108,10 @@ def test_filter_package(bpa_package, package_metadata_map):
     # Check that the fields used are recorded
     assert bpa_package.bpa_fields["scientific_name"] == "scientific_name"
     assert bpa_package.bpa_fields["data_context"] == "project_aim"
+
+    # Check that default fields are working correctly
+    assert bpa_package.decisions["sex_accepted"] is True
+    assert bpa_package.bpa_values["sex"] == "default"
     
     # Verify that the keep attribute is determined by all boolean decisions
     expected_keep_value = all(
@@ -195,6 +199,9 @@ def test_resource_map_metadata(bpa_package, resource_metadata_map, package_data)
         assert resource.mapped_metadata["runs"]["file_name"] == resource_data["name"]
         assert resource.mapped_metadata["runs"]["file_checksum"] == resource_data["md5"]
         assert resource.mapped_metadata["runs"]["file_format"] == resource_data["format"]
+
+        # Verify default field is working correctly
+        assert resource.mapped_metadata["runs"]["library_layout"] == "default"
         
         # Verify that mapping_log is populated
         assert hasattr(resource, "mapping_log")

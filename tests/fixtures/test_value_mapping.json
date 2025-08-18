@@ -9,6 +9,23 @@
                 "Undetermined sp.",
                 "Undetermined species"
             ]
+        },
+        "sex": {
+            "female": [
+                "female",
+                "Female"
+            ],
+            "male": [
+                "male",
+                "Male"
+            ],
+            "undetermined": [
+                "undetermined",
+                "not determined"
+            ],
+            "default": [
+                null
+            ]
         }
     },
     "runs": {
@@ -27,6 +44,20 @@
             "DNA": [
                 "genomic dna",
                 "genomic DNA"
+            ]
+        },
+        "library_layout": {
+            "default": [
+                null
+            ],
+            "PAIRED": [
+                "paired",
+                "PE",
+                "Paired"
+            ],
+            "SINGLE": [
+                "SINGLE",
+                "single"
             ]
         },
         "file_format": {

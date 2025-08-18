@@ -14,6 +14,7 @@
       "material_extraction_type",
       "sample_material_preparation_type"
     ],
+    "library_layout": ["resources.library_layout"],
     "file_name": ["resources.name"],
     "file_checksum": ["resources.md5"],
     "file_format": ["file_type", "resources.format"],
