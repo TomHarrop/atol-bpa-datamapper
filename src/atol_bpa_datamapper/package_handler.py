@@ -44,7 +44,6 @@ class BpaBase(dict):
         )
 
         # if there is a parent package, this is a resource, and we need to strip the prefixes
-        parent_values = {}
         if parent_package is not None:
             logger.debug(f"Package {self.id} has a parent {parent_package.id}")
             fields_to_check = [x.split(".")[-1] for x in fields_to_check]
