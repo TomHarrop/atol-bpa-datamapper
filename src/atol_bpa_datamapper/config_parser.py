@@ -4,7 +4,7 @@ import os
 
 
 class MetadataMap(dict):
-    def __init__(self, field_mapping_file, value_mapping_file):
+    def __init__(self, field_mapping_file, value_mapping_file, sanitization_config_file):
         super().__init__()
         logger.info(f"Reading field mapping from {field_mapping_file}")
         with open(field_mapping_file, "rt") as f:
@@ -12,20 +12,14 @@ class MetadataMap(dict):
         logger.info(f"Reading value mapping from {value_mapping_file}")
         with open(value_mapping_file, "rt") as f:
             value_mapping = json.load(f)
-
-        # Load sanitization config if it exists
-        self.sanitization_config = {}
-        sanitization_config_path = os.path.join(
-            os.path.dirname(field_mapping_file), "sanitization_config.json"
-        )
-        if os.path.exists(sanitization_config_path):
-            logger.info(f"Reading sanitization config from {sanitization_config_path}")
-            with open(sanitization_config_path, "rt") as f:
-                self.sanitization_config = json.load(f)
-        else:
-            logger.warning(
-                f"Sanitization config not found at {sanitization_config_path}"
-            )
+        logger.info(f"Reading sanitization config from {sanitization_config_file}")
+        sanitization_config = {}
+        try:
+            with open(sanitization_config_file, "rt") as f:
+                sanitization_config = json.load(f)
+        except FileNotFoundError:
+            logger.warning(f"Sanitization config file {sanitization_config_file} not found. Using default config.")
+        self.sanitization_config = sanitization_config
 
         # Debug: Print the sections in field_mapping
         logger.debug(f"Field mapping sections: {list(field_mapping.keys())}")

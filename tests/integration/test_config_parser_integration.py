@@ -16,6 +16,7 @@ def test_metadata_map_initialization(package_metadata_map, resource_metadata_map
     # 2. The expected fields are loaded from the field mapping file
     # 3. The metadata sections are correctly identified
     # 4. The controlled vocabularies are correctly loaded
+    # 5. The sanitization config is correctly loaded
     
     # Check that the metadata map is not None
     assert package_metadata_map is not None
@@ -36,6 +37,12 @@ def test_metadata_map_initialization(package_metadata_map, resource_metadata_map
     # Check that the controlled vocabularies are loaded
     assert "scientific_name" in package_metadata_map.controlled_vocabularies
     assert "data_context" in package_metadata_map.controlled_vocabularies
+    
+    # Check that the sanitization config is loaded
+    assert hasattr(package_metadata_map, "sanitization_config")
+    assert package_metadata_map.sanitization_config is not None
+    assert hasattr(resource_metadata_map, "sanitization_config")
+    assert resource_metadata_map.sanitization_config is not None
 
 
 @pytest.mark.parametrize("field, expected_values, has_values, use_resource_map", [
@@ -193,15 +200,9 @@ def test_sanitize_value(test_fixtures_dir):
         resource_field_mapping_file = os.path.join(test_fixtures_dir, "test_field_mapping_resources.json")
         value_mapping_file = os.path.join(test_fixtures_dir, "test_value_mapping.json")
         
-        # Create a custom class that mocks the sanitization behavior
-        class MockMetadataMap(MetadataMap):
-            def __init__(self, field_mapping_file, value_mapping_file):
-                super().__init__(field_mapping_file, value_mapping_file)
-                self.sanitization_config = sanitization_config
-        
-        # Create instances of our mock class
-        package_metadata_map = MockMetadataMap(package_field_mapping_file, value_mapping_file)
-        resource_metadata_map = MockMetadataMap(resource_field_mapping_file, value_mapping_file)
+        # Create instances using the new sanitization_config_file parameter
+        package_metadata_map = MetadataMap(package_field_mapping_file, value_mapping_file, sanitization_config_path)
+        resource_metadata_map = MetadataMap(resource_field_mapping_file, value_mapping_file, sanitization_config_path)
         
         # For simplicity in testing, we'll use the package metadata map for organism fields
         # and the resource metadata map for runs fields
@@ -244,7 +245,7 @@ def test_sanitize_value(test_fixtures_dir):
             os.remove(sanitization_config_path)
 
 
-def test_invalid_json_format(invalid_json_file, field_mapping_file, field_mapping_file_resources, value_mapping_file):
+def test_invalid_json_format(invalid_json_file, field_mapping_file, field_mapping_file_resources, value_mapping_file, sanitization_config_file):
     """Test that the MetadataMap constructor raises an error when given invalid JSON."""
     # This test verifies that:
     # 1. The MetadataMap constructor validates the JSON format of mapping files
@@ -253,22 +254,26 @@ def test_invalid_json_format(invalid_json_file, field_mapping_file, field_mappin
     
     # Test with invalid package field mapping
     with pytest.raises(json.JSONDecodeError):
-        MetadataMap(invalid_json_file, value_mapping_file)
+        MetadataMap(invalid_json_file, value_mapping_file, sanitization_config_file)
     
     # Test with invalid resource field mapping
     with pytest.raises(json.JSONDecodeError):
-        MetadataMap(invalid_json_file, value_mapping_file)
+        MetadataMap(invalid_json_file, value_mapping_file, sanitization_config_file)
     
-    # Test with invalid value mapping (using package field mapping)
+    # Test with invalid value mapping file
     with pytest.raises(json.JSONDecodeError):
-        MetadataMap(field_mapping_file, invalid_json_file)
+        MetadataMap(field_mapping_file, invalid_json_file, sanitization_config_file)
         
-    # Test with invalid value mapping (using resource field mapping)
+    # Test with invalid value mapping file (using resource field mapping)
     with pytest.raises(json.JSONDecodeError):
-        MetadataMap(field_mapping_file_resources, invalid_json_file)
+        MetadataMap(field_mapping_file_resources, invalid_json_file, sanitization_config_file)
+        
+    # Test with invalid sanitization config file
+    with pytest.raises(json.JSONDecodeError):
+        MetadataMap(field_mapping_file, value_mapping_file, invalid_json_file)
 
 
-def test_file_io_errors(field_mapping_file, field_mapping_file_resources):
+def test_file_io_errors(field_mapping_file, field_mapping_file_resources, sanitization_config_file, caplog):
     """Test that the MetadataMap constructor handles file I/O errors gracefully."""
     # This test verifies that:
     # 1. The MetadataMap constructor handles file I/O errors gracefully

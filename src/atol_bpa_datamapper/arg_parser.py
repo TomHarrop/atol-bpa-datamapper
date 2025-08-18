@@ -221,6 +221,14 @@ def shared_args():
     )
 
     options_group.add_argument(
+        "-s",
+        "--sanitization_config_file",
+        type=argparse.FileType("r"),
+        help="Sanitization configuration file in json.",
+        default=get_config_filepath("sanitization_config.json"),
+    )
+
+    options_group.add_argument(
         "-l",
         "--log-level",
         type=str,
