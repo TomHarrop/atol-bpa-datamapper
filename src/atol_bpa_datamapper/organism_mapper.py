@@ -172,7 +172,8 @@ class NcbiTaxdump:
         logger.info(
             f"Reading BUSCO to dataset mapping from {taxids_to_busco_dataset_mapping}"
         )
-        self.busco_mapping = read_busco_mapping(taxids_to_busco_dataset_mapping)
+        #self.busco_mapping = read_busco_mapping(taxids_to_busco_dataset_mapping)
+        self.busco_mapping = {}
         logger.info(
             f"    ... found {len(self.busco_mapping.keys())} datasets in BUSCO mapping file"
         )
@@ -265,7 +266,7 @@ class OrganismSection(dict):
             self.organism_grouping_key = "_".join(
                 [remove_whitespace(self.atol_scientific_name), str(self.taxon_id)]
             )
-            self.busco_dataset_name = ncbi_taxdump.get_busco_lineage(self.taxon_id)
+            # self.busco_dataset_name = ncbi_taxdump.get_busco_lineage(self.taxon_id)
         else:
             self.organism_grouping_key = None
 

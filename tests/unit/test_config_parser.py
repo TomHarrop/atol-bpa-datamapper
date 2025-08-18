@@ -15,6 +15,7 @@ def test_metadata_map_initialization():
     # 3. The expected_fields attribute contains all fields from the field mapping
     # 4. The metadata_sections attribute contains all sections from the field mapping
     # 5. The controlled_vocabularies attribute is correctly populated
+    # 6. The sanitization_config is correctly loaded
     
     # The field mapping file format is organized by section first, then field
     field_mapping = {
@@ -43,16 +44,29 @@ def test_metadata_map_initialization():
                 "new_value3": ["old_value3"]
             }
         }
-    }    
+    }
+    
+    # The sanitization config file format
+    sanitization_config = {
+        "dataset": {
+            "field1": ["text_sanitization", "empty_string_sanitization"]
+        },
+        "organism": {
+            "field2": ["integer_sanitization"]
+        },
+        "null_values": ["NULL", "N/A", ""]
+    }
+    
     # Mock the open function to return our test data
     with patch("builtins.open", mock_open()) as mock_file:
         # Configure the mock to return different content for different files
         mock_file.side_effect = [
             mock_open(read_data=json.dumps(field_mapping)).return_value,
-            mock_open(read_data=json.dumps(value_mapping)).return_value
+            mock_open(read_data=json.dumps(value_mapping)).return_value,
+            mock_open(read_data=json.dumps(sanitization_config)).return_value
         ]
         
-        metadata_map = MetadataMap("field.json", "value.json")
+        metadata_map = MetadataMap("field.json", "value.json", "sanitization.json")
         
         # Test that the metadata map was initialized correctly
         assert len(metadata_map) == 3
@@ -76,6 +90,12 @@ def test_metadata_map_initialization():
         
         # Test that the expected fields were set correctly
         assert set(metadata_map.expected_fields) == {"field1", "field2", "field3"}
+        
+        # Test that the sanitization config was loaded correctly
+        assert metadata_map.sanitization_config == sanitization_config
+        assert metadata_map.sanitization_config["dataset"]["field1"] == ["text_sanitization", "empty_string_sanitization"]
+        assert metadata_map.sanitization_config["organism"]["field2"] == ["integer_sanitization"]
+        assert metadata_map.sanitization_config["null_values"] == ["NULL", "N/A", ""]
 
 
 def test_get_allowed_values():

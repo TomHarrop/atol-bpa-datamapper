@@ -116,17 +116,17 @@ def invalid_structure_file(test_fixtures_dir):
 
 
 @pytest.fixture
-def package_metadata_map(field_mapping_file, value_mapping_file):
+def package_metadata_map(field_mapping_file, value_mapping_file, sanitization_config_file):
     """Create a package-level MetadataMap instance for testing."""
     from atol_bpa_datamapper.config_parser import MetadataMap
-    return MetadataMap(field_mapping_file, value_mapping_file)
+    return MetadataMap(field_mapping_file, value_mapping_file, sanitization_config_file)
 
 
 @pytest.fixture
-def resource_metadata_map(field_mapping_file_resources, value_mapping_file):
+def resource_metadata_map(field_mapping_file_resources, value_mapping_file, sanitization_config_file):
     """Create a resource-level MetadataMap instance for testing."""
     from atol_bpa_datamapper.config_parser import MetadataMap
-    return MetadataMap(field_mapping_file_resources, value_mapping_file)
+    return MetadataMap(field_mapping_file_resources, value_mapping_file, sanitization_config_file)
 
 
 @pytest.fixture

@@ -65,7 +65,7 @@ def test_map_metadata_basic(mock_read_taxdump_file, mock_compute_sha256, mock_pa
     mock_resource_metadata_map.metadata_sections = ["dataset", "organism", "runs"]
     
     # Configure the MetadataMap mock to return different instances based on arguments
-    def metadata_map_side_effect(field_mapping_file, value_mapping_file):
+    def metadata_map_side_effect(field_mapping_file, value_mapping_file, sanitization_config_file):
         if field_mapping_file == "package_field_mapping.json":
             return mock_package_metadata_map
         elif field_mapping_file == "resource_field_mapping.json":
@@ -83,6 +83,7 @@ def test_map_metadata_basic(mock_read_taxdump_file, mock_compute_sha256, mock_pa
     args.package_field_mapping_file = "package_field_mapping.json"
     args.resource_field_mapping_file = "resource_field_mapping.json"
     args.value_mapping_file = "value_mapping.json"
+    args.sanitization_config_file = "sanitization_config.json"
     args.log_level = "INFO"
     args.dry_run = False
     args.mapping_log = None
@@ -114,8 +115,8 @@ def test_map_metadata_basic(mock_read_taxdump_file, mock_compute_sha256, mock_pa
     
     # Verify the function behavior
     assert mock_metadata_map.call_count == 2
-    mock_metadata_map.assert_any_call(args.package_field_mapping_file, args.value_mapping_file)
-    mock_metadata_map.assert_any_call(args.resource_field_mapping_file, args.value_mapping_file)
+    mock_metadata_map.assert_any_call(args.package_field_mapping_file, args.value_mapping_file, args.sanitization_config_file)
+    mock_metadata_map.assert_any_call(args.resource_field_mapping_file, args.value_mapping_file, args.sanitization_config_file)
     mock_read_input.assert_called_once_with(args.input)
     
     # Verify that map_metadata was called on the package with package-level map
@@ -182,7 +183,7 @@ def test_map_metadata_dry_run(mock_read_taxdump_file, mock_compute_sha256, mock_
     mock_resource_metadata_map.metadata_sections = ["dataset", "organism", "runs"]
     
     # Configure the MetadataMap mock to return different instances based on arguments
-    def metadata_map_side_effect(field_mapping_file, value_mapping_file):
+    def metadata_map_side_effect(field_mapping_file, value_mapping_file, sanitization_config_file):
         if field_mapping_file == "package_field_mapping.json":
             return mock_package_metadata_map
         elif field_mapping_file == "resource_field_mapping.json":
@@ -200,6 +201,7 @@ def test_map_metadata_dry_run(mock_read_taxdump_file, mock_compute_sha256, mock_
     args.package_field_mapping_file = "package_field_mapping.json"
     args.resource_field_mapping_file = "resource_field_mapping.json"
     args.value_mapping_file = "value_mapping.json"
+    args.sanitization_config_file = "sanitization_config.json"
     args.log_level = "INFO"
     args.dry_run = True
     args.mapping_log = None
@@ -232,8 +234,8 @@ def test_map_metadata_dry_run(mock_read_taxdump_file, mock_compute_sha256, mock_
     
     # Verify the function behavior
     assert mock_metadata_map.call_count == 2
-    mock_metadata_map.assert_any_call(args.package_field_mapping_file, args.value_mapping_file)
-    mock_metadata_map.assert_any_call(args.resource_field_mapping_file, args.value_mapping_file)
+    mock_metadata_map.assert_any_call(args.package_field_mapping_file, args.value_mapping_file, args.sanitization_config_file)
+    mock_metadata_map.assert_any_call(args.resource_field_mapping_file, args.value_mapping_file, args.sanitization_config_file)
     mock_read_input.assert_called_once_with(args.input)
     
     # Verify that map_metadata was called on the package with package-level map
@@ -305,7 +307,7 @@ def test_map_metadata_with_output_files(mock_parse_args, mock_write_json, mock_w
     mock_resource_metadata_map.metadata_sections = ["dataset", "organism", "runs"]
     
     # Configure the MetadataMap mock to return different instances based on arguments
-    def metadata_map_side_effect(field_mapping_file, value_mapping_file):
+    def metadata_map_side_effect(field_mapping_file, value_mapping_file, sanitization_config_file):
         if field_mapping_file == "package_field_mapping.json":
             return mock_package_metadata_map
         elif field_mapping_file == "resource_field_mapping.json":
@@ -323,6 +325,7 @@ def test_map_metadata_with_output_files(mock_parse_args, mock_write_json, mock_w
     args.package_field_mapping_file = "package_field_mapping.json"
     args.resource_field_mapping_file = "resource_field_mapping.json"
     args.value_mapping_file = "value_mapping.json"
+    args.sanitization_config_file = "sanitization_config.json"
     args.log_level = "INFO"
     args.dry_run = False
     args.mapping_log = "mapping_log.csv"
@@ -349,8 +352,8 @@ def test_map_metadata_with_output_files(mock_parse_args, mock_write_json, mock_w
     
     # Verify the function behavior
     assert mock_metadata_map.call_count == 2
-    mock_metadata_map.assert_any_call(args.package_field_mapping_file, args.value_mapping_file)
-    mock_metadata_map.assert_any_call(args.resource_field_mapping_file, args.value_mapping_file)
+    mock_metadata_map.assert_any_call(args.package_field_mapping_file, args.value_mapping_file, args.sanitization_config_file)
+    mock_metadata_map.assert_any_call(args.resource_field_mapping_file, args.value_mapping_file, args.sanitization_config_file)
     mock_read_input.assert_called_once_with(args.input)
     
     # Verify that map_metadata was called on the package with package-level map
@@ -431,7 +434,7 @@ def test_map_metadata_with_different_section_types(mock_parse_args, mock_output_
     mock_resource_metadata_map.metadata_sections = ["dataset", "organism", "runs"]
     
     # Configure the MetadataMap mock to return different instances based on arguments
-    def metadata_map_side_effect(field_mapping_file, value_mapping_file):
+    def metadata_map_side_effect(field_mapping_file, value_mapping_file, sanitization_config_file):
         if field_mapping_file == "package_field_mapping.json":
             return mock_package_metadata_map
         elif field_mapping_file == "resource_field_mapping.json":
@@ -449,6 +452,7 @@ def test_map_metadata_with_different_section_types(mock_parse_args, mock_output_
     args.package_field_mapping_file = "package_field_mapping.json"
     args.resource_field_mapping_file = "resource_field_mapping.json"
     args.value_mapping_file = "value_mapping.json"
+    args.sanitization_config_file = "sanitization_config.json"
     args.log_level = "INFO"
     args.dry_run = False
     args.mapping_log = None
@@ -481,8 +485,8 @@ def test_map_metadata_with_different_section_types(mock_parse_args, mock_output_
     
     # Verify the function behavior
     assert mock_metadata_map.call_count == 2
-    mock_metadata_map.assert_any_call(args.package_field_mapping_file, args.value_mapping_file)
-    mock_metadata_map.assert_any_call(args.resource_field_mapping_file, args.value_mapping_file)
+    mock_metadata_map.assert_any_call(args.package_field_mapping_file, args.value_mapping_file, args.sanitization_config_file)
+    mock_metadata_map.assert_any_call(args.resource_field_mapping_file, args.value_mapping_file, args.sanitization_config_file)
     mock_read_input.assert_called_once_with(args.input)
     
     # Verify that map_metadata was called on the package with package-level map

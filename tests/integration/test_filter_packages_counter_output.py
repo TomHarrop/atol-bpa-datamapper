@@ -109,7 +109,7 @@ def value_mapping_data():
     }
 
 
-def test_filter_packages_counter_output_integration(tmp_path, test_input_data, field_mapping_data, value_mapping_data):
+def test_filter_packages_counter_output_integration(tmp_path, test_input_data, field_mapping_data, value_mapping_data, sanitization_config_file):
     """Test counter output functionality in an integration context."""
     # This test verifies that:
     # 1. The filter_packages main function correctly counts field and value usage
@@ -122,6 +122,7 @@ def test_filter_packages_counter_output_integration(tmp_path, test_input_data, f
     output_file = tmp_path / "output.jsonl"
     package_field_mapping_file = tmp_path / "package_field_mapping.json"
     resource_field_mapping_file = tmp_path / "resource_field_mapping.json"
+    sanitization_config_file = tmp_path / "sanitization_config.json"
     value_mapping_file = tmp_path / "value_mapping.json"
     raw_field_usage_file = tmp_path / "raw_field_usage.json"
     bpa_field_usage_file = tmp_path / "bpa_field_usage.json"
@@ -217,6 +218,7 @@ def test_filter_packages_counter_output_integration(tmp_path, test_input_data, f
             args.package_field_mapping_file = str(package_field_mapping_file)
             args.resource_field_mapping_file = str(resource_field_mapping_file)
             args.value_mapping_file = str(value_mapping_file)
+            args.sanitization_config_file = str(sanitization_config_file)
             args.raw_field_usage = raw_field_usage_file
             args.bpa_field_usage = bpa_field_usage_file
             args.bpa_value_usage = bpa_value_usage_file

@@ -62,7 +62,7 @@ def test_filter_packages_basic(mock_parse_args, mock_output_writer, mock_read_in
     mock_resource_metadata_map.controlled_vocabularies = ["platform", "library_type", "library_size"]
     
     # Configure the MetadataMap mock to return different instances based on arguments
-    def metadata_map_side_effect(field_mapping_file, value_mapping_file):
+    def metadata_map_side_effect(field_mapping_file, value_mapping_file, sanitization_config_file):
         if field_mapping_file == "package_field_mapping.json":
             return mock_package_metadata_map
         elif field_mapping_file == "resource_field_mapping.json":
@@ -80,6 +80,7 @@ def test_filter_packages_basic(mock_parse_args, mock_output_writer, mock_read_in
     args.package_field_mapping_file = "package_field_mapping.json"
     args.resource_field_mapping_file = "resource_field_mapping.json"
     args.value_mapping_file = "value_mapping.json"
+    args.sanitization_config_file = "sanitization_config.json"
     args.log_level = "INFO"
     args.dry_run = False
     args.decision_log = None
@@ -95,8 +96,8 @@ def test_filter_packages_basic(mock_parse_args, mock_output_writer, mock_read_in
     
     # Verify the function behavior
     assert mock_metadata_map.call_count == 2
-    mock_metadata_map.assert_any_call(args.package_field_mapping_file, args.value_mapping_file)
-    mock_metadata_map.assert_any_call(args.resource_field_mapping_file, args.value_mapping_file)
+    mock_metadata_map.assert_any_call(args.package_field_mapping_file, args.value_mapping_file, args.sanitization_config_file)
+    mock_metadata_map.assert_any_call(args.resource_field_mapping_file, args.value_mapping_file, args.sanitization_config_file)
     mock_read_input.assert_called_once_with(args.input)
     
     # Verify that filter was called on each package with package-level map
@@ -158,7 +159,7 @@ def test_filter_packages_dry_run(mock_parse_args, mock_output_writer, mock_read_
     mock_resource_metadata_map.controlled_vocabularies = ["platform", "library_type"]
     
     # Configure the MetadataMap mock to return different instances based on arguments
-    def metadata_map_side_effect(field_mapping_file, value_mapping_file):
+    def metadata_map_side_effect(field_mapping_file, value_mapping_file, sanitization_config_file):
         if field_mapping_file == "package_field_mapping.json":
             return mock_package_metadata_map
         elif field_mapping_file == "resource_field_mapping.json":
@@ -176,6 +177,7 @@ def test_filter_packages_dry_run(mock_parse_args, mock_output_writer, mock_read_
     args.package_field_mapping_file = "package_field_mapping.json"
     args.resource_field_mapping_file = "resource_field_mapping.json"
     args.value_mapping_file = "value_mapping.json"
+    args.sanitization_config_file = "sanitization_config.json"
     args.log_level = "INFO"
     args.dry_run = True
     args.decision_log = "decision_log.csv"
@@ -191,8 +193,8 @@ def test_filter_packages_dry_run(mock_parse_args, mock_output_writer, mock_read_
     
     # Verify the function behavior
     assert mock_metadata_map.call_count == 2
-    mock_metadata_map.assert_any_call(args.package_field_mapping_file, args.value_mapping_file)
-    mock_metadata_map.assert_any_call(args.resource_field_mapping_file, args.value_mapping_file)
+    mock_metadata_map.assert_any_call(args.package_field_mapping_file, args.value_mapping_file, args.sanitization_config_file)
+    mock_metadata_map.assert_any_call(args.resource_field_mapping_file, args.value_mapping_file, args.sanitization_config_file)
     mock_read_input.assert_called_once_with(args.input)
     
     # Verify that filter was called on the package with package-level map
@@ -236,7 +238,7 @@ def test_filter_packages_empty_input(mock_parse_args, mock_output_writer, mock_r
     mock_resource_metadata_map.controlled_vocabularies = []
     
     # Configure the MetadataMap mock to return different instances based on arguments
-    def metadata_map_side_effect(field_mapping_file, value_mapping_file):
+    def metadata_map_side_effect(field_mapping_file, value_mapping_file, sanitization_config_file):
         if field_mapping_file == "package_field_mapping.json":
             return mock_package_metadata_map
         elif field_mapping_file == "resource_field_mapping.json":
@@ -254,6 +256,7 @@ def test_filter_packages_empty_input(mock_parse_args, mock_output_writer, mock_r
     args.package_field_mapping_file = "package_field_mapping.json"
     args.resource_field_mapping_file = "resource_field_mapping.json"
     args.value_mapping_file = "value_mapping.json"
+    args.sanitization_config_file = "sanitization_config.json"
     args.log_level = "INFO"
     args.dry_run = False
     args.decision_log = None
@@ -269,8 +272,8 @@ def test_filter_packages_empty_input(mock_parse_args, mock_output_writer, mock_r
     
     # Verify the function behavior
     assert mock_metadata_map.call_count == 2
-    mock_metadata_map.assert_any_call(args.package_field_mapping_file, args.value_mapping_file)
-    mock_metadata_map.assert_any_call(args.resource_field_mapping_file, args.value_mapping_file)
+    mock_metadata_map.assert_any_call(args.package_field_mapping_file, args.value_mapping_file, args.sanitization_config_file)
+    mock_metadata_map.assert_any_call(args.resource_field_mapping_file, args.value_mapping_file, args.sanitization_config_file)
     mock_read_input.assert_called_once_with(args.input)
     
     # Verify that no data was written to output (empty input)
@@ -344,7 +347,7 @@ def test_filter_packages_with_stats_output(mock_parse_args, mock_output_writer, 
     mock_resource_metadata_map.controlled_vocabularies = ["platform", "library_type"]
     
     # Configure the MetadataMap mock to return different instances based on arguments
-    def metadata_map_side_effect(field_mapping_file, value_mapping_file):
+    def metadata_map_side_effect(field_mapping_file, value_mapping_file, sanitization_config_file):
         if field_mapping_file == "package_field_mapping.json":
             return mock_package_metadata_map
         elif field_mapping_file == "resource_field_mapping.json":
@@ -362,6 +365,7 @@ def test_filter_packages_with_stats_output(mock_parse_args, mock_output_writer, 
     args.package_field_mapping_file = "package_field_mapping.json"
     args.resource_field_mapping_file = "resource_field_mapping.json"
     args.value_mapping_file = "value_mapping.json"
+    args.sanitization_config_file = "sanitization_config.json"
     args.log_level = "INFO"
     args.dry_run = False
     args.decision_log = "decisions.csv"
@@ -377,8 +381,8 @@ def test_filter_packages_with_stats_output(mock_parse_args, mock_output_writer, 
     
     # Verify the function behavior
     assert mock_metadata_map.call_count == 2
-    mock_metadata_map.assert_any_call(args.package_field_mapping_file, args.value_mapping_file)
-    mock_metadata_map.assert_any_call(args.resource_field_mapping_file, args.value_mapping_file)
+    mock_metadata_map.assert_any_call(args.package_field_mapping_file, args.value_mapping_file, args.sanitization_config_file)
+    mock_metadata_map.assert_any_call(args.resource_field_mapping_file, args.value_mapping_file, args.sanitization_config_file)
     mock_read_input.assert_called_once_with(args.input)
     
     # Verify that filter was called on each package with package-level map
@@ -456,7 +460,7 @@ def test_filter_packages_counter_output(mock_parse_args, mock_output_writer, moc
     mock_resource_metadata_map.controlled_vocabularies = ["platform", "library_type", "library_size"]
     
     # Configure the MetadataMap mock to return different instances based on arguments
-    def metadata_map_side_effect(field_mapping_file, value_mapping_file):
+    def metadata_map_side_effect(field_mapping_file, value_mapping_file, sanitization_config_file):
         if field_mapping_file == "package_field_mapping.json":
             return mock_package_metadata_map
         elif field_mapping_file == "resource_field_mapping.json":
@@ -474,6 +478,7 @@ def test_filter_packages_counter_output(mock_parse_args, mock_output_writer, moc
     args.package_field_mapping_file = "package_field_mapping.json"
     args.resource_field_mapping_file = "resource_field_mapping.json"
     args.value_mapping_file = "value_mapping.json"
+    args.sanitization_config_file = "sanitization_config.json"
     args.log_level = "INFO"
     args.dry_run = False
     args.decision_log = "decision_log.csv"

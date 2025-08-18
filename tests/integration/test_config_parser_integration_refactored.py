@@ -196,73 +196,64 @@ class TestSanitization:
             "null_values": ["", "null", "NULL", "None", "none", "NA", "na", "N/A", "n/a"]
         }
         
-        sanitization_config_path = os.path.join(test_fixtures_dir, "temp_sanitization_config.json")
         
-        try:
-            # Write the sanitization config to a temporary file
-            with open(sanitization_config_path, "w") as f:
-                json.dump(sanitization_config, f)
+        # Create metadata maps that will use our sanitization config
+        package_field_mapping_file = os.path.join(test_fixtures_dir, "test_field_mapping_packages.json")
+        resource_field_mapping_file = os.path.join(test_fixtures_dir, "test_field_mapping_resources.json")
+        value_mapping_file = os.path.join(test_fixtures_dir, "test_value_mapping.json")
+        sanitization_config_file = os.path.join(test_fixtures_dir, "test_sanitization_config.json")
             
-            # Create metadata maps that will use our sanitization config
-            package_field_mapping_file = os.path.join(test_fixtures_dir, "test_field_mapping_packages.json")
-            resource_field_mapping_file = os.path.join(test_fixtures_dir, "test_field_mapping_resources.json")
-            value_mapping_file = os.path.join(test_fixtures_dir, "test_value_mapping.json")
+        # Create a custom class that mocks the sanitization behavior
+        class MockMetadataMap(MetadataMap):
+            def __init__(self, field_mapping_file, value_mapping_file, sanitization_config_file):
+                super().__init__(field_mapping_file, value_mapping_file, sanitization_config_file)
+                self.sanitization_config = sanitization_config
             
-            # Create a custom class that mocks the sanitization behavior
-            class MockMetadataMap(MetadataMap):
-                def __init__(self, field_mapping_file, value_mapping_file):
-                    super().__init__(field_mapping_file, value_mapping_file)
-                    self.sanitization_config = sanitization_config
+        # Create instances of our mock class
+        package_metadata_map = MockMetadataMap(package_field_mapping_file, value_mapping_file, sanitization_config_file)
+        resource_metadata_map = MockMetadataMap(resource_field_mapping_file, value_mapping_file, sanitization_config_file)
             
-            # Create instances of our mock class
-            package_metadata_map = MockMetadataMap(package_field_mapping_file, value_mapping_file)
-            resource_metadata_map = MockMetadataMap(resource_field_mapping_file, value_mapping_file)
+        # For simplicity in testing, we'll use the package metadata map for organism fields
+        # and the resource metadata map for runs fields
+        metadata_map = package_metadata_map  # Default for organism tests
             
-            # For simplicity in testing, we'll use the package metadata map for organism fields
-            # and the resource metadata map for runs fields
-            metadata_map = package_metadata_map  # Default for organism tests
+        # Test text sanitization on package-level field
+        sanitized_value, applied_rules = package_metadata_map._sanitize_value("organism", "scientific_name", "  Homo   sapiens  ")
+        assert sanitized_value == "Homo sapiens"
+        assert "text_sanitization" in applied_rules
             
-            # Test text sanitization on package-level field
-            sanitized_value, applied_rules = package_metadata_map._sanitize_value("organism", "scientific_name", "  Homo   sapiens  ")
-            assert sanitized_value == "Homo sapiens"
-            assert "text_sanitization" in applied_rules
+        # Test empty string sanitization on package-level field
+        sanitized_value, applied_rules = package_metadata_map._sanitize_value("organism", "scientific_name", "")
+        assert sanitized_value is None
+        assert "empty_string_sanitization" in applied_rules
             
-            # Test empty string sanitization on package-level field
-            sanitized_value, applied_rules = package_metadata_map._sanitize_value("organism", "scientific_name", "")
-            assert sanitized_value is None
-            assert "empty_string_sanitization" in applied_rules
+        # Test text sanitization on resource-level field
+        sanitized_value, applied_rules = resource_metadata_map._sanitize_value("runs", "platform", "  illumina   genomic  ")
+        assert sanitized_value == "illumina genomic"
+        assert "text_sanitization" in applied_rules
             
-            # Test text sanitization on resource-level field
-            sanitized_value, applied_rules = resource_metadata_map._sanitize_value("runs", "platform", "  illumina   genomic  ")
-            assert sanitized_value == "illumina genomic"
-            assert "text_sanitization" in applied_rules
+        # Test sanitization on resource-level field with different rules
+        sanitized_value, applied_rules = resource_metadata_map._sanitize_value("runs", "file_format", "  FASTQ  ")
+        assert sanitized_value == "FASTQ"
+        assert "text_sanitization" in applied_rules
             
-            # Test sanitization on resource-level field with different rules
-            sanitized_value, applied_rules = resource_metadata_map._sanitize_value("runs", "file_format", "  FASTQ  ")
-            assert sanitized_value == "FASTQ"
-            assert "text_sanitization" in applied_rules
+        # Test a field without sanitization rules
+        sanitized_value, applied_rules = metadata_map._sanitize_value("dataset", "bpa_id", "test-id")
+        assert sanitized_value == "test-id"
+        assert applied_rules == []
             
-            # Test a field without sanitization rules
-            sanitized_value, applied_rules = metadata_map._sanitize_value("dataset", "bpa_id", "test-id")
-            assert sanitized_value == "test-id"
-            assert applied_rules == []
-            
-            # Test a value that doesn't need sanitization but still has rules applied
-            sanitized_value, applied_rules = metadata_map._sanitize_value("organism", "scientific_name", "Homo sapiens")
-            assert sanitized_value == "Homo sapiens"
-            # The rule might not be applied if the value doesn't need sanitization
+        # Test a value that doesn't need sanitization but still has rules applied
+        sanitized_value, applied_rules = metadata_map._sanitize_value("organism", "scientific_name", "Homo sapiens")
+        assert sanitized_value == "Homo sapiens"
+        # The rule might not be applied if the value doesn't need sanitization
             # This is implementation-dependent, so we don't assert on applied_rules here
         
-        finally:
-            # Clean up the temporary file
-            if os.path.exists(sanitization_config_path):
-                os.remove(sanitization_config_path)
 
 
 class TestErrorHandling:
     """Tests for error handling in MetadataMap."""
     
-    def test_invalid_json_format(self, invalid_json_file, field_mapping_file, field_mapping_file_resources, value_mapping_file):
+    def test_invalid_json_format(self, invalid_json_file, field_mapping_file, field_mapping_file_resources, value_mapping_file, sanitization_config_file):
         """Test that the MetadataMap constructor raises an error when given invalid JSON."""
         # This test verifies that:
         # 1. The MetadataMap constructor validates the JSON format of mapping files
@@ -271,21 +262,21 @@ class TestErrorHandling:
         
         # Test with invalid package field mapping
         with pytest.raises(json.JSONDecodeError):
-            MetadataMap(invalid_json_file, value_mapping_file)
+            MetadataMap(invalid_json_file, value_mapping_file, sanitization_config_file)
         
         # Test with invalid resource field mapping
         with pytest.raises(json.JSONDecodeError):
-            MetadataMap(invalid_json_file, value_mapping_file)
+            MetadataMap(invalid_json_file, value_mapping_file, sanitization_config_file)
         
         # Test with invalid value mapping (using package field mapping)
         with pytest.raises(json.JSONDecodeError):
-            MetadataMap(field_mapping_file, invalid_json_file)
+            MetadataMap(field_mapping_file, invalid_json_file, sanitization_config_file)
             
         # Test with invalid value mapping (using resource field mapping)
         with pytest.raises(json.JSONDecodeError):
-            MetadataMap(field_mapping_file_resources, invalid_json_file)
+            MetadataMap(field_mapping_file_resources, invalid_json_file, sanitization_config_file)
 
-    def test_file_io_errors(self, field_mapping_file, field_mapping_file_resources):
+    def test_file_io_errors(self, field_mapping_file, field_mapping_file_resources, value_mapping_file, sanitization_config_file):
         """Test that the MetadataMap constructor handles file I/O errors gracefully."""
         # This test verifies that:
         # 1. The MetadataMap constructor handles file I/O errors gracefully
@@ -294,21 +285,21 @@ class TestErrorHandling:
         
         # Test with non-existent package field mapping file
         with pytest.raises(FileNotFoundError):
-            MetadataMap("non_existent_file.json", "tests/fixtures/test_value_mapping.json")
+            MetadataMap("non_existent_file.json", value_mapping_file, sanitization_config_file)
         
         # Test with non-existent resource field mapping file
         with pytest.raises(FileNotFoundError):
-            MetadataMap("non_existent_file.json", "tests/fixtures/test_value_mapping.json")
+            MetadataMap("non_existent_file.json", value_mapping_file, sanitization_config_file)
         
         # Test with non-existent value mapping file (using package field mapping)
         with pytest.raises(FileNotFoundError):
-            MetadataMap(field_mapping_file, "non_existent_file.json")
+            MetadataMap(field_mapping_file, "non_existent_file.json", sanitization_config_file)
             
         # Test with non-existent value mapping file (using resource field mapping)
         with pytest.raises(FileNotFoundError):
-            MetadataMap(field_mapping_file_resources, "non_existent_file.json")
+            MetadataMap(field_mapping_file_resources, "non_existent_file.json", sanitization_config_file)
 
-    def test_invalid_mapping_structure(self, invalid_structure_file, value_mapping_file):
+    def test_invalid_mapping_structure(self, invalid_structure_file, value_mapping_file, sanitization_config_file):
         """Test that the MetadataMap constructor validates the structure of mapping files."""
         # This test verifies that:
         # 1. The MetadataMap constructor validates the structure of mapping files
@@ -318,7 +309,7 @@ class TestErrorHandling:
         # The current implementation might not validate structure strictly
         # This test documents the current behavior and can be updated if validation is added
         try:
-            metadata_map = MetadataMap(invalid_structure_file, value_mapping_file)
+            metadata_map = MetadataMap(invalid_structure_file, value_mapping_file, sanitization_config_file)
             # If no exception is raised, verify that the object is created but might be incomplete
             assert metadata_map is not None
             # Check that controlled_vocabularies is empty or contains only valid fields
@@ -352,10 +343,11 @@ class TestLogging:
         package_field_mapping_file = os.path.join(test_fixtures_dir, "test_field_mapping_packages.json")
         resource_field_mapping_file = os.path.join(test_fixtures_dir, "test_field_mapping_resources.json")
         value_mapping_file = os.path.join(test_fixtures_dir, "test_value_mapping.json")
+        sanitization_config_file = os.path.join(test_fixtures_dir, "test_sanitization_config.json")
         
         # This should generate log messages for package-level mapping
         caplog.clear()
-        package_metadata_map = MetadataMap(package_field_mapping_file, value_mapping_file)
+        package_metadata_map = MetadataMap(package_field_mapping_file, value_mapping_file, sanitization_config_file)
         
         # Check that something was logged for package-level mapping
         assert len(caplog.records) > 0
@@ -363,7 +355,7 @@ class TestLogging:
         
         # Clear logs and test resource-level mapping
         caplog.clear()
-        resource_metadata_map = MetadataMap(resource_field_mapping_file, value_mapping_file)
+        resource_metadata_map = MetadataMap(resource_field_mapping_file, value_mapping_file, sanitization_config_file)
         
         # Check that something was logged
         assert len(caplog.records) > 0

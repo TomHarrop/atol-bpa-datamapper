@@ -208,7 +208,7 @@ def value_mapping_data():
     }
 
 @pytest.fixture
-def metadata_map(tmp_path, field_mapping_data, value_mapping_data):
+def metadata_map(tmp_path, field_mapping_data, value_mapping_data, sanitization_config_file):
     """Create a MetadataMap instance with the test configurations."""
     # Create temporary config files
     field_mapping = tmp_path / "field_mapping_bpa_to_atol.json"
@@ -217,7 +217,7 @@ def metadata_map(tmp_path, field_mapping_data, value_mapping_data):
     value_mapping = tmp_path / "value_mapping_bpa_to_atol.json"
     value_mapping.write_text(json.dumps(value_mapping_data))
     
-    return MetadataMap(field_mapping, value_mapping)
+    return MetadataMap(field_mapping, value_mapping, sanitization_config_file)
 
 def test_filter_package_nested_fields(nested_package_data, metadata_map):
     """Test filtering of packages with nested fields."""

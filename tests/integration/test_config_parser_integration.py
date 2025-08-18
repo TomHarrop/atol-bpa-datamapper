@@ -282,22 +282,31 @@ def test_file_io_errors(field_mapping_file, field_mapping_file_resources, saniti
     
     # Test with non-existent package field mapping file
     with pytest.raises(FileNotFoundError):
-        MetadataMap("non_existent_file.json", "tests/fixtures/test_value_mapping.json")
+        MetadataMap("non_existent_file.json", "tests/fixtures/test_value_mapping.json", sanitization_config_file)
     
     # Test with non-existent resource field mapping file
     with pytest.raises(FileNotFoundError):
-        MetadataMap("non_existent_file.json", "tests/fixtures/test_value_mapping.json")
+        MetadataMap("non_existent_file.json", "tests/fixtures/test_value_mapping.json", sanitization_config_file)
     
     # Test with non-existent value mapping file (using package field mapping)
     with pytest.raises(FileNotFoundError):
-        MetadataMap(field_mapping_file, "non_existent_file.json")
+        MetadataMap(field_mapping_file, "non_existent_file.json", sanitization_config_file)
         
     # Test with non-existent value mapping file (using resource field mapping)
     with pytest.raises(FileNotFoundError):
-        MetadataMap(field_mapping_file_resources, "non_existent_file.json")
+        MetadataMap(field_mapping_file_resources, "non_existent_file.json", sanitization_config_file)
+        
+    # Test with non-existent sanitization config file
+    # The MetadataMap class has a fallback for sanitization config, so it doesn't raise FileNotFoundError
+    # Instead, it logs a warning and uses an empty dict as default config
+    caplog.clear()
+    caplog.set_level(logging.WARNING)
+    metadata_map = MetadataMap(field_mapping_file, "tests/fixtures/test_value_mapping.json", "non_existent_file.json")
+    assert "Sanitization config file non_existent_file.json not found. Using default config." in caplog.text
+    assert metadata_map.sanitization_config == {}
 
 
-def test_invalid_mapping_structure(invalid_structure_file, value_mapping_file):
+def test_invalid_mapping_structure(invalid_structure_file, value_mapping_file, sanitization_config_file):
     """Test that the MetadataMap constructor validates the structure of mapping files."""
     # This test verifies that:
     # 1. The MetadataMap constructor validates the structure of mapping files
@@ -307,7 +316,7 @@ def test_invalid_mapping_structure(invalid_structure_file, value_mapping_file):
     # The current implementation might not validate structure strictly
     # This test documents the current behavior and can be updated if validation is added
     try:
-        metadata_map = MetadataMap(invalid_structure_file, value_mapping_file)
+        metadata_map = MetadataMap(invalid_structure_file, value_mapping_file, sanitization_config_file)
         # If no exception is raised, verify that the object is created but might be incomplete
         assert metadata_map is not None
         # Check that controlled_vocabularies is empty or contains only valid fields
@@ -338,10 +347,11 @@ def test_logging_output(test_fixtures_dir, caplog):
     package_field_mapping_file = os.path.join(test_fixtures_dir, "test_field_mapping_packages.json")
     resource_field_mapping_file = os.path.join(test_fixtures_dir, "test_field_mapping_resources.json")
     value_mapping_file = os.path.join(test_fixtures_dir, "test_value_mapping.json")
+    sanitization_config_file = os.path.join(test_fixtures_dir, "test_sanitization_config.json")
     
     # This should generate log messages for package-level mapping
     caplog.clear()
-    package_metadata_map = MetadataMap(package_field_mapping_file, value_mapping_file)
+    package_metadata_map = MetadataMap(package_field_mapping_file, value_mapping_file, sanitization_config_file)
     
     # Check that something was logged for package-level mapping
     assert len(caplog.records) > 0
@@ -349,7 +359,7 @@ def test_logging_output(test_fixtures_dir, caplog):
     
     # Clear logs and test resource-level mapping
     caplog.clear()
-    resource_metadata_map = MetadataMap(resource_field_mapping_file, value_mapping_file)
+    resource_metadata_map = MetadataMap(resource_field_mapping_file, value_mapping_file, sanitization_config_file)
     
     # Check that something was logged
     assert len(caplog.records) > 0
@@ -357,12 +367,16 @@ def test_logging_output(test_fixtures_dir, caplog):
     # Check for specific log messages related to initialization
     found_field_mapping_log = False
     found_value_mapping_log = False
+    found_sanitization_config_log = False
     
     for record in caplog.records:
         if "Reading field mapping" in record.message:
             found_field_mapping_log = True
         if "Reading value mapping" in record.message:
             found_value_mapping_log = True
+        if "Reading sanitization config" in record.message:
+            found_sanitization_config_log = True
     
     assert found_field_mapping_log, "Expected log message about reading field mapping not found"
     assert found_value_mapping_log, "Expected log message about reading value mapping not found"
+    assert found_sanitization_config_log, "Expected log message about reading sanitization config not found"

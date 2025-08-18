@@ -211,7 +211,7 @@ def value_mapping_data():
     }
 
 @pytest.fixture
-def package_metadata_map(tmp_path, package_field_mapping_data, value_mapping_data):
+def package_metadata_map(tmp_path, package_field_mapping_data, value_mapping_data, sanitization_config_file):
     """Create a package-level MetadataMap instance with the test configurations."""
     # Create temporary config files
     field_mapping = tmp_path / "field_mapping_bpa_to_atol_packages.json"
@@ -220,10 +220,10 @@ def package_metadata_map(tmp_path, package_field_mapping_data, value_mapping_dat
     value_mapping = tmp_path / "value_mapping_bpa_to_atol.json"
     value_mapping.write_text(json.dumps(value_mapping_data))
     
-    return MetadataMap(field_mapping, value_mapping)
+    return MetadataMap(field_mapping, value_mapping, sanitization_config_file)
 
 @pytest.fixture
-def resource_metadata_map(tmp_path, resource_field_mapping_data, value_mapping_data):
+def resource_metadata_map(tmp_path, resource_field_mapping_data, value_mapping_data, sanitization_config_file):
     """Create a resource-level MetadataMap instance with the test configurations."""
     # Create temporary config files
     field_mapping = tmp_path / "field_mapping_bpa_to_atol_resources.json"
@@ -232,7 +232,7 @@ def resource_metadata_map(tmp_path, resource_field_mapping_data, value_mapping_d
     value_mapping = tmp_path / "value_mapping_bpa_to_atol.json"
     value_mapping.write_text(json.dumps(value_mapping_data))
     
-    return MetadataMap(field_mapping, value_mapping)
+    return MetadataMap(field_mapping, value_mapping, sanitization_config_file)
 
 def apply_mapping_logic(package_data, package_metadata_map, resource_metadata_map):
     """Apply the mapping logic from the main() function to the package data.
