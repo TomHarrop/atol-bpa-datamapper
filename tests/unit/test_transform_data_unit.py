@@ -113,11 +113,11 @@ class TestSampleTransformer:
         # Create a transformer with ignored fields
         transformer = SampleTransformer(ignored_fields=["collection_date"])
         
-        # Create two packages with the same sample_name but different collection_date
+        # Create two packages with the same bpa_sample_id but different collection_date
         package1 = {
             "experiment": {"bpa_package_id": "package1"},
             "sample": {
-                "sample_name": "sample1",
+                "bpa_sample_id": "sample1",
                 "collection_date": "2023-01-01",
                 "location": "Location A"
             }
@@ -126,7 +126,7 @@ class TestSampleTransformer:
         package2 = {
             "experiment": {"bpa_package_id": "package2"},
             "sample": {
-                "sample_name": "sample1",
+                "bpa_sample_id": "sample1",
                 "collection_date": "2023-02-01",
                 "location": "Location A"
             }
@@ -155,11 +155,11 @@ class TestSampleTransformer:
         # Create a transformer with ignored fields
         transformer = SampleTransformer(ignored_fields=["collection_date"])
         
-        # Create two packages with the same sample_name but different location (critical field)
+        # Create two packages with the same bpa_sample_id but different location (critical field)
         package1 = {
             "experiment": {"bpa_package_id": "package1"},
             "sample": {
-                "sample_name": "sample1",
+                "bpa_sample_id": "sample1",
                 "collection_date": "2023-01-01",
                 "location": "Location A"
             }
@@ -168,7 +168,7 @@ class TestSampleTransformer:
         package2 = {
             "experiment": {"bpa_package_id": "package2"},
             "sample": {
-                "sample_name": "sample1",
+                "bpa_sample_id": "sample1",
                 "collection_date": "2023-01-01",
                 "location": "Location B"
             }
@@ -195,7 +195,7 @@ class TestSampleTransformer:
         package1 = {
             "experiment": {"bpa_package_id": "package1"},
             "sample": {
-                "sample_name": "sample1",
+                "bpa_sample_id": "sample1",
                 "field1": "value1"
             },
             "organism": {
@@ -207,7 +207,7 @@ class TestSampleTransformer:
         package2 = {
             "experiment": {"bpa_package_id": "package2"},
             "sample": {
-                "sample_name": "sample2",
+                "bpa_sample_id": "sample2",
                 "field1": "value2"
             },
             "organism": {
@@ -236,7 +236,7 @@ class TestSampleTransformer:
         package1 = {
             "experiment": {"bpa_package_id": "package1"},
             "sample": {
-                "sample_name": "sample1",
+                "bpa_sample_id": "sample1",
                 "field1": "value1"
             },
             "organism": {
@@ -248,7 +248,7 @@ class TestSampleTransformer:
         package2 = {
             "experiment": {"bpa_package_id": "package2"},
             "sample": {
-                "sample_name": "sample1",
+                "bpa_sample_id": "sample1",
                 "field1": "value1"
             },
             "organism": {
