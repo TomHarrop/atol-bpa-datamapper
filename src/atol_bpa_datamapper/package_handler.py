@@ -1,4 +1,5 @@
 from .logger import logger
+from .utils.common import safe_get
 
 
 class BpaBase(dict):
@@ -104,7 +105,8 @@ class BpaBase(dict):
     def _check_atol_field(
         self, atol_field, metadata_map: "MetadataMap", parent_package=None
     ):
-        null_values = metadata_map.sanitization_config.get("null_values", [])
+        # Use safe_get to ensure we have a default empty list for null_values if sanitization_config is missing or incomplete
+        null_values = safe_get(lambda: metadata_map.sanitization_config.null_values, [])
         logger.debug(f"Checking field {atol_field}...")
 
         bpa_field_list = metadata_map[atol_field]["bpa_fields"]
@@ -306,7 +308,8 @@ class BpaPackage(BpaBase):
         # Generate a list of Resources for this Package
         self.resources = {}
         self.resource_ids = set()
-        for resource in self.get("resources"):
+        resources = self.get("resources") or []
+        for resource in resources:
             self.resources[resource["id"]] = BpaResource(resource)
             self.resource_ids.add(resource["id"])
 

@@ -3,12 +3,30 @@ Unit tests for the transform_data module.
 """
 
 import pytest
+from datetime import datetime
 from atol_bpa_datamapper.transform_data import OrganismTransformer, SampleTransformer
 
 
 class TestOrganismTransformer:
     """Tests for the OrganismTransformer class."""
-
+    
+    def test_get_entity_key(self):
+        """Test the _get_entity_key method of OrganismTransformer."""
+        # Create a transformer
+        transformer = OrganismTransformer()
+        
+        # Test with valid entity data
+        entity_data = {"organism_grouping_key": "org123"}
+        assert transformer._get_entity_key(entity_data) == "org123"
+        
+        # Test with missing key
+        entity_data = {"other_field": "value"}
+        assert transformer._get_entity_key(entity_data) is None
+        
+        # Test with None value
+        entity_data = {"organism_grouping_key": None}
+        assert transformer._get_entity_key(entity_data) is None
+    
     def test_init_with_ignored_fields(self):
         """Test initializing with ignored fields."""
         ignored_fields = ["common_name", "description"]
@@ -101,7 +119,24 @@ class TestOrganismTransformer:
 
 class TestSampleTransformer:
     """Tests for the SampleTransformer class."""
-
+    
+    def test_get_entity_key(self):
+        """Test the _get_entity_key method of SampleTransformer."""
+        # Create a transformer
+        transformer = SampleTransformer()
+        
+        # Test with valid entity data
+        entity_data = {"bpa_sample_id": "sample123"}
+        assert transformer._get_entity_key(entity_data) == "sample123"
+        
+        # Test with missing key
+        entity_data = {"other_field": "value"}
+        assert transformer._get_entity_key(entity_data) is None
+        
+        # Test with None value
+        entity_data = {"bpa_sample_id": None}
+        assert transformer._get_entity_key(entity_data) is None
+    
     def test_init_with_ignored_fields(self):
         """Test initializing with ignored fields."""
         ignored_fields = ["collection_date", "description"]
@@ -113,11 +148,11 @@ class TestSampleTransformer:
         # Create a transformer with ignored fields
         transformer = SampleTransformer(ignored_fields=["collection_date"])
         
-        # Create two packages with the same sample_name but different collection_date
+        # Create two packages with the same bpa_sample_id but different collection_date
         package1 = {
             "experiment": {"bpa_package_id": "package1"},
             "sample": {
-                "sample_name": "sample1",
+                "bpa_sample_id": "sample1",
                 "collection_date": "2023-01-01",
                 "location": "Location A"
             }
@@ -126,7 +161,7 @@ class TestSampleTransformer:
         package2 = {
             "experiment": {"bpa_package_id": "package2"},
             "sample": {
-                "sample_name": "sample1",
+                "bpa_sample_id": "sample1",
                 "collection_date": "2023-02-01",
                 "location": "Location A"
             }
@@ -155,11 +190,11 @@ class TestSampleTransformer:
         # Create a transformer with ignored fields
         transformer = SampleTransformer(ignored_fields=["collection_date"])
         
-        # Create two packages with the same sample_name but different location (critical field)
+        # Create two packages with the same bpa_sample_id but different location (critical field)
         package1 = {
             "experiment": {"bpa_package_id": "package1"},
             "sample": {
-                "sample_name": "sample1",
+                "bpa_sample_id": "sample1",
                 "collection_date": "2023-01-01",
                 "location": "Location A"
             }
@@ -168,7 +203,7 @@ class TestSampleTransformer:
         package2 = {
             "experiment": {"bpa_package_id": "package2"},
             "sample": {
-                "sample_name": "sample1",
+                "bpa_sample_id": "sample1",
                 "collection_date": "2023-01-01",
                 "location": "Location B"
             }
@@ -195,7 +230,7 @@ class TestSampleTransformer:
         package1 = {
             "experiment": {"bpa_package_id": "package1"},
             "sample": {
-                "sample_name": "sample1",
+                "bpa_sample_id": "sample1",
                 "field1": "value1"
             },
             "organism": {
@@ -207,7 +242,7 @@ class TestSampleTransformer:
         package2 = {
             "experiment": {"bpa_package_id": "package2"},
             "sample": {
-                "sample_name": "sample2",
+                "bpa_sample_id": "sample2",
                 "field1": "value2"
             },
             "organism": {
@@ -236,7 +271,7 @@ class TestSampleTransformer:
         package1 = {
             "experiment": {"bpa_package_id": "package1"},
             "sample": {
-                "sample_name": "sample1",
+                "bpa_sample_id": "sample1",
                 "field1": "value1"
             },
             "organism": {
@@ -248,7 +283,7 @@ class TestSampleTransformer:
         package2 = {
             "experiment": {"bpa_package_id": "package2"},
             "sample": {
-                "sample_name": "sample1",
+                "bpa_sample_id": "sample1",
                 "field1": "value1"
             },
             "organism": {
@@ -275,3 +310,98 @@ class TestSampleTransformer:
         organism_conflicts = results["sample_conflicts"]["sample1"]["organism_grouping_key"]
         assert "organism1" in organism_conflicts
         assert "organism2" in organism_conflicts
+        
+    def test_handle_special_field(self):
+        """Test the _handle_special_field method for sample_access_date."""
+        # Create a sample transformer
+        sample_transformer = SampleTransformer()
+        
+        # Create an existing entity with a sample_access_date
+        existing_entity = {
+            "bpa_sample_id": "sample1",
+            "sample_access_date": "2023-01-01"
+        }
+        
+        # Test with sample_access_date field
+        result = sample_transformer._handle_special_field(
+            existing_entity, 
+            "sample_access_date", 
+            "2023-01-01", 
+            "2023-02-01"
+        )
+        
+        # Should return True indicating the field was handled
+        assert result is True
+        # The date should be updated to the newer one
+        assert existing_entity["sample_access_date"] == "2023-02-01"
+        
+        # Test with a non-special field
+        result = sample_transformer._handle_special_field(
+            existing_entity, 
+            "regular_field", 
+            "old_value", 
+            "new_value"
+        )
+        
+        # Should return False indicating the field was not specially handled
+        assert result is False
+        
+    def test_update_access_date(self):
+        """Test the _update_access_date method with various date formats."""
+        # Create a sample transformer
+        sample_transformer = SampleTransformer()
+        
+        # Test case 1: Newer date should replace older date
+        existing_entity = {"sample_access_date": "2023-01-01"}
+        result = sample_transformer._update_access_date(
+            existing_entity, 
+            "sample_access_date", 
+            "2023-01-01", 
+            "2023-02-01"
+        )
+        assert result is True
+        assert existing_entity["sample_access_date"] == "2023-02-01"
+        
+        # Test case 2: Older date should not replace newer date
+        existing_entity = {"sample_access_date": "2023-02-01"}
+        result = sample_transformer._update_access_date(
+            existing_entity, 
+            "sample_access_date", 
+            "2023-02-01", 
+            "2023-01-01"
+        )
+        assert result is True
+        assert existing_entity["sample_access_date"] == "2023-02-01"  # Unchanged
+        
+        # Test case 3: ISO format with time component
+        existing_entity = {"sample_access_date": "2023-01-01T12:00:00"}
+        result = sample_transformer._update_access_date(
+            existing_entity, 
+            "sample_access_date", 
+            "2023-01-01T12:00:00", 
+            "2023-02-01T14:30:00"
+        )
+        assert result is True
+        assert existing_entity["sample_access_date"] == "2023-02-01T14:30:00"
+        
+        # Test case 4: Invalid date format should return False
+        existing_entity = {"sample_access_date": "2023-01-01"}
+        result = sample_transformer._update_access_date(
+            existing_entity, 
+            "sample_access_date", 
+            "2023-01-01", 
+            "invalid_date"
+        )
+        assert result is False
+        assert existing_entity["sample_access_date"] == "2023-01-01"  # Unchanged
+        
+        # Test case 5: None values should return False
+        existing_entity = {"sample_access_date": None}
+        result = sample_transformer._update_access_date(
+            existing_entity, 
+            "sample_access_date", 
+            None, 
+            "2023-01-01"
+        )
+        assert result is False
+        assert existing_entity["sample_access_date"] is None  # Unchanged

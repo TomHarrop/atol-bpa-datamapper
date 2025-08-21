@@ -17,10 +17,14 @@ def main():
 
     # read the schemas
     package_level_map = MetadataMap(
-        args.package_field_mapping_file, args.value_mapping_file
+        args.package_field_mapping_file, 
+        args.value_mapping_file,
+        args.sanitization_config_file
     )
     resource_level_map = MetadataMap(
-        args.resource_field_mapping_file, args.value_mapping_file
+        args.resource_field_mapping_file, 
+        args.value_mapping_file,
+        args.sanitization_config_file
     )
 
     null_values = package_level_map.sanitization_config.get("null_values")

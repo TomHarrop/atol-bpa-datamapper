@@ -3,7 +3,7 @@
     "dataset": {"dataset_id": "dataset1"},
     "experiment": {"bpa_package_id": "bpa-123"},
     "sample": {
-      "sample_name": "sample1",
+      "bpa_sample_id": "sample1",
       "collection_date": "2023-01-01",
       "location": "Site A"
     },
@@ -13,7 +13,7 @@
     "dataset": {"dataset_id": "dataset2"},
     "experiment": {"bpa_package_id": "bpa-456"},
     "sample": {
-      "sample_name": "sample1",
+      "bpa_sample_id": "sample1",
       "collection_date": "2023-01-01",
       "location": "Site A"
     },
@@ -23,7 +23,7 @@
     "dataset": {"dataset_id": "dataset3"},
     "experiment": {"bpa_package_id": "bpa-789"},
     "sample": {
-      "sample_name": "sample2",
+      "bpa_sample_id": "sample2",
       "collection_date": "2023-02-01",
       "location": "Site B"
     },
@@ -33,7 +33,7 @@
     "dataset": {"dataset_id": "dataset4"},
     "experiment": {"bpa_package_id": "bpa-101"},
     "sample": {
-      "sample_name": "sample3",
+      "bpa_sample_id": "sample3",
       "collection_date": "2023-03-01",
       "location": "Site C",
       "extra_field": "value1"
@@ -44,7 +44,7 @@
     "dataset": {"dataset_id": "dataset5"},
     "experiment": {"bpa_package_id": "bpa-102"},
     "sample": {
-      "sample_name": "sample3",
+      "bpa_sample_id": "sample3",
       "collection_date": "2023-03-01",
       "location": "Site C",
       "extra_field": "value2"

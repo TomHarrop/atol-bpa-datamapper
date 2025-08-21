@@ -22,15 +22,15 @@
     },
     {
       "id": "resource_2",
-      "type": "pacbio-hifi",
-      "library_type": "single",
-      "library_size": "1000",
-      "name": "test_file_2.fastq.gz",
-      "md5": "0987654321fedcba",
+      "type": "illumina-shortread",
+      "library_type": "other",
+      "library_size": "350",
+      "name": "test_file_1.fastq.gz",
+      "md5": "abcdef1234567890",
       "format": "FASTQ",
-      "created": "2025-01-02",
+      "created": "2025-01-01",
       "package_id": "test-package-123",
-      "url": "https://example.com/resource2"
+      "url": "https://example.com/resource1"
     }
   ]
 }

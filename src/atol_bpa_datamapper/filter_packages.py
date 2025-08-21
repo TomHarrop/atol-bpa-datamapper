@@ -15,10 +15,10 @@ def main():
     setup_logger(args.log_level)
 
     package_level_map = MetadataMap(
-        args.package_field_mapping_file, args.value_mapping_file
+        args.package_field_mapping_file, args.value_mapping_file, args.sanitization_config_file
     )
     resource_level_map = MetadataMap(
-        args.resource_field_mapping_file, args.value_mapping_file
+        args.resource_field_mapping_file, args.value_mapping_file, args.sanitization_config_file
     )
 
     input_data = read_input(args.input)

@@ -1,10 +1,4 @@
 {
-  "organism": {
-    "scientific_name": ["scientific_name", "species_name", "taxon_or_organism"]
-  },
-  "sample": {
-    "data_context": ["project_aim", "data_context"]
-  },
   "runs": {
     "platform": [
       "resources.type",
@@ -15,7 +9,12 @@
     ],
     "library_type": ["resources.library_type", "library_type"],
     "library_size": ["resources.library_size", "library_size"],
-    "library_source": ["resources.library_source", "material_extraction_type", "sample_material_preparation_type"],
+    "library_source": [
+      "resources.library_source",
+      "material_extraction_type",
+      "sample_material_preparation_type"
+    ],
+    "library_layout": ["resources.library_layout"],
     "file_name": ["resources.name"],
     "file_checksum": ["resources.md5"],
     "file_format": ["file_type", "resources.format"],
@@ -23,8 +22,5 @@
     "package_id": ["resources.package_id", "id"],
     "resource_id": ["resources.id"],
     "bioplatforms_resource_url": ["resources.url"]
-  },
-  "dataset": {
-    "bpa_id": ["id"]
   }
 }
