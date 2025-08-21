@@ -14,11 +14,6 @@ def parse_args_for_transform():
     parser, input_group, output_group, options_group = shared_args()
     parser.description = "Transform mapped metadata to extract unique samples"
     
-    # Remove mapping file arguments that aren't needed for transform
-    for action in list(options_group._group_actions):
-        if action.dest in ["package_field_mapping_file", "resource_field_mapping_file", "value_mapping_file"]:
-            options_group._group_actions.remove(action)
-    
     transform_group = parser.add_argument_group("Transform options")
     
     transform_group.add_argument(
