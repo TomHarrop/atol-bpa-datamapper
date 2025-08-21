@@ -14,11 +14,11 @@ def apply_filtering_logic(package_data, metadata_map):
     """
     Helper function to apply the filtering logic from filter_packages.py to a package.
     
-    This function encapsulates the core filtering logic without duplicating it in each test.
-    It creates a BpaPackage instance from the provided data and applies the filter using
-    the provided metadata map.
+    This function uses the actual filter method from BpaPackage instead of 
+    reimplementing the logic. It creates a BpaPackage instance from the provided data 
+    and applies the filter using the provided metadata map.
     
-    For testing purposes, this function filters only package-level fields and ignores
+    For testing purposes, this function modifies the metadata_map temporarily to exclude
     resource-level fields, which matches the expected behavior in the tests.
     
     Args:
@@ -31,45 +31,26 @@ def apply_filtering_logic(package_data, metadata_map):
     # Create a BpaPackage instance from the data
     package = BpaPackage(package_data)
     
-    # Initialize tracking dictionaries
-    package.decisions = {}
-    package.bpa_fields = {}
-    package.bpa_values = {}
+    # Create a temporary copy of controlled_vocabularies without resource-level fields
+    original_vocabularies = metadata_map.controlled_vocabularies.copy()
     
-    # Filter only package-level fields (not in the "runs" section)
-    for atol_field in metadata_map.controlled_vocabularies:
-        # Skip resource-level fields (in the "runs" section)
-        if metadata_map[atol_field]["section"] == "runs":
-            continue
-            
-        bpa_field_list = metadata_map[atol_field]["bpa_fields"]
-        accepted_values = metadata_map.get_allowed_values(atol_field)
-        
-        # Use the _choose_value method to get the value, field, and keep decision
-        value, bpa_field, keep = package._choose_value(bpa_field_list, accepted_values)
-        
-        # Handle genome_data override for data_context
-        if (
-            atol_field == "data_context"
-            and "genome_data" in package.fields
-            and not keep
-        ):
-            if package["genome_data"] == "yes":
-                value, bpa_field, keep = ("yes", "genome_data", True)
-        
-        # Record the field, value, and decision
-        package.bpa_fields[atol_field] = bpa_field
-        package.bpa_values[atol_field] = value
-        
-        # Record the decision
-        decision_key = f"{atol_field}_accepted"
-        package.decisions[decision_key] = keep
-        package.decisions[atol_field] = value
+    # Filter out resource-level fields (in the "runs" section)
+    filtered_vocabularies = [
+        field for field in original_vocabularies 
+        if metadata_map[field]["section"] != "runs"
+    ]
     
-    # Determine if the package should be kept based on all boolean decisions
-    package.keep = all(x for x in package.decisions.values() if isinstance(x, bool))
+    # Temporarily modify the metadata_map to only include package-level fields
+    metadata_map.controlled_vocabularies = filtered_vocabularies
     
-    return package
+    try:
+        # Use the actual filter method
+        package.filter(metadata_map)
+        
+        return package
+    finally:
+        # Restore the original controlled_vocabularies
+        metadata_map.controlled_vocabularies = original_vocabularies
 
 @pytest.fixture
 def nested_package_data():

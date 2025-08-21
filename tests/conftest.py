@@ -126,38 +126,3 @@ def resource_metadata_map(field_mapping_file_resources, value_mapping_file, sani
     """Create a resource-level MetadataMap instance for testing."""
     from atol_bpa_datamapper.config_parser import MetadataMap
     return MetadataMap(field_mapping_file_resources, value_mapping_file, sanitization_config_file)
-
-@pytest.fixture
-def ncbi_taxdump_factory():
-    """Factory fixture that creates a mock NcbiTaxdump with configurable behavior."""
-    def _factory(nodes_df=None, names_df=None):
-        mock_taxdump = MagicMock()
-        
-        # Set default values if not provided
-        if nodes_df is None:
-            import pandas as pd
-            nodes_df = pd.DataFrame({
-                'tax_id': [1, 2, 3],
-                'parent_tax_id': [0, 1, 1],
-                'rank': ['no rank', 'superkingdom', 'superkingdom']
-            })
-        
-        if names_df is None:
-            import pandas as pd
-            names_df = pd.DataFrame({
-                'tax_id': [1, 2, 3],
-                'name_txt': ['root', 'Bacteria', 'Archaea'],
-                'name_class': ['scientific name', 'scientific name', 'scientific name']
-            })
-        
-        # Set properties
-        mock_taxdump.nodes_df = nodes_df
-        mock_taxdump.names_df = names_df
-        
-        # Mock methods
-        mock_taxdump.get_lineage.return_value = ["root", "Bacteria", "Species"]
-        mock_taxdump.get_rank.return_value = "species"
-        
-        return mock_taxdump
-    
-    return _factory
