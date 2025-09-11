@@ -1,5 +1,87 @@
 # Changelog
 
+## v0.1.12 (2025-09-11)
+
+### Changes
+
+* Map assembly type.
+
+  chg: Map assembly type
+
+* Library_type defaults to None (fixes #29)
+
+* Default for library_selection (addresses #29)
+
+### Other
+
+* Merge pull request #28 from TomHarrop/update-tests.
+
+  chg: update unit and integration tests
+
+* Remove duplicate logic in test, remove redundant factory fixture.
+
+* Add tests to improve coverage.
+
+* Remove redundant fixtures.
+
+* Undo temporary code accidentally committed.
+
+* Make sanitization config file an arg, update tests.
+
+* Make sanitization config file an arg, update tests.
+
+* Update key for unique samples in tests.
+
+* Add assertion to test default fields.
+
+* Remove my incorrect fixture, also remove unit tests which are already covered by integration tests.
+
+* Update tests.
+
+* Fix failing config parser integration test.
+
+* Updating unit tests.
+
+* Passing with noted issues wrt counters for any nested values (to do!)
+
+* Add unit and integration tests for counters in filter_packages.
+
+* Add unit and integration tests for counters in filter_packages.
+
+* Add unit and integration tests for counters in filter_packages.
+
+* Update unit tests for config_parser to test default values.
+
+* Merge branch 'main' into update-tests.
+
+* Merge pull request #27 from TomHarrop/extract-experiments.
+
+  new: structure experiments output for database
+
+* Merge branch 'main' into extract-experiments.
+
+# Conflicts
+
+# src/atol_bpa_datamapper/transform_data.py
+
+* Merge branch 'main' into extract-experiments.
+
+* Add tests for transform_data.
+
+* Update contest.py and gitignore.
+
+* Format experiments data for database.
+
+* Update tests for package handler.
+
+* Merge branch 'main' into update-tests.
+
+* Add factory fixtures for taxdump, metadata_map and args handler.
+
+* Update unit and integration tests.
+
+* Update unit and integration tests.
+
 ## v0.1.11 (2025-08-06)
 
 ### New
