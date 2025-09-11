@@ -128,7 +128,7 @@ class BpaBase(dict):
         # apply the default if we didn't get an accepted_value
         if has_default == True and keep == False:
             if value is not None:
-                logger.warning(
+                logger.debug(
                     f"Field {atol_field} has value {value}. Using default {default_value}."
                 )
             else:
