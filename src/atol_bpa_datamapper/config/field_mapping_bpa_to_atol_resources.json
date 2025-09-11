@@ -34,10 +34,10 @@
             "access_control_date"
         ],
         "read_number": [
-            "read"
+            "resources.read"
         ],
         "lane_number": [
-            "lane"
+            "resources.lane"
         ],
         "sra_run_accession": [],
         "run_read_count": [],
