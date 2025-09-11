@@ -419,6 +419,9 @@
                 "illumina-shortread",
                 "samples were barcoded and pooled based on different time points and replicates",
                 "unspecified"
+            ],
+            "null": [
+                null
             ]
         },
         "library_source": {
@@ -761,7 +764,7 @@
             ]
         },
         "GAL": {
-            "AGRF": [
+            "Australian Genomic Research Facility - AGRF": [
                 "AGRF",
                 "AGRF / Kor-jent van Dijk",
                 "AGRF Adelaide",
@@ -769,27 +772,29 @@
                 "AGRF_Melboune",
                 "AGRF_Melbourne"
             ],
-            "BRF": [
+            "Biomolecular Research Facility - ANU": [
                 "BRF",
                 "Biomolecular Research Facility - ANU",
                 "Biomolecular Resource Facility"
             ],
-            "Genomics WA": [
+            "Genomics Western Australia - UWA": [
                 "Genomics WA"
             ],
-            "Kinghorn": [
+            "Ramaciotti Centre for Genomics - UNSW": [
+                "Ramaciotti, UNSW",
+                "Ramaciotti_UNSW",
                 "UNSW",
-                "UNSW/Kinghorn"
+                "UNSW/Kinghorn",
+                "UNSW_Ramaciotti Centre for Genomics"
             ],
-            "Ramaciotti": [
+            "Ramaciotti Centre for Genomics": [
                 "RAMAC",
                 "Ramaciotti",
-                "Ramaciotti Centre for Genomics",
-                "Ramaciotti, UNSW",
+                "Ramaciotti Centre for Genomics"
+            ],
+            "Ramaciotti Centre for Genomics - Garvan": [
                 "Ramaciotti/Garvan",
-                "RamaciottiGarvan",
-                "Ramaciotti_UNSW",
-                "UNSW_Ramaciotti Centre for Genomics"
+                "RamaciottiGarvan"
             ]
         },
         "lifestage": {
