@@ -260,11 +260,8 @@ class OrganismSection(dict):
         self.check_for_subspecies_information(ncbi_taxdump, package_id, null_values)
 
         # generate a key for grouping the organisms
-        # TODO: this should be some sort of UUID
         if self.has_taxid_at_accepted_level and self.scientific_name_source == "ncbi":
-            self.organism_grouping_key = "_".join(
-                [remove_whitespace(self.atol_scientific_name), str(self.taxon_id)]
-            )
+            self.organism_grouping_key = f"taxid{self.taxon_id}"
             self.busco_dataset_name = ncbi_taxdump.get_busco_lineage(self.taxon_id)
         else:
             self.organism_grouping_key = None
