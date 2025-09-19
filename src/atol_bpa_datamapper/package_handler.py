@@ -2,6 +2,17 @@ from .logger import logger
 from .utils.common import safe_get
 
 
+def _is_non_empty_value(value):
+    """Check if a value is considered non-empty, handling different data types."""
+    if value is None:
+        return False
+    if isinstance(value, bool):
+        return True
+    if isinstance(value, str):
+        return value.strip() != ""
+    return True
+
+
 class BpaBase(dict):
     def __init__(self, data):
         super().__init__()
@@ -60,13 +71,11 @@ class BpaBase(dict):
             for k, v in values.items():
                 my_values[k] = None
 
-                if (v is not None) and not (v.strip == ""):
+                if _is_non_empty_value(v):
                     my_values[k] = v
                     continue
 
-                if (parent_values[k] is not None) and not (
-                    parent_values[k].strip == ""
-                ):
+                if _is_non_empty_value(parent_values[k]):
                     my_values[k] = parent_values[k]
 
             values = my_values
@@ -84,7 +93,7 @@ class BpaBase(dict):
                 value = value[0]
 
             # skip None values and empty strings
-            if value is None or value.upper() in null_values:
+            if value is None or (isinstance(value, str) and value.upper() in null_values):
                 continue
             # return the first item if there is no controlled vocab
             if not accepted_values:
