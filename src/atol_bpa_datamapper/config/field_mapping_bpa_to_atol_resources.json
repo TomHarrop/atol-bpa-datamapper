@@ -20,12 +20,14 @@
             "resources.md5"
         ],
         "file_format": [
-            "file_type",
             "resources.format"
         ],
         "file_submission_date": [
             "resources.created",
             "date_submission"
+        ],
+        "optional_file": [
+            "resources.optional_file"
         ],
         "bioplatforms_url": [
             "resources.url"

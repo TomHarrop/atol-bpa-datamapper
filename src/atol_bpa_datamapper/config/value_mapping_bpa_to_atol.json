@@ -27,6 +27,7 @@
             ],
             "Illumina MiSeq": [
                 "HiSeq 2517",
+                "Illumina MiSeq",
                 "MiSeq"
             ],
             "Illumina NovaSeq 6000": [
@@ -62,6 +63,32 @@
                 "NovaSeq 6000",
                 "NovaSeq 6000 S2 2x150bp_Flowcell",
                 "NovaSeq 6000 SP, 300 cycle",
+                "NovaSeq 6001",
+                "NovaSeq 6002",
+                "NovaSeq 6003",
+                "NovaSeq 6004",
+                "NovaSeq 6005",
+                "NovaSeq 6006",
+                "NovaSeq 6007",
+                "NovaSeq 6008",
+                "NovaSeq 6009",
+                "NovaSeq 6010",
+                "NovaSeq 6011",
+                "NovaSeq 6012",
+                "NovaSeq 6013",
+                "NovaSeq 6014",
+                "NovaSeq 6015",
+                "NovaSeq 6016",
+                "NovaSeq 6017",
+                "NovaSeq 6018",
+                "NovaSeq 6019",
+                "NovaSeq 6020",
+                "NovaSeq 6021",
+                "NovaSeq 6022",
+                "NovaSeq 6023",
+                "NovaSeq 6024",
+                "NovaSeq 6025",
+                "NovaSeq 6026",
                 "NovaSeq 6027",
                 "NovaSeq 6028",
                 "NovaSeq 6029",
@@ -83,7 +110,8 @@
                 "Illumina NovaSeq X Plus",
                 "NovaSeq X Plus",
                 "X Plus",
-                "X-Plus"
+                "X-Plus",
+                "X_Plus"
             ],
             "Illumina NextSeq 500": [
                 "Illumina NextSeq 500",
@@ -559,6 +587,8 @@
                 "NovaSeq",
                 "ausarg-hi-c",
                 "ausarg-illumina-fastq",
+                "avian-hi-c",
+                "fish-hi-c",
                 "fungi-illumina-shortread",
                 "gap-genomics-10x",
                 "gap-hi-c",
@@ -587,6 +617,8 @@
             "OXFORD_NANOPORE": [
                 "OXFORD_NANOPORE",
                 "ausarg-ont-promethion",
+                "avian-ont-promethion",
+                "fish-ont-promethion",
                 "fungi-ont-promethion",
                 "gap-ont-minion",
                 "gap-ont-promethion",
@@ -666,20 +698,8 @@
     },
     "runs": {
         "file_format": {
-            "454_native": [
-                "454_native"
-            ],
-            "454_native_qual": [
-                "454_native_qual"
-            ],
-            "454_native_seq": [
-                "454_native_seq"
-            ],
             "bam": [
                 "bam"
-            ],
-            "CompleteGenomics_native": [
-                "CompleteGenomics_native"
             ],
             "cram": [
                 "cram"
@@ -692,54 +712,6 @@
                 ".fastq.gz",
                 "fastq",
                 "fastq.qz"
-            ],
-            "Helicos_native": [
-                "Helicos_native"
-            ],
-            "Illumina_native": [
-                "Illumina_native"
-            ],
-            "Illumina_native_int": [
-                "Illumina_native_int"
-            ],
-            "Illumina_native_prb": [
-                "Illumina_native_prb"
-            ],
-            "Illumina_native_qseq": [
-                "Illumina_native_qseq"
-            ],
-            "Illumina_native_scarf": [
-                "Illumina_native_scarf"
-            ],
-            "Illumina_native_seq": [
-                "Illumina_native_seq"
-            ],
-            "OxfordNanopore_native": [
-                "OxfordNanopore_native"
-            ],
-            "PacBio_HDF5": [
-                "PacBio_HDF5"
-            ],
-            "sff": [
-                "sff"
-            ],
-            "SOLiD_native": [
-                "SOLiD_native"
-            ],
-            "SOLiD_native_csfasta": [
-                "SOLiD_native_csfasta"
-            ],
-            "SOLiD_native_qual": [
-                "SOLiD_native_qual"
-            ],
-            "sra": [
-                "sra"
-            ],
-            "srf": [
-                "srf"
-            ],
-            "tab": [
-                "tab"
             ]
         }
     },
@@ -759,7 +731,9 @@
                 "Reference genome (HiC)",
                 "Reference genome for Rhodomyrtus psidioides",
                 "Reference genomes",
+                "Resequenced genome",
                 "Resequencing",
+                "Whole Genome Sequencing",
                 "reference genome"
             ]
         },
