@@ -1,5 +1,23 @@
 # Changelog
 
+## (unreleased)
+
+### Changes
+
+* Handle boolean optional_file field.
+
+* Remove underscores from organism_grouping_key.
+
+  chg: remove underscores from organism_grouping_key
+
+* Remove underscores from organism_grouping_key (fixes #31)
+
+### Other
+
+* Merge pull request #33 from TomHarrop/resource_filter.
+
+  chg: handle boolean optional_file field
+
 ## v0.1.12 (2025-09-11)
 
 ### Changes
