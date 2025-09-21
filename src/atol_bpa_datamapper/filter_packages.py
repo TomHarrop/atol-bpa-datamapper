@@ -6,6 +6,13 @@ from collections import Counter
 
 
 def main():
+    """
+    Main function for filtering packages.
+    
+    NOTE: For better performance, consider using the single-pass pipeline:
+    `python -m atol_bpa_datamapper.process_pipeline` which combines
+    filtering, mapping, and transformation in one pass.
+    """
 
     # debugging options
     max_iterations = None

@@ -463,9 +463,23 @@ def extract_experiment(experiments_data, package):
         
 
 def main():
-    """Main function to transform mapped metadata."""
+    """Main function to transform mapped metadata - now integrated into pipeline."""
+    # This function is kept for backward compatibility but the logic
+    # is now primarily handled by the unified pipeline
+    from .pipeline import PipelineConfig, DataProcessingPipeline
+    
     args = parse_args_for_transform()
     setup_logger(args.log_level)
+
+    config = PipelineConfig(
+        enable_filtering=False,
+        enable_mapping=False,
+        enable_transformation=True,
+        **vars(args)
+    )
+    
+    pipeline = DataProcessingPipeline(config)
+    pipeline.run()
 
     # Parse ignored fields if provided
     sample_ignored_fields = []
