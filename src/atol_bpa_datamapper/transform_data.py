@@ -463,23 +463,15 @@ def extract_experiment(experiments_data, package):
         
 
 def main():
-    """Main function to transform mapped metadata - now integrated into pipeline."""
-    # This function is kept for backward compatibility but the logic
-    # is now primarily handled by the unified pipeline
-    from .pipeline import PipelineConfig, DataProcessingPipeline
+    """
+    Main function to transform mapped metadata.
     
+    NOTE: For better performance, consider using the single-pass pipeline:
+    `python -m atol_bpa_datamapper.pipeline` which combines
+    filtering, mapping, and transformation in one pass.
+    """
     args = parse_args_for_transform()
     setup_logger(args.log_level)
-
-    config = PipelineConfig(
-        enable_filtering=False,
-        enable_mapping=False,
-        enable_transformation=True,
-        **vars(args)
-    )
-    
-    pipeline = DataProcessingPipeline(config)
-    pipeline.run()
 
     # Parse ignored fields if provided
     sample_ignored_fields = []
@@ -566,6 +558,14 @@ def main():
     n_organism_conflicts = len(organism_results["organism_conflicts"])
 
     logger.info(f"Found {n_unique_samples} unique samples")
+    logger.info(f"Found {n_sample_conflicts} samples with conflicts")
+    logger.info(f"Found {n_unique_organisms} unique organisms")
+    logger.info(f"Found {n_organism_conflicts} organisms with conflicts")
+    logger.info(f"Found {len(experiments_data)} experiments")
+
+
+if __name__ == "__main__":
+    main()
     logger.info(f"Found {n_sample_conflicts} samples with conflicts")
     logger.info(f"Found {n_unique_organisms} unique organisms")
     logger.info(f"Found {n_organism_conflicts} organisms with conflicts")

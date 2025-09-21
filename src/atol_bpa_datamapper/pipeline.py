@@ -1,8 +1,15 @@
 """
-Unified data processing pipeline that combines filtering, mapping, and transformation.
+Single-pass data processing pipeline that combines filtering, mapping, and transformation.
 
-This module consolidates the functionality from filter_packages.py, map_metadata.py, 
-and transform_data.py into a single configurable pipeline.
+This pipeline processes each package sequentially through all three stages:
+1. Filter packages based on controlled vocabularies
+2. Map metadata to AToL schema format  
+3. Transform data to extract unique entities
+
+This approach is much more efficient than the multi-pass approach as it:
+- Reads input data only once
+- Processes packages in memory without intermediate files
+- Reduces I/O overhead significantly
 """
 
 from .arg_parser import parse_args_for_filtering, parse_args_for_mapping, parse_args_for_transform
@@ -10,86 +17,112 @@ from .config_parser import MetadataMap
 from .io import read_input, OutputWriter, write_json, write_decision_log_to_csv
 from .logger import logger, setup_logger
 from .transform_data import SampleTransformer, OrganismTransformer, extract_experiment
-from .organism_mapper import OrganismMapper
 from collections import Counter
 import argparse
 
 
-class DataProcessingPipeline:
+class SinglePassPipeline:
     """
-    Unified pipeline for processing BPA data through filtering, mapping, and transformation steps.
+    Single-pass pipeline that processes packages through filter → map → transform sequentially.
     """
     
-    def __init__(self, config):
-        """
-        Initialize the pipeline with configuration.
+    def __init__(self, args):
+        """Initialize pipeline with command-line arguments."""
+        self.args = args
+        setup_logger(args.log_level)
         
-        Args:
-            config: Configuration object containing all pipeline parameters
-        """
-        self.config = config
-        self.counters = {}
+        # Initialize metadata maps
+        self.package_metadata_map = MetadataMap(
+            args.package_field_mapping_file, 
+            args.value_mapping_file, 
+            getattr(args, 'sanitization_config_file', None)
+        )
+        self.resource_metadata_map = MetadataMap(
+            args.resource_field_mapping_file, 
+            args.value_mapping_file, 
+            getattr(args, 'sanitization_config_file', None)
+        )
+        
+        # Initialize organism mapper for mapping stage if needed
+        self.organism_mapper = None
+        if hasattr(args, 'nodes') and args.nodes:
+            from .organism_mapper import OrganismMapper
+            self.organism_mapper = OrganismMapper(
+                args.nodes, 
+                args.names,
+                getattr(args, 'taxids_to_busco_dataset_mapping', None),
+                getattr(args, 'cache_dir', None)
+            )
+            
+        # Initialize transformers for transformation stage
+        sample_ignored_fields = []
+        organism_ignored_fields = []
+        if hasattr(args, 'sample_ignored_fields') and args.sample_ignored_fields:
+            sample_ignored_fields = args.sample_ignored_fields.split(',')
+        if hasattr(args, 'organism_ignored_fields') and args.organism_ignored_fields:
+            organism_ignored_fields = args.organism_ignored_fields.split(',')
+            
+        self.sample_transformer = SampleTransformer(ignored_fields=sample_ignored_fields)
+        self.organism_transformer = OrganismTransformer(ignored_fields=organism_ignored_fields)
+        
+        # Initialize counters and tracking
+        all_controlled_vocabularies = sorted(
+            set(
+                self.package_metadata_map.controlled_vocabularies
+                + self.resource_metadata_map.controlled_vocabularies
+            )
+        )
+        self.counters = {
+            "raw_field_usage": Counter(),
+            "bpa_field_usage": {
+                atol_field: Counter() for atol_field in all_controlled_vocabularies
+            },
+            "bpa_value_usage": {
+                atol_field: Counter() for atol_field in all_controlled_vocabularies
+            },
+        }
+        
         self.decision_log = {}
+        self.experiments_data = {}
         self.stats = {
             'n_packages': 0,
             'n_filtered': 0,
             'n_mapped': 0,
-            'n_transformed_samples': 0,
-            'n_transformed_organisms': 0
+            'n_transformed': 0
         }
+
+    def process_package(self, package):
+        """
+        Process a single package through all three stages sequentially.
         
-        # Initialize components based on configuration
-        if config.enable_filtering or config.enable_mapping:
-            self.package_metadata_map = MetadataMap(
-                config.package_field_mapping_file, 
-                config.value_mapping_file, 
-                config.sanitization_config_file
-            )
-            self.resource_metadata_map = MetadataMap(
-                config.resource_field_mapping_file, 
-                config.value_mapping_file, 
-                config.sanitization_config_file
-            )
+        Returns:
+            bool: True if package should be included in final output
+        """
+        self.stats['n_packages'] += 1
+        logger.debug(f"Processing package {package.id}")
+        
+        # Update raw field usage counter
+        self.counters["raw_field_usage"].update(package.fields)
+        
+        # STAGE 1: FILTERING
+        should_continue = self._filter_package(package)
+        if not should_continue:
+            return False
             
-        if config.enable_mapping:
-            self.organism_mapper = OrganismMapper(
-                config.nodes_file, 
-                config.names_file,
-                config.taxids_to_busco_dataset_mapping,
-                config.cache_dir
-            )
-            
-        if config.enable_transformation:
-            self.sample_transformer = SampleTransformer(
-                ignored_fields=config.sample_ignored_fields
-            )
-            self.organism_transformer = OrganismTransformer(
-                ignored_fields=config.organism_ignored_fields
-            )
-            
-        self._setup_counters()
+        self.stats['n_filtered'] += 1
+        
+        # STAGE 2: MAPPING  
+        self._map_package(package)
+        self.stats['n_mapped'] += 1
+        
+        # STAGE 3: TRANSFORMATION
+        self._transform_package(package)
+        self.stats['n_transformed'] += 1
+        
+        return True
 
-    def _setup_counters(self):
-        """Initialize counters for tracking field and value usage."""
-        if self.config.enable_filtering or self.config.enable_mapping:
-            all_controlled_vocabularies = sorted(
-                set(
-                    self.package_metadata_map.controlled_vocabularies
-                    + self.resource_metadata_map.controlled_vocabularies
-                )
-            )
-            self.counters = {
-                "raw_field_usage": Counter(),
-                "bpa_field_usage": {
-                    atol_field: Counter() for atol_field in all_controlled_vocabularies
-                },
-                "bpa_value_usage": {
-                    atol_field: Counter() for atol_field in all_controlled_vocabularies
-                },
-            }
-
-    def process_package_filtering(self, package):
-        """Apply filtering logic to a package."""
+    def _filter_package(self, package):
+        """Apply filtering logic to package and resources."""
         # Filter on Package-level fields
         package.filter(self.package_metadata_map)
         
@@ -123,16 +156,19 @@ class DataProcessingPipeline:
             package.decisions["kept_resources"] = False
             package.keep = False
 
+        # Log decisions
         self.decision_log[package.id] = package.decisions
+        
         return package.keep
 
-    def process_package_mapping(self, package):
-        """Apply mapping logic to a package."""
+    def _map_package(self, package):
+        """Apply mapping logic to package and resources."""
         # Map package-level metadata
         package.map_metadata(self.package_metadata_map)
         
-        # Map organism information
-        self.organism_mapper.process_package(package)
+        # Map organism information if organism mapper is available
+        if self.organism_mapper:
+            self.organism_mapper.process_package(package)
         
         # Map resource-level metadata
         resource_mapped_metadata = {
@@ -149,215 +185,179 @@ class DataProcessingPipeline:
         # Merge resource metadata into package metadata
         for section, resource_metadata in resource_mapped_metadata.items():
             package.mapped_metadata[section] = resource_metadata
-            
-        return True
 
-    def process_package_transformation(self, package):
-        """Apply transformation logic to a package."""
-        sample_processed = self.sample_transformer.process_package(package)
-        organism_processed = self.organism_transformer.process_package(package)
+    def _transform_package(self, package):
+        """Apply transformation logic to extract entities."""
+        # Process for sample extraction
+        self.sample_transformer.process_package(package)
+        
+        # Process for organism extraction  
+        self.organism_transformer.process_package(package)
         
         # Extract experiment data
-        if hasattr(self, 'experiments_data'):
-            extract_experiment(self.experiments_data, package)
-        else:
-            self.experiments_data = {}
-            extract_experiment(self.experiments_data, package)
-            
-        return sample_processed or organism_processed
+        extract_experiment(self.experiments_data, package)
 
     def run(self):
-        """Execute the complete pipeline."""
-        logger.info(f"Starting pipeline with steps: "
-                   f"filter={self.config.enable_filtering}, "
-                   f"map={self.config.enable_mapping}, "
-                   f"transform={self.config.enable_transformation}")
-
-        input_data = read_input(self.config.input)
+        """Execute the complete single-pass pipeline."""
+        logger.info("Starting single-pass pipeline: filter → map → transform")
         
-        with OutputWriter(self.config.output, self.config.dry_run) as output_writer:
+        input_data = read_input(self.args.input)
+        
+        with OutputWriter(self.args.output, self.args.dry_run) as output_writer:
             for package in input_data:
-                # Debug limits
-                if (hasattr(self.config, 'max_iterations') and 
-                    self.config.max_iterations and 
-                    self.stats['n_packages'] >= self.config.max_iterations):
+                # Apply debug limits if specified
+                if (hasattr(self.args, 'max_iterations') and 
+                    self.args.max_iterations and 
+                    self.stats['n_packages'] >= self.args.max_iterations):
                     break
-                if (hasattr(self.config, 'manual_record') and 
-                    self.config.manual_record and 
-                    package.id != self.config.manual_record):
+                if (hasattr(self.args, 'manual_record') and 
+                    self.args.manual_record and 
+                    package.id != self.args.manual_record):
                     continue
 
-                self.stats['n_packages'] += 1
-                logger.debug(f"Processing package {package.id}")
-                
-                # Update raw field usage counter
-                if hasattr(self, 'counters'):
-                    self.counters["raw_field_usage"].update(package.fields)
-
-                should_output = True
-                
-                # Step 1: Filtering
-                if self.config.enable_filtering:
-                    should_output = self.process_package_filtering(package)
-                    if should_output:
-                        self.stats['n_filtered'] += 1
-
-                # Step 2: Mapping
-                if should_output and self.config.enable_mapping:
-                    self.process_package_mapping(package)
-                    self.stats['n_mapped'] += 1
-
-                # Step 3: Transformation
-                if should_output and self.config.enable_transformation:
-                    if self.process_package_transformation(package):
-                        self.stats['n_transformed_samples'] += 1
-
-                # Output the package if it should be included
-                if should_output:
+                # Process package through all stages
+                if self.process_package(package):
                     output_writer.write_data(package)
 
         self._write_outputs()
         self._log_statistics()
 
     def _write_outputs(self):
-        """Write all output files based on configuration."""
-        if self.config.dry_run:
+        """Write all output files."""
+        if self.args.dry_run:
             return
+
+        # Write filtering outputs
+        if hasattr(self.args, 'decision_log') and self.args.decision_log:
+            logger.info(f"Writing decision log to {self.args.decision_log}")
+            write_decision_log_to_csv(self.decision_log, self.args.decision_log)
             
-        # Filtering outputs
-        if self.config.enable_filtering:
-            if hasattr(self.config, 'decision_log') and self.config.decision_log:
-                logger.info(f"Writing decision log to {self.config.decision_log}")
-                write_decision_log_to_csv(self.decision_log, self.config.decision_log)
-                
-        # Counter outputs (shared between filtering and mapping)
-        if hasattr(self, 'counters'):
-            if hasattr(self.config, 'raw_field_usage') and self.config.raw_field_usage:
-                write_json(self.counters["raw_field_usage"], self.config.raw_field_usage)
-            if hasattr(self.config, 'bpa_field_usage') and self.config.bpa_field_usage:
-                write_json(self.counters["bpa_field_usage"], self.config.bpa_field_usage)
-            if hasattr(self.config, 'bpa_value_usage') and self.config.bpa_value_usage:
-                write_json(self.counters["bpa_value_usage"], self.config.bpa_value_usage)
-                
-        # Mapping outputs
-        if self.config.enable_mapping and hasattr(self, 'organism_mapper'):
-            self.organism_mapper.write_outputs(self.config)
+        # Write counter outputs
+        if hasattr(self.args, 'raw_field_usage') and self.args.raw_field_usage:
+            logger.info(f"Writing raw field usage to {self.args.raw_field_usage}")
+            write_json(self.counters["raw_field_usage"], self.args.raw_field_usage)
+        if hasattr(self.args, 'bpa_field_usage') and self.args.bpa_field_usage:
+            logger.info(f"Writing BPA field usage to {self.args.bpa_field_usage}")
+            write_json(self.counters["bpa_field_usage"], self.args.bpa_field_usage)
+        if hasattr(self.args, 'bpa_value_usage') and self.args.bpa_value_usage:
+            logger.info(f"Writing BPA value usage to {self.args.bpa_value_usage}")
+            write_json(self.counters["bpa_value_usage"], self.args.bpa_value_usage)
             
-        # Transformation outputs
-        if self.config.enable_transformation:
-            sample_results = self.sample_transformer.get_results()
-            organism_results = self.organism_transformer.get_results()
+        # Write mapping outputs
+        if self.organism_mapper and hasattr(self.args, 'grouping_log'):
+            self.organism_mapper.write_outputs(self.args)
             
-            if hasattr(self.config, 'sample_output') and self.config.sample_output:
-                write_json(sample_results["unique_samples"], self.config.sample_output)
-            if hasattr(self.config, 'organism_output') and self.config.organism_output:
-                write_json(organism_results["unique_organisms"], self.config.organism_output)
-            if hasattr(self.config, 'experiments_output') and self.config.experiments_output:
-                write_json(self.experiments_data, self.config.experiments_output)
+        # Write transformation outputs
+        sample_results = self.sample_transformer.get_results()
+        organism_results = self.organism_transformer.get_results()
+        
+        # Use the same output paths as the individual scripts would use
+        if hasattr(self.args, 'sample_conflicts') and self.args.sample_conflicts:
+            logger.info(f"Writing sample conflicts to {self.args.sample_conflicts}")
+            write_json(sample_results["sample_conflicts"], self.args.sample_conflicts)
+        if hasattr(self.args, 'unique_organisms') and self.args.unique_organisms:
+            logger.info(f"Writing unique organisms to {self.args.unique_organisms}")
+            write_json(organism_results["unique_organisms"], self.args.unique_organisms)
+        if hasattr(self.args, 'experiments_output') and self.args.experiments_output:
+            logger.info(f"Writing experiments to {self.args.experiments_output}")
+            write_json(self.experiments_data, self.args.experiments_output)
 
     def _log_statistics(self):
         """Log processing statistics."""
-        logger.info(f"Processed {self.stats['n_packages']} packages")
-        if self.config.enable_filtering:
-            logger.info(f"Kept {self.stats['n_filtered']} packages after filtering")
-        if self.config.enable_mapping:
-            logger.info(f"Mapped {self.stats['n_mapped']} packages")
-        if self.config.enable_transformation:
-            logger.info(f"Processed {self.stats['n_transformed_samples']} samples for transformation")
+        logger.info(f"Single-pass pipeline completed:")
+        logger.info(f"  Processed {self.stats['n_packages']} packages")
+        logger.info(f"  Filtered {self.stats['n_filtered']} packages")
+        logger.info(f"  Mapped {self.stats['n_mapped']} packages") 
+        logger.info(f"  Transformed {self.stats['n_transformed']} packages")
+        
+        # Log transformation results
+        sample_results = self.sample_transformer.get_results()
+        organism_results = self.organism_transformer.get_results()
+        
+        logger.info(f"  Found {len(sample_results['unique_samples'])} unique samples")
+        logger.info(f"  Found {len(sample_results['sample_conflicts'])} samples with conflicts")
+        logger.info(f"  Found {len(organism_results['unique_organisms'])} unique organisms")
+        logger.info(f"  Found {len(organism_results['organism_conflicts'])} organisms with conflicts")
+        logger.info(f"  Found {len(self.experiments_data)} experiments")
 
 
-class PipelineConfig:
-    """Configuration class for the unified pipeline."""
-    
-    def __init__(self, **kwargs):
-        # Pipeline control
-        self.enable_filtering = kwargs.get('enable_filtering', True)
-        self.enable_mapping = kwargs.get('enable_mapping', True) 
-        self.enable_transformation = kwargs.get('enable_transformation', True)
-        
-        # Common parameters
-        self.input = kwargs.get('input')
-        self.output = kwargs.get('output')
-        self.dry_run = kwargs.get('dry_run', False)
-        self.log_level = kwargs.get('log_level', 'INFO')
-        
-        # Configuration files
-        self.package_field_mapping_file = kwargs.get('package_field_mapping_file')
-        self.resource_field_mapping_file = kwargs.get('resource_field_mapping_file')
-        self.value_mapping_file = kwargs.get('value_mapping_file')
-        self.sanitization_config_file = kwargs.get('sanitization_config_file')
-        
-        # Mapping-specific parameters
-        self.nodes_file = kwargs.get('nodes_file')
-        self.names_file = kwargs.get('names_file')
-        self.taxids_to_busco_dataset_mapping = kwargs.get('taxids_to_busco_dataset_mapping')
-        self.cache_dir = kwargs.get('cache_dir')
-        
-        # Transformation-specific parameters
-        self.sample_ignored_fields = kwargs.get('sample_ignored_fields', [])
-        self.organism_ignored_fields = kwargs.get('organism_ignored_fields', [])
-        
-        # Output files
-        for key, value in kwargs.items():
-            if not hasattr(self, key):
-                setattr(self, key, value)
-
-
-def create_unified_args_parser():
-    """Create argument parser that combines all three pipeline steps."""
+def create_combined_args_parser():
+    """Create argument parser that combines arguments from all three original scripts."""
     parser = argparse.ArgumentParser(
-        description="Unified BPA data processing pipeline"
+        description="Single-pass BPA data processing pipeline (filter → map → transform)"
     )
     
-    # Pipeline control
-    pipeline_group = parser.add_argument_group("Pipeline control")
-    pipeline_group.add_argument(
-        '--steps', 
-        choices=['filter', 'map', 'transform', 'filter,map', 'map,transform', 'filter,map,transform'],
-        default='filter,map,transform',
-        help='Which pipeline steps to run (default: all steps)'
-    )
-    
-    # Input/Output
+    # Input/Output (from all scripts)
     io_group = parser.add_argument_group("Input/Output")
     io_group.add_argument('-i', '--input', help='Input file (default: stdin)')
     io_group.add_argument('-o', '--output', help='Output file (default: stdout)')
     
-    # Configuration files
-    config_group = parser.add_argument_group("Configuration")
-    config_group.add_argument('-f', '--package_field_mapping_file', 
-                             help='Package-level field mapping file in json')
-    config_group.add_argument('-r', '--resource_field_mapping_file',
-                             help='Resource-level field mapping file in json')
-    config_group.add_argument('-v', '--value_mapping_file',
-                             help='Value mapping file in json')
-    config_group.add_argument('--sanitization_config_file',
-                             help='Sanitization configuration file')
-    
-    # General options
+    # General options (from all scripts)
     general_group = parser.add_argument_group("General options")
-    general_group.add_argument('-l', '--log-level', 
+    general_group.add_argument('-f', '--package_field_mapping_file',
+                              help='Package-level field mapping file in json')
+    general_group.add_argument('-r', '--resource_field_mapping_file',
+                              help='Resource-level field mapping file in json')
+    general_group.add_argument('-v', '--value_mapping_file',
+                              help='Value mapping file in json')
+    general_group.add_argument('--sanitization_config_file',
+                              help='Sanitization configuration file')
+    general_group.add_argument('-l', '--log-level',
                               choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
                               default='INFO', help='Set the logging level')
     general_group.add_argument('-n', '--dry-run', action='store_true',
                               help='Test mode. Output will be uncompressed jsonlines.')
+
+    # Mapping-specific arguments
+    mapping_group = parser.add_argument_group("Mapping options")
+    mapping_group.add_argument('--nodes', help='NCBI nodes.dmp file from taxdump')
+    mapping_group.add_argument('--names', help='NCBI names.dmp file from taxdump')
+    mapping_group.add_argument('--taxids_to_busco_dataset_mapping',
+                              help='BUSCO dataset mapping file')
+    mapping_group.add_argument('--cache_dir', help='Directory to cache NCBI taxonomy')
     
-    # Add specific arguments for each step
-    # ...existing argument definitions from each original parser...
+    # Transformation-specific arguments
+    transform_group = parser.add_argument_group("Transform options")
+    transform_group.add_argument('--sample-ignored-fields',
+                                help='Comma-separated list of sample fields to ignore for conflicts')
+    transform_group.add_argument('--organism-ignored-fields', 
+                                help='Comma-separated list of organism fields to ignore for conflicts')
+    
+    # Output file arguments (from all scripts)
+    output_group = parser.add_argument_group("Output files")
+    
+    # Filtering outputs
+    output_group.add_argument('--decision_log', help='Decision log CSV file')
+    output_group.add_argument('--raw_field_usage', help='Raw field usage JSON file')
+    output_group.add_argument('--bpa_field_usage', help='BPA field usage JSON file')
+    output_group.add_argument('--bpa_value_usage', help='BPA value usage JSON file')
+    
+    # Mapping outputs  
+    output_group.add_argument('--mapping_log', help='Mapping log CSV file')
+    output_group.add_argument('--grouping_log', help='Organism grouping log CSV file')
+    output_group.add_argument('--grouped_packages', help='Grouped packages JSON file')
+    output_group.add_argument('--sanitization_changes', help='Sanitization changes JSON file')
+    
+    # Transformation outputs
+    output_group.add_argument('--sample-conflicts', help='Sample conflicts JSON file')
+    output_group.add_argument('--unique-organisms', help='Unique organisms JSON file')
+    output_group.add_argument('--experiments-output', help='Experiments JSON file')
     
     return parser
 
 
 def main():
-    """Main entry point for the unified pipeline."""
-    parser = create_unified_args_parser()
+    """Main entry point for single-pass pipeline."""
+    parser = create_combined_args_parser()
     args = parser.parse_args()
     
-    # Setup logging
-    setup_logger(args.log_level)
-    
-    # Parse which steps to run
-    steps = args.steps.split(',')
+    # Create and run pipeline
+    pipeline = SinglePassPipeline(args)
+    pipeline.run()
+
+
+if __name__ == "__main__":
+    main()
     config_dict = vars(args)
     config_dict.update({
         'enable_filtering': 'filter' in steps,
