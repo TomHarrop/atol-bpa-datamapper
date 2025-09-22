@@ -43,15 +43,15 @@ class SinglePassPipeline:
             getattr(args, 'sanitization_config_file', None)
         )
         
-        # Initialize organism mapper for mapping stage if needed
-        self.organism_mapper = None
-        if hasattr(args, 'nodes') and args.nodes:
-            from .organism_mapper import OrganismMapper
-            self.organism_mapper = OrganismMapper(
+        # Initialize NCBI taxonomy for organism mapping if needed
+        self.ncbi_taxdump = None
+        if hasattr(args, 'nodes') and args.nodes and hasattr(args, 'names') and args.names:
+            from .organism_mapper import NcbiTaxdump
+            self.ncbi_taxdump = NcbiTaxdump(
                 args.nodes, 
                 args.names,
                 getattr(args, 'taxids_to_busco_dataset_mapping', None),
-                getattr(args, 'cache_dir', None)
+                getattr(args, 'cache_dir', './cache')
             )
             
         # Initialize transformers for transformation stage
@@ -166,9 +166,9 @@ class SinglePassPipeline:
         # Map package-level metadata
         package.map_metadata(self.package_metadata_map)
         
-        # Map organism information if organism mapper is available
-        if self.organism_mapper:
-            self.organism_mapper.process_package(package)
+        # Map organism information if NCBI taxonomy is available
+        if self.ncbi_taxdump and 'organism' in package.mapped_metadata:
+            self._map_organism_section(package)
         
         # Map resource-level metadata
         resource_mapped_metadata = {
@@ -185,6 +185,28 @@ class SinglePassPipeline:
         # Merge resource metadata into package metadata
         for section, resource_metadata in resource_mapped_metadata.items():
             package.mapped_metadata[section] = resource_metadata
+
+    def _map_organism_section(self, package):
+        """Map organism section using NCBI taxonomy."""
+        from .organism_mapper import OrganismSection
+        from .utils.common import safe_get
+        
+        # Get null values for organism mapping
+        null_values = safe_get(
+            lambda: self.package_metadata_map.sanitization_config.null_values, 
+            []
+        )
+        
+        # Create organism section with NCBI lookup
+        organism_section = OrganismSection(
+            package.id,
+            package.mapped_metadata.get('organism', {}),
+            self.ncbi_taxdump,
+            null_values
+        )
+        
+        # Update the package's organism metadata
+        package.mapped_metadata['organism'].update(organism_section.mapped_metadata)
 
     def _transform_package(self, package):
         """Apply transformation logic to extract entities."""
@@ -243,22 +265,18 @@ class SinglePassPipeline:
             logger.info(f"Writing BPA value usage to {self.args.bpa_value_usage}")
             write_json(self.counters["bpa_value_usage"], self.args.bpa_value_usage)
             
-        # Write mapping outputs
-        if self.organism_mapper and hasattr(self.args, 'grouping_log'):
-            self.organism_mapper.write_outputs(self.args)
-            
         # Write transformation outputs
         sample_results = self.sample_transformer.get_results()
         organism_results = self.organism_transformer.get_results()
         
         # Use the same output paths as the individual scripts would use
-        if hasattr(self.args, 'sample_conflicts') and self.args.sample_conflicts:
+        if hasattr(self.args, 'sample_conflicts') and getattr(self.args, 'sample_conflicts', None):
             logger.info(f"Writing sample conflicts to {self.args.sample_conflicts}")
             write_json(sample_results["sample_conflicts"], self.args.sample_conflicts)
-        if hasattr(self.args, 'unique_organisms') and self.args.unique_organisms:
+        if hasattr(self.args, 'unique_organisms') and getattr(self.args, 'unique_organisms', None):
             logger.info(f"Writing unique organisms to {self.args.unique_organisms}")
             write_json(organism_results["unique_organisms"], self.args.unique_organisms)
-        if hasattr(self.args, 'experiments_output') and self.args.experiments_output:
+        if hasattr(self.args, 'experiments_output') and getattr(self.args, 'experiments_output', None):
             logger.info(f"Writing experiments to {self.args.experiments_output}")
             write_json(self.experiments_data, self.args.experiments_output)
 
@@ -301,20 +319,22 @@ def create_combined_args_parser():
     general_group.add_argument('-v', '--value_mapping_file',
                               help='Value mapping file in json')
     general_group.add_argument('--sanitization_config_file',
-                              help='Sanitization configuration file')
+                              help='Sanitization configuration file',
+                              default=None)
     general_group.add_argument('-l', '--log-level',
                               choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
                               default='INFO', help='Set the logging level')
     general_group.add_argument('-n', '--dry-run', action='store_true',
                               help='Test mode. Output will be uncompressed jsonlines.')
 
-    # Mapping-specific arguments
+    # Mapping-specific arguments - make optional
     mapping_group = parser.add_argument_group("Mapping options")
-    mapping_group.add_argument('--nodes', help='NCBI nodes.dmp file from taxdump')
-    mapping_group.add_argument('--names', help='NCBI names.dmp file from taxdump')
+    mapping_group.add_argument('--nodes', help='NCBI nodes.dmp file from taxdump', default=None)
+    mapping_group.add_argument('--names', help='NCBI names.dmp file from taxdump', default=None)
     mapping_group.add_argument('--taxids_to_busco_dataset_mapping',
-                              help='BUSCO dataset mapping file')
-    mapping_group.add_argument('--cache_dir', help='Directory to cache NCBI taxonomy')
+                              help='BUSCO dataset mapping file', default=None)
+    mapping_group.add_argument('--cache_dir', help='Directory to cache NCBI taxonomy', 
+                              default='./cache')
     
     # Transformation-specific arguments
     transform_group = parser.add_argument_group("Transform options")
@@ -342,6 +362,9 @@ def create_combined_args_parser():
     output_group.add_argument('--sample-conflicts', help='Sample conflicts JSON file')
     output_group.add_argument('--unique-organisms', help='Unique organisms JSON file')
     output_group.add_argument('--experiments-output', help='Experiments JSON file')
+    output_group.add_argument('--sample-package-map', help='Sample to package mapping JSON file')
+    output_group.add_argument('--transformation-changes', help='Transformation changes JSON file')
+    output_group.add_argument('--organism-package-map', help='Organism to package mapping JSON file')
     
     return parser
 
