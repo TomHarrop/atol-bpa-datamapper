@@ -168,96 +168,105 @@ class BpaBase(dict):
 
         return (value, bpa_field, keep)
 
-    def process_with_metadata_map(self, metadata_map, parent_package=None, operation='filter'):
-        """
-        Unified method to process package data with a metadata map.
-        
-        Args:
-            metadata_map: MetadataMap instance
-            parent_package: Parent package for resource processing
-            operation: 'filter' or 'map' to determine processing type
-        """
-        logger.debug(f"{operation.capitalize()}ing {type(self).__name__} {self.id}")
-        
-        if operation == 'filter':
-            self.decisions = {}
-            self.bpa_fields = {}
-            self.bpa_values = {}
-            fields_to_process = metadata_map.controlled_vocabularies
-        elif operation == 'map':
-            self.mapping_log = []
-            self.field_mapping = {}
-            self.sanitization_changes = []
-            mapped_metadata = {k: {} for k in metadata_map.metadata_sections}
-            fields_to_process = metadata_map.expected_fields
-        else:
-            raise ValueError(f"Unknown operation: {operation}")
+    def filter(self, metadata_map: "MetadataMap", parent_package=None):
+        logger.debug(f"Filtering {type(self).__name__} {self.id}")
 
-        for atol_field in fields_to_process:
+        self.decisions = {}
+        self.bpa_fields = {}
+        self.bpa_values = {}
+
+        for atol_field in metadata_map.controlled_vocabularies:
             value, bpa_field, keep = self._check_atol_field(
                 atol_field, metadata_map, parent_package
             )
 
-            if operation == 'filter':
-                # Record filtering decisions
-                self.bpa_fields[atol_field] = bpa_field
-                self.bpa_values[atol_field] = value
-                decision_key = f"{atol_field}_accepted"
-                self.decisions[decision_key] = keep
-                self.decisions[atol_field] = value
-            
-            elif operation == 'map':
-                # Handle mapping logic
-                section = metadata_map.get_atol_section(atol_field)
-                
-                if isinstance(value, list) and len(value) > 1:
-                    raise NotImplementedError(
+            # record the field that was used in the bpa data
+            self.bpa_fields[atol_field] = bpa_field
+            self.bpa_values[atol_field] = value
+
+            # record the decision for this field
+            decision_key = f"{atol_field}_accepted"
+            self.decisions[decision_key] = keep
+            self.decisions[atol_field] = value
+
+        # summarise the decision for this package
+        logger.debug(f"Decisions: {self.decisions}")
+        self.keep = all(x for x in self.decisions.values() if isinstance(x, bool))
+        logger.debug(f"Keep: {self.keep}")
+
+    def map_metadata(self, metadata_map: "MetadataMap", parent_package=None):
+        """Map BPA package metadata to AToL format, handling resources properly."""
+        logger.debug(f"Mapping BpaPackage {self.id}")
+        null_values = metadata_map.sanitization_config.get("null_values")
+        mapped_metadata = {k: {} for k in metadata_map.metadata_sections}
+
+        self.mapping_log = []
+        self.field_mapping = {}
+        self.sanitization_changes = []
+
+        for atol_field in metadata_map.expected_fields:
+            section = metadata_map.get_atol_section(atol_field)
+            value, bpa_field, keep = self._check_atol_field(
+                atol_field, metadata_map, parent_package
+            )
+
+            if isinstance(value, list) and len(value) > 1:
+                raise NotImplementedError(
+                    (
                         f"Found different values for bpa_field {bpa_field} "
-                        f"when trying to map atol_field {atol_field} for Package {self.id}"
+                        f"when trying to map atol_field {atol_field} for Package {self.id}. "
+                        "Choosing between different values for the same field is not implemented.\n"
+                        f"{self}"
                     )
+                )
 
-                if keep and bpa_field is not None:
-                    sanitized_value = self._apply_sanitization(
-                        metadata_map, section, atol_field, value
+            if keep is True and bpa_field is not None:
+                # Apply sanitization rules
+                logger.debug(f"Sanitise value {value}")
+                sanitized_value = self._apply_sanitization(
+                    metadata_map, section, atol_field, value
+                )
+
+                # Map the sanitized value
+                try:
+                    logger.debug(f"Using value {sanitized_value}")
+                    mapped_value = metadata_map.map_value(atol_field, sanitized_value)
+                except KeyError as e:
+                    # Handle invalid values gracefully
+                    logger.debug(
+                        f"Invalid value '{sanitized_value}' for field '{atol_field}': {e}"
                     )
-                    
-                    try:
-                        mapped_value = metadata_map.map_value(atol_field, sanitized_value)
-                    except KeyError:
-                        logger.debug(f"Invalid value '{sanitized_value}' for field '{atol_field}'")
-                        mapped_value = sanitized_value
+                    mapped_value = sanitized_value
 
-                    mapped_metadata[section][atol_field] = mapped_value
-                    self.field_mapping[atol_field] = bpa_field
-                    
-                    self.mapping_log.append({
+                logger.debug(f"Mapped value {value} to {mapped_value}")
+
+                mapped_metadata[section][atol_field] = mapped_value
+                self.field_mapping[atol_field] = bpa_field
+
+                self.mapping_log.append(
+                    {
                         "atol_field": atol_field,
                         "bpa_field": bpa_field,
                         "value": value,
                         "sanitized_value": sanitized_value,
                         "mapped_value": mapped_value,
-                    })
+                    }
+                )
 
-        if operation == 'filter':
-            self.keep = all(x for x in self.decisions.values() if isinstance(x, bool))
-            logger.debug(f"Keep: {self.keep}")
-        elif operation == 'map':
-            self.mapped_metadata = mapped_metadata
-            self.unused_fields = [
-                field for field in self.fields
-                if field not in [
-                    self.field_mapping.get(atol_field) for atol_field in self.field_mapping
-                ]
+        # Store the mapped metadata
+        self.mapped_metadata = mapped_metadata
+
+        # Track fields that weren't used
+        self.unused_fields = [
+            field
+            for field in self.fields
+            if field
+            not in [
+                self.field_mapping.get(atol_field) for atol_field in self.field_mapping
             ]
-            return mapped_metadata
+        ]
 
-    def filter(self, metadata_map: "MetadataMap", parent_package=None):
-        """Filter using the unified processing method."""
-        return self.process_with_metadata_map(metadata_map, parent_package, 'filter')
-
-    def map_metadata(self, metadata_map: "MetadataMap", parent_package=None):
-        """Map metadata using the unified processing method."""
-        return self.process_with_metadata_map(metadata_map, parent_package, 'map')
+        return mapped_metadata
 
     def _apply_sanitization(self, metadata_map, section, atol_field, original_value):
         """
@@ -384,15 +393,6 @@ def get_nested_value(d, key):
                         f"{filtered_results}"
                     )
                 )
-            if len(filtered_results) == 1:
-                filtered_results = filtered_results[0]
-
-            return filtered_results if filtered_results else None
-
-        else:
-            return None
-
-    return current
             if len(filtered_results) == 1:
                 filtered_results = filtered_results[0]
 
