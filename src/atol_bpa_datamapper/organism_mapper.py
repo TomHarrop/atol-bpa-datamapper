@@ -255,16 +255,32 @@ class NcbiTaxdump:
             if taxid in self.busco_mapping.keys():
                 return self.busco_mapping[taxid]
 
-    def get_augustus_lineage(self, taxid, ancestor_taxids):
+    def get_node(self, taxid):
+        try:
+            return self.tree.find(taxid)
+        except skbio.tree._exception.MissingNodeError as e:
+            logger.debug(f"Node {taxid} not found, trying a string search")
+            return self.tree.find(str(taxid))
+
+    def get_augustus_lineage(self, taxid):
 
         logger.debug(f"Looking up Augustus dataset name for taxid {taxid}")
-        logger.debug(f"Checking ancestor_taxids {ancestor_taxids}")
 
-        for taxid in ancestor_taxids:
-            if int(taxid) in self.augustus_mapping.keys():
-                return self.augustus_mapping[int(taxid)]
-            if taxid in self.augustus_mapping.keys():
-                return self.augustus_mapping[taxid]
+        node = self.get_node(taxid)
+
+        dist_to_dataset = {}
+        for taxid in self.augustus_mapping.keys():
+            dist_to_dataset[taxid] = node.distance(
+                self.get_node(taxid), use_length=False
+            )
+
+        closest_dataset = min(dist_to_dataset, key=dist_to_dataset.get)
+
+        logger.debug(
+            f"Closest dataset is {closest_dataset} with dist {dist_to_dataset[closest_dataset]}"
+        )
+
+        return self.augustus_mapping[closest_dataset]
 
 
 class OrganismSection(dict):
@@ -307,7 +323,7 @@ class OrganismSection(dict):
             )
             logger.debug(f"Found BUSCO dataset {self.busco_dataset_name}")
             self.augustus_dataset_name = ncbi_taxdump.get_augustus_lineage(
-                self.taxon_id, ancestor_taxids
+                self.taxon_id
             )
             logger.debug(f"Found Augustus dataset {self.augustus_dataset_name}")
             raise ValueError(self.augustus_dataset_name)
