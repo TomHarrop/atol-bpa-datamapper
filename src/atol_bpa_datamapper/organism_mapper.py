@@ -140,6 +140,20 @@ def remove_whitespace(string):
     return re.sub(r"[^a-zA-Z0-9]+", "_", string)
 
 
+def get_node(tree, taxid):
+    try:
+        node = tree.find(int(taxid))
+    except skbio.tree._exception.MissingNodeError as e:
+        logger.debug(f"Node {taxid} not found, trying a string search")
+        node = tree.find(str(taxid))
+        logger.debug(f"    ... found {node}")
+
+    if isinstance(node, skbio.tree._tree.TreeNode):
+        return node
+    else:
+        logger.warning(f"Node for taxid {taxid} not found in tree.")
+
+
 class NcbiTaxdump:
 
     def __init__(
@@ -199,6 +213,26 @@ class NcbiTaxdump:
             f"    ... found {len(self.augustus_mapping.keys())} datasets in Augustus mapping file"
         )
 
+        logger.info(f"Generating tree for Augustus datasets")
+        augustus_node_names = [
+            get_node(self.tree, x).name for x in self.augustus_mapping.keys()
+        ]
+        logger.debug(
+            f"Found {len(augustus_node_names)} Augustus taxids in tree:\n{augustus_node_names}"
+        )
+
+        # FIXME. Shear works on tips but not all Augustus nodes are tips. We
+        # need to remove all descendants of the Augustus nodes first.
+        self.augustus_tree = self.tree.shear(
+            names=augustus_node_names,
+            prune=False,
+            inplace=False,
+            strict=False,
+        )
+        logger.debug("Getting tip names of the Augustus tree")
+        self.augustus_tip_names = [x.name for x in self.augustus_tree.tips()]
+        logger.debug(f"    ... {self.augustus_tip_names}")
+
     def get_rank(self, taxid):
         return self.nodes.at[taxid, "rank"]
 
@@ -230,11 +264,7 @@ class NcbiTaxdump:
     def get_ancestor_taxids(self, taxid):
         logger.debug(f"Looking up ancestors for taxid {taxid}")
 
-        try:
-            node = self.tree.find(taxid)
-        except skbio.tree._exception.MissingNodeError as e:
-            logger.debug(f"Node {taxid} not found, trying a string search")
-            node = self.tree.find(str(taxid))
+        node = get_node(self.tree, taxid)
 
         ancestor_taxids = [x.name for x in node.ancestors()]
         logger.debug(f"ancestor_taxids: {ancestor_taxids}")
@@ -255,32 +285,50 @@ class NcbiTaxdump:
             if taxid in self.busco_mapping.keys():
                 return self.busco_mapping[taxid]
 
-    def get_node(self, taxid):
-        try:
-            return self.tree.find(taxid)
-        except skbio.tree._exception.MissingNodeError as e:
-            logger.debug(f"Node {taxid} not found, trying a string search")
-            return self.tree.find(str(taxid))
-
-    def get_augustus_lineage(self, taxid):
+    def get_augustus_lineage(self, taxid, ancestor_taxids):
 
         logger.debug(f"Looking up Augustus dataset name for taxid {taxid}")
 
-        node = self.get_node(taxid)
+        node = get_node(self.tree, taxid)
 
-        dist_to_dataset = {}
-        for taxid in self.augustus_mapping.keys():
-            dist_to_dataset[taxid] = node.distance(
-                self.get_node(taxid), use_length=False
-            )
+        # Include taxid in the search, in case it has been trained
+        ancestor_taxids.insert(0, taxid)
 
-        closest_dataset = min(dist_to_dataset, key=dist_to_dataset.get)
+        # Find the first ancestor that is present in the Augustus sub-tree
+        closest_taxid_in_augustus_tree = None
+        while not closest_taxid_in_augustus_tree and len(ancestor_taxids) > 0:
+            taxid = ancestor_taxids.pop(0)
+            logger.debug(f"Checking Augustus tree for {taxid}")
+            try:
+                closest_taxid_in_augustus_tree = get_node(self.augustus_tree, taxid)
+            except skbio.tree._exception.MissingNodeError:
+                logger.debug(f"Node {taxid} not in Augustus tree")
 
         logger.debug(
-            f"Closest dataset is {closest_dataset} with dist {dist_to_dataset[closest_dataset]}"
+            f"Found closest_taxid_in_augustus_tree {closest_taxid_in_augustus_tree}"
         )
 
-        return self.augustus_mapping[closest_dataset]
+        if closest_taxid_in_augustus_tree:
+            dist_to_dataset = {}
+            for taxid in self.augustus_mapping.keys():
+                logger.debug(f"Calculating distance to {taxid}")
+                try:
+                    dest_node = get_node(self.augustus_tree, taxid)
+                    dist_to_dataset[taxid] = closest_taxid_in_augustus_tree.distance(
+                        dest_node, use_length=False
+                    )
+                    logger.debug(f"    ...{dist_to_dataset[taxid]}")
+                except skbio.tree._exception.MissingNodeError:
+                    logger.debug(f"{taxid} not in Augustus tree")
+
+            logger.debug(f"Distances: {dist_to_dataset}")
+            closest_dataset = min(dist_to_dataset, key=dist_to_dataset.get)
+
+            logger.debug(
+                f"Closest dataset is {closest_dataset} with dist {dist_to_dataset[closest_dataset]}"
+            )
+
+            return self.augustus_mapping[closest_dataset]
 
 
 class OrganismSection(dict):
@@ -323,7 +371,7 @@ class OrganismSection(dict):
             )
             logger.debug(f"Found BUSCO dataset {self.busco_dataset_name}")
             self.augustus_dataset_name = ncbi_taxdump.get_augustus_lineage(
-                self.taxon_id
+                self.taxon_id, ancestor_taxids
             )
             logger.debug(f"Found Augustus dataset {self.augustus_dataset_name}")
             raise ValueError(self.augustus_dataset_name)
