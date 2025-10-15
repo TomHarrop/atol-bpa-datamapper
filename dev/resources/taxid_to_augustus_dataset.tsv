@@ -23,7 +23,6 @@
 5345	coprinus
 5346	coprinus_cinereus                                  
 5689	leishmania_tarentolae        
-6181	schistosoma2
 3701	arabidopsis                           
 36914	lodderomyces_elongisporus    
 4896	schizosaccharomyces_pombe
@@ -96,53 +95,58 @@
 3052	chlamydomonas           
 7460	honeybee1                                       
 7955	zebrafish
-12993	Cassiopea xamachana
-63121	Ptychodera flava
-321803	Nemopilema nomurai
+12993	Cassiopea_xamachana
+63121	Ptychodera_flava
+321803	Nemopilema_nomurai
 416868	Notospermus_geniculatus
-2880	Ectocarpus siliculosus
-10228	Trichoplax adhaerens
-6145	Aurelia aurita
-499914	Rhopilema esculentum
-6035	Encephalitozoon cuniculi
-1123529	Gonapodya prolifera
+2880	Ectocarpus_siliculosus
+10228	Trichoplax_adhaerens
+6145	Aurelia_aurita
+499914	Rhopilema_esculentum
+6035	Encephalitozoon_cuniculi
+1123529	Gonapodya_prolifera
 3046	Dunaliella_salina
-5147	Sordaria macrospora
-2082308	Sphaceloma murrayae
-1169539	Vitrella brassicaformis
-145388	Monoraphidium neglectum
-70448	Ostreococcus tauri
-242159	Ostreococcus sp. lucimarinus
-38833	Micromonas pusilla
+5147	Sordaria_macrospora
+2082308	Sphaceloma_murrayae
+1169539	Vitrella_brassicaformis
+145388	Monoraphidium_neglectum
+70448	Ostreococcus_tauri
+242159	Ostreococcus_sp_lucimarinus
+38833	Micromonas_pusilla
 296587	Micromonas_commoda
-1157962	Chlamydomonas eustigma
-35128	Thalassiosira pseudonana
-183589	Pseudo-nitzschia multistriata
-2850	Phaeodactylum tricornutum
-186039	Fragilariopsis cylindrus
-1519565	Fistulifera solaris
-41875	Bathycoccus prasinos
-1764295	Chloropicon primus
-6087	Hydra vulgaris
-2843	Skeletonema costatum
-121225	Pediculus humanus  
-7614	Pycnopodia helianthoides
-7590	Dermasterias imbricata
-3988	Ricinus communis
-59729	Taeniopygia guttata
-7739	Branchiostoma floridae
-7165	Anopheles gambiae
-237895	Cryptosporidium hominis
-3218	Physcomitrium patens
-31276	Perkinsus marinus
-7209	Loa loa
-5693	Trypanosoma cruzi
-5762	Naegleria gruberi
-81824	Monosiga brevicollis
-29204	Cyclotella cryptica
-5180	Sclerotinia sclerotiorum
-5888	Paramecium tetraurelia
-8364	Xenopus tropicalis
-416868	Notospermus geniculatus
-2039481	Chrysaora chesapeakei
+1157962	Chlamydomonas_eustigma
+296543  Thalassiosira_pseudonana_CCMP1335
+183589	Pseudo-nitzschia_multistriata
+2850	Phaeodactylum_tricornutum
+635003	Fragilariopsis_cylindrus_CCMP1102
+1519565	Fistulifera_solaris
+41875	Bathycoccus_prasinos
+1764295	Chloropicon_primus
+6087	Hydra_vulgaris
+2843	Skeletonema_costatum
+121225	Pediculus_humanus  
+7614	Pycnopodia_helianthoides
+7590	Dermasterias_imbricata
+3988	Ricinus_communis
+59729	Taeniopygia_guttata
+7739	Branchiostoma_floridae
+7165	Anopheles_gambiae
+237895	Cryptosporidium_hominis
+3218	Physcomitrium_patens
+31276	Perkinsus_marinus
+7209	Loa_loa
+5693	Trypanosoma_cruzi
+5762	Naegleria_gruberi
+81824	Monosiga_brevicollis
+29204	Cyclotella_cryptica
+5180	Sclerotinia_sclerotiorum
+5888	Paramecium_tetraurelia
+8364	Xenopus_tropicalis
+416868	Notospermus_geniculatus
+2039481	Chrysaora_chesapeakei
 4232	sunflower
+31199	Argopecten_irradians
+8083	Xiphophorus_maculatus
+2039481	Chrysaora_chesapeakei
+307507	Raphidocelis_subcapitata
+29760	Vitis_vinifera
