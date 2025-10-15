@@ -113,6 +113,17 @@ def split_scientific_name(scientific_name, null_values):
     return name_parts
 
 
+def read_augustus_mapping(taxids_to_augustus_dataset_mapping):
+    taxid_to_dataset = {}
+    with open(taxids_to_augustus_dataset_mapping, "rt") as f:
+        for i, line in enumerate(f, 1):
+            splits = line.strip().split(maxsplit=1)
+            taxid_to_dataset.update({int(splits[0]): str(splits[1])})
+
+    logger.debug(taxid_to_dataset)
+    return taxid_to_dataset
+
+
 def read_busco_mapping(taxids_to_busco_dataset_mapping):
     dataset_mapping = read_gzip_textfile(taxids_to_busco_dataset_mapping)
     next(dataset_mapping)  # skip the header
@@ -136,6 +147,7 @@ class NcbiTaxdump:
         nodes_file,
         names_file,
         taxids_to_busco_dataset_mapping,
+        taxids_to_augustus_dataset_mapping,
         cache_dir,
         resolve_to_rank="species",
     ):
@@ -170,11 +182,21 @@ class NcbiTaxdump:
         )
 
         logger.info(
-            f"Reading BUSCO to dataset mapping from {taxids_to_busco_dataset_mapping}"
+            f"Reading BUSCO dataset mapping from {taxids_to_busco_dataset_mapping}"
         )
         self.busco_mapping = read_busco_mapping(taxids_to_busco_dataset_mapping)
         logger.info(
             f"    ... found {len(self.busco_mapping.keys())} datasets in BUSCO mapping file"
+        )
+
+        logger.info(
+            f"Reading Augustus dataset mapping from {taxids_to_augustus_dataset_mapping}"
+        )
+        self.augustus_mapping = read_augustus_mapping(
+            taxids_to_augustus_dataset_mapping
+        )
+        logger.info(
+            f"    ... found {len(self.augustus_mapping.keys())} datasets in Augustus mapping file"
         )
 
     def get_rank(self, taxid):
@@ -205,13 +227,8 @@ class NcbiTaxdump:
 
         return None
 
-    def get_busco_lineage(self, taxid):
-        """
-        Find the closest ancestor that is in the BUSCO taxid map and return the
-        lineage name.
-        """
-
-        logger.debug(f"Looking up BUSCO dataset name for taxid {taxid}")
+    def get_ancestor_taxids(self, taxid):
+        logger.debug(f"Looking up ancestors for taxid {taxid}")
 
         try:
             node = self.tree.find(taxid)
@@ -221,11 +238,33 @@ class NcbiTaxdump:
 
         ancestor_taxids = [x.name for x in node.ancestors()]
         logger.debug(f"ancestor_taxids: {ancestor_taxids}")
+        return ancestor_taxids
+
+    def get_busco_lineage(self, taxid, ancestor_taxids):
+        """
+        Find the closest ancestor that is in the BUSCO taxid map and return the
+        lineage name.
+        """
+
+        logger.debug(f"Looking up BUSCO dataset name for taxid {taxid}")
+        logger.debug(f"Checking ancestor_taxids {ancestor_taxids}")
+
         for taxid in ancestor_taxids:
             if int(taxid) in self.busco_mapping.keys():
                 return self.busco_mapping[int(taxid)]
             if taxid in self.busco_mapping.keys():
                 return self.busco_mapping[taxid]
+
+    def get_augustus_lineage(self, taxid, ancestor_taxids):
+
+        logger.debug(f"Looking up Augustus dataset name for taxid {taxid}")
+        logger.debug(f"Checking ancestor_taxids {ancestor_taxids}")
+
+        for taxid in ancestor_taxids:
+            if int(taxid) in self.augustus_mapping.keys():
+                return self.augustus_mapping[int(taxid)]
+            if taxid in self.augustus_mapping.keys():
+                return self.augustus_mapping[taxid]
 
 
 class OrganismSection(dict):
@@ -259,10 +298,19 @@ class OrganismSection(dict):
 
         self.check_for_subspecies_information(ncbi_taxdump, package_id, null_values)
 
-        # generate a key for grouping the organisms
+        # generate a key for grouping the organisms and lookup lineage information
         if self.has_taxid_at_accepted_level and self.scientific_name_source == "ncbi":
             self.organism_grouping_key = f"taxid{self.taxon_id}"
-            self.busco_dataset_name = ncbi_taxdump.get_busco_lineage(self.taxon_id)
+            ancestor_taxids = ncbi_taxdump.get_ancestor_taxids(self.taxon_id)
+            self.busco_dataset_name = ncbi_taxdump.get_busco_lineage(
+                self.taxon_id, ancestor_taxids
+            )
+            logger.debug(f"Found BUSCO dataset {self.busco_dataset_name}")
+            self.augustus_dataset_name = ncbi_taxdump.get_augustus_lineage(
+                self.taxon_id, ancestor_taxids
+            )
+            logger.debug(f"Found Augustus dataset {self.augustus_dataset_name}")
+            raise ValueError(self.augustus_dataset_name)
         else:
             self.organism_grouping_key = None
 
