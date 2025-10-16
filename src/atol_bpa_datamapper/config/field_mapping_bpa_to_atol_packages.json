@@ -51,6 +51,7 @@
         "atol_scientific_name": [],
         "organism_grouping_key": [],
         "busco_dataset_name": [],
+        "augustus_dataset_name": [],
         "tax_string": []
     },
     "sample": {

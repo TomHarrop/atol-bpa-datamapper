@@ -214,21 +214,54 @@ class NcbiTaxdump:
         )
 
         logger.info(f"Generating tree for Augustus datasets")
-        augustus_node_names = [
-            get_node(self.tree, x).name for x in self.augustus_mapping.keys()
+        augustus_tree = self.tree.copy(deep=True)
+        initial_node_count = int(augustus_tree.count())
+
+        # Shear works on tips but not all Augustus nodes are tips. We
+        # need to remove all descendants of the Augustus nodes first.
+        augustus_nodes = [
+            get_node(augustus_tree, x) for x in self.augustus_mapping.keys()
         ]
+        augustus_node_names = [x.name for x in augustus_nodes]
         logger.debug(
             f"Found {len(augustus_node_names)} Augustus taxids in tree:\n{augustus_node_names}"
         )
 
-        # FIXME. Shear works on tips but not all Augustus nodes are tips. We
-        # need to remove all descendants of the Augustus nodes first.
-        self.augustus_tree = self.tree.shear(
+        for node in augustus_nodes:
+            if node.has_children():
+                node_children = node.children
+                logger.debug(
+                    f"Node {node.name} has children {[x.name for x in node_children]}"
+                )
+                logger.debug(f"\n{node.ascii_art()}")
+                # I don't know why, but this sometimes leaves one child.
+                for child in node_children:
+                    logger.debug(f"Removing node {child.name}")
+                    removed = node.remove(child)
+                    logger.debug(f"Removed? {removed}")
+
+                # Running pop removes the remaining child.
+                if not node.is_tip():
+                    node.pop()
+
+            logger.debug(f"Is node {node.name} a tip? {node.is_tip()}")
+            logger.debug(f"\n{node.ascii_art()}")
+
+        # Now we can shear the tree
+        self.augustus_tree = augustus_tree.shear(
             names=augustus_node_names,
             prune=False,
             inplace=False,
             strict=False,
         )
+
+        final_node_count = int(self.augustus_tree.count())
+        nodes_removed = initial_node_count - final_node_count
+
+        logger.debug(f"    ... NCBI tree had {initial_node_count} nodes.")
+        logger.debug(f"    ... Removed {nodes_removed} nodes.")
+        logger.debug(f"    ... Augustus tree has {final_node_count} nodes.")
+
         logger.debug("Getting tip names of the Augustus tree")
         self.augustus_tip_names = [x.name for x in self.augustus_tree.tips()]
         logger.debug(f"    ... {self.augustus_tip_names}")
@@ -305,7 +338,7 @@ class NcbiTaxdump:
                 logger.debug(f"Node {taxid} not in Augustus tree")
 
         logger.debug(
-            f"Found closest_taxid_in_augustus_tree {closest_taxid_in_augustus_tree}"
+            f"Found closest_taxid_in_augustus_tree {closest_taxid_in_augustus_tree.name}"
         )
 
         if closest_taxid_in_augustus_tree:
@@ -374,7 +407,6 @@ class OrganismSection(dict):
                 self.taxon_id, ancestor_taxids
             )
             logger.debug(f"Found Augustus dataset {self.augustus_dataset_name}")
-            raise ValueError(self.augustus_dataset_name)
         else:
             self.organism_grouping_key = None
 
