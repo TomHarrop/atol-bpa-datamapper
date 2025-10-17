@@ -1,8 +1,16 @@
 # Changelog
 
-## (unreleased)
+## v0.1.13 (2025-10-17)
+
+### New
+
+* Lookup Augustus dataset for query species.
+
+  Add NCBI taxid to AUGUSTUS dataset
 
 ### Changes
+
+* Prune the NCBI tree to the Augustus datasets, and search for closest.
 
 * Handle boolean optional_file field.
 
@@ -13,6 +21,18 @@
 * Remove underscores from organism_grouping_key (fixes #31)
 
 ### Other
+
+* Merge branch 'oops' into JTUNG25-Augustus_mapping.
+
+* Update taxon names and new species.
+
+* Testing.
+
+* Merge pull request #1 from TomHarrop/jt_augustus_map.
+
+  rename map !cosmetic
+
+* Create taxid_to_AUGUSTUSdataset.tsv.
 
 * Merge pull request #33 from TomHarrop/resource_filter.
 
