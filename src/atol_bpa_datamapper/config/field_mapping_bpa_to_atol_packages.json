@@ -187,18 +187,9 @@
         "bioplatforms_project_code": [
             "bioplatforms_project_code"
         ],
-        "bpa_initiative": [
-            "bioplatforms_project",
-            "initiative_prefix",
-            "organization.title"
-        ],
         "bioplatforms_project_id": [
             "organization.name"
         ],
-        "bioplatforms_project_description": [
-            "organization.description"
-        ],
-        "bioplatforms_project_url": [],
         "title": [],
         "sample_same_as": [],
         "sample_derived_from": [],
@@ -230,13 +221,10 @@
         "design_description": [
             "experimental_design"
         ],
+        "bpa_package_id": [
+            "id"
+        ],
         "bpa_library_id": [
-            "bioplatforms_library_id",
-            "bpa_library_id",
-            "library_id",
-            "resources.bioplatforms_library_id",
-            "resources.library_id",
-            "bpa_library_ids",
             "bioplatforms_library_id",
             "bpa_library_id",
             "library_id",
@@ -361,9 +349,6 @@
         ],
         "base_caller_model": [
             "model_base_caller"
-        ],
-        "bpa_package_id": [
-            "id"
         ],
         "data_owner": [
             "project_lead",

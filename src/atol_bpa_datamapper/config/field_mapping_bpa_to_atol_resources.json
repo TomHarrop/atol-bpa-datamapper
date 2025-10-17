@@ -7,9 +7,6 @@
             "resources.dataset_id",
             "bpa_dataset_ids"
         ],
-        "bpa_package_id": [
-            "resources.package_id"
-        ],
         "bpa_resource_id": [
             "resources.id"
         ],

@@ -653,7 +653,7 @@
             ]
         }
     },
-    "organism": {
+    "sample": {
         "bioplatforms_project_id": {
             "aus-avian": [
                 "aus-avian"
@@ -694,28 +694,7 @@
             "threatened-species": [
                 "threatened-species"
             ]
-        }
-    },
-    "runs": {
-        "file_format": {
-            "bam": [
-                "bam"
-            ],
-            "cram": [
-                "cram"
-            ],
-            "fasta": [
-                "fasta"
-            ],
-            "fastq": [
-                ".fast.gz",
-                ".fastq.gz",
-                "fastq",
-                "fastq.qz"
-            ]
-        }
-    },
-    "sample": {
+        },
         "data_context": {
             "annotation": [
                 "Transcriptome",
@@ -769,6 +748,9 @@
             "Ramaciotti Centre for Genomics - Garvan": [
                 "Ramaciotti/Garvan",
                 "RamaciottiGarvan"
+            ],
+            "South Australian Genomics centre - SAGC": [
+                "South Australian Genomics centre - SAGC"
             ]
         },
         "lifestage": {
@@ -882,8 +864,33 @@
             "male": [
                 "male"
             ],
+            "not collected": [
+                "not collected"
+            ],
+            "not applicable": [
+                "not applicable"
+            ],
             "null": [
                 null
+            ]
+        }
+    },
+    "runs": {
+        "file_format": {
+            "bam": [
+                "bam"
+            ],
+            "cram": [
+                "cram"
+            ],
+            "fasta": [
+                "fasta"
+            ],
+            "fastq": [
+                ".fast.gz",
+                ".fastq.gz",
+                "fastq",
+                "fastq.qz"
             ]
         }
     }
