@@ -42,6 +42,8 @@ python3 -m cProfile -o "results/${RESULT_DIR}/map.cprofile.stats" \
     <"results/${RESULT_DIR}/f.jsonl.gz" \
     >"results/${RESULT_DIR}/m.jsonl.gz"
 
+Rscript dev/scripts/flatten_mapping_output.R "${RESULT_DIR}" &
+
 python3 -m cProfile -o "results/${RESULT_DIR}/transform.cprofile.stats" \
     -m atol_bpa_datamapper.transform_data \
     --sample-conflicts "results/${RESULT_DIR}/transform/SAMPLE_CONFLICTS.jsonl.gz" \
