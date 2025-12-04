@@ -34,6 +34,14 @@ Output is compressed jsonlines data.
 
 See [`dev/scripts/test_commands.sh`](dev/scripts/test_commands.sh) for an example.
 
+### Reference data
+
+TODO: add sources
+
+- NCBI "new" taxonomy
+- BUSCO's own mapping of their lineage names to NCBI TaxIDs
+- Augustus training dataset to NCBI TaxIDs
+
 ### filter-packages
 
 ```

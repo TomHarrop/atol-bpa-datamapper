@@ -7,7 +7,7 @@ RESULT_DIR="$(date -I)_${RANDOM}"
 
 if [ ! -f "${INPUT_DATA}" ]; then
     ckanapi search datasets \
-        -a "${BPI_APIKEY}" \
+        -a "${BPA_APIKEY}" \
         include_private=true \
         -O "${INPUT_DATA}" \
         -z -r https://data.bioplatforms.com
