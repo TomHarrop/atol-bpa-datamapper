@@ -19,18 +19,11 @@
         "file_format": [
             "resources.format"
         ],
-        "file_submission_date": [
-            "resources.created",
-            "date_submission"
-        ],
         "optional_file": [
             "resources.optional_file"
         ],
         "bioplatforms_url": [
             "resources.url"
-        ],
-        "reads_access_date": [
-            "access_control_date"
         ],
         "read_number": [
             "resources.read"

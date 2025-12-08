@@ -174,9 +174,21 @@ class NcbiTaxdump:
         logger.info(f"Reading NCBI taxon names from {names_file}")
         names, names_changed = read_taxdump_file(names_file, cache_dir, "names")
 
-        # Create a dictionary for faster lookups
+        # Generate taxonomoic info dictionaries for faster lookups
         scientific_names = names[names["name_class"] == "scientific name"]
         self.scientific_name_dict = scientific_names["name_txt"].to_dict()
+
+        # prefer genbank common name, fallback to common name
+        genbank_common_names = names[names["name_class"] == "genbank common name"]
+        genbank_common_name_dict = genbank_common_names["name_txt"].to_dict()
+        common_names = names[names["name_class"] == "common name"]
+        common_name_dict = common_names["name_txt"].to_dict()
+        self.common_name_dict = {**common_name_dict, **genbank_common_name_dict}
+
+        self.authority_dict = names[names["name_class"] == "authority"][
+            "name_txt"
+        ].to_dict()
+
         self.name_to_taxids = {}
         for taxid, name in self.scientific_name_dict.items():
             key = name.lower()
@@ -265,6 +277,12 @@ class NcbiTaxdump:
         logger.debug("Getting tip names of the Augustus tree")
         self.augustus_tip_names = [x.name for x in self.augustus_tree.tips()]
         logger.debug(f"    ... {self.augustus_tip_names}")
+
+    def get_authority_txt(self, taxid):
+        return self.authority_dict.get(taxid, None)
+
+    def get_common_name_txt(self, taxid):
+        return self.common_name_dict.get(taxid, None)
 
     def get_rank(self, taxid):
         return self.nodes.at[taxid, "rank"]
@@ -399,6 +417,18 @@ class OrganismSection(dict):
         if self.has_taxid_at_accepted_level and self.scientific_name_source == "ncbi":
             self.organism_grouping_key = f"taxid{self.taxon_id}"
             ancestor_taxids = ncbi_taxdump.get_ancestor_taxids(self.taxon_id)
+            ancestor_names_all = [
+                ncbi_taxdump.get_scientific_name_txt(int(x)) for x in ancestor_taxids
+            ]
+            ancestor_names = [x for x in ancestor_names_all if x not in [None, "root"]]
+
+            if len(ancestor_names) > 0:
+                name_list = ancestor_names[::-1]
+                name_list.append(self.scientific_name)
+                self.tax_string = "; ".join(name_list)
+            else:
+                self.tax_string = None
+
             self.busco_dataset_name = ncbi_taxdump.get_busco_lineage(
                 self.taxon_id, ancestor_taxids
             )
@@ -511,10 +541,17 @@ class OrganismSection(dict):
             self.rank = ncbi_taxdump.get_rank(self.taxon_id)
             self.scientific_name = ncbi_taxdump.get_scientific_name_txt(self.taxon_id)
             self.scientific_name_source = "ncbi"
+
+            self.ncbi_common_name = ncbi_taxdump.get_common_name_txt(self.taxon_id)
+            self.authority = ncbi_taxdump.get_authority_txt(self.taxon_id)
+
         else:
             self.rank = None
             self.scientific_name = None
             self.scientific_name_source = None
+
+            self.ncbi_common_name = None
+            self.authority = None
 
         self.has_taxid_at_accepted_level = self.rank in ncbi_taxdump.accepted_ranks
 
