@@ -26,6 +26,21 @@ Local installation isn't supported, but can be done with `pip`
 from this repo, or from 
 [bioconda](https://anaconda.org/bioconda/atol-bpa-datamapper).
 
+
+## Reference data
+
+### `map-metadata`
+
+- The `nodes` and `names` files are `nodes.dmp` and `names.dmp` from NCBI's
+  [new_taxdump](https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/new_taxdump/). 
+- `taxids_to_busco_dataset_mapping` is the `mapping_taxids-busco_dataset_name`
+  file from
+  [busco-data.ezlab.org/v5/data/placement_files](https://busco-data.ezlab.org/v5/data/placement_files/)
+- `taxids_to_augustus_dataset_mapping` is a mapping of Augustus training
+  datasets to NCBI TaxID, [provided in this
+  repo](dev/resources/taxid_to_augustus_dataset.tsv).
+
+
 ## Usage
 
 The input is compressed jsonlines data output from the `ckanapi search datasets` command.
@@ -34,13 +49,6 @@ Output is compressed jsonlines data.
 
 See [`dev/scripts/test_commands.sh`](dev/scripts/test_commands.sh) for an example.
 
-### Reference data
-
-TODO: add sources
-
-- NCBI "new" taxonomy
-- BUSCO's own mapping of their lineage names to NCBI TaxIDs
-- Augustus training dataset to NCBI TaxIDs
 
 ### filter-packages
 
