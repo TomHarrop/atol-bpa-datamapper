@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.14 (2025-12-08)
+
+### New
+
+* Retrieve common name, authority and lineage string during mapping.
+
+### Other
+
+* Readme notes.
+
+* Flatten mapped jsonl to csv for testing.
+
 ## v0.1.13 (2025-10-17)
 
 ### New
