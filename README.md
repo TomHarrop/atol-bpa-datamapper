@@ -10,7 +10,9 @@ schema](https://docs.google.com/spreadsheets/d/1ml5hASZ-qlAuuTrwHeGzNVqqe1mXsmmo
 
 ## Installation
 
-### Recommended: Use the [BioContainer](https://quay.io/repository/biocontainers/atol-bpa-datamapper?tab=tags)
+The
+[BioContainer](https://quay.io/repository/biocontainers/atol-bpa-datamapper?tab=tags)
+is the only supported method of running `atol-bpa-datamapper`.
 
 *e.g.* with Apptainer/Singularity:
 
