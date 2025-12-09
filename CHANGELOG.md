@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.15 (2025-12-09)
+
+### Changes
+
+* Move augustus dataset mapping to config, since it's shipped anyway.
+
 ## v0.1.14 (2025-12-08)
 
 ### New
