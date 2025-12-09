@@ -154,9 +154,12 @@ Mapping options:
 ### transform-data
 
 ```
-usage: transform-data [-h] [-i INPUT] [-o OUTPUT] [-l {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [-n] [--sample-conflicts SAMPLE_CONFLICTS] [--sample-package-map SAMPLE_PACKAGE_MAP] [--transformation-changes TRANSFORMATION_CHANGES] [--unique-organisms UNIQUE_ORGANISMS] [--organism-conflicts ORGANISM_CONFLICTS] [--organism-package-map ORGANISM_PACKAGE_MAP] [--sample-ignored-fields SAMPLE_IGNORED_FIELDS] [--organism-ignored-fields ORGANISM_IGNORED_FIELDS]
+usage: transform-data [-h] [-i INPUT] [-o OUTPUT] [-f PACKAGE_FIELD_MAPPING_FILE] [-r RESOURCE_FIELD_MAPPING_FILE] [-v VALUE_MAPPING_FILE] [-s SANITIZATION_CONFIG_FILE] [-l {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+                      [-n] [--sample_conflicts SAMPLE_CONFLICTS] [--sample_package_map SAMPLE_PACKAGE_MAP] [--transformation_changes TRANSFORMATION_CHANGES] [--unique_organisms UNIQUE_ORGANISMS]
+                      [--organism_conflicts ORGANISM_CONFLICTS] [--organism_package_map ORGANISM_PACKAGE_MAP] [--sample_ignored_fields SAMPLE_IGNORED_FIELDS] [--organism_ignored_fields ORGANISM_IGNORED_FIELDS]
+                      [--experiments_output EXPERIMENTS_OUTPUT]
 
-Transform mapped metadata to extract unique samples and organisms
+Transform mapped metadata to extract unique samples
 
 options:
   -h, --help            show this help message and exit
@@ -165,30 +168,42 @@ Input:
   -i INPUT, --input INPUT
                         Input file (default: stdin)
 
-Outputs:
+Output:
   -o OUTPUT, --output OUTPUT
-                        Output file of unique samples (default: stdout)
+                        Output file (default: stdout)
 
 General options:
+  -f PACKAGE_FIELD_MAPPING_FILE, --package_field_mapping_file PACKAGE_FIELD_MAPPING_FILE
+                        Package-level field mapping file in json.
+  -r RESOURCE_FIELD_MAPPING_FILE, --resource_field_mapping_file RESOURCE_FIELD_MAPPING_FILE
+                        Resource-level field mapping file in json.
+  -v VALUE_MAPPING_FILE, --value_mapping_file VALUE_MAPPING_FILE
+                        Value mapping file in json.
+  -s SANITIZATION_CONFIG_FILE, --sanitization_config_file SANITIZATION_CONFIG_FILE
+                        Sanitization configuration file in json.
+  -l {DEBUG,INFO,WARNING,ERROR,CRITICAL}, --log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        Set the logging level (default: INFO)
   -n, --dry-run         Test mode. Output will be uncompressed jsonlines.
 
 Transform options:
-  --sample-conflicts SAMPLE_CONFLICTS
+  --sample_conflicts SAMPLE_CONFLICTS
                         File to record conflicts between samples with the same bpa_sample_id
-  --sample-package-map SAMPLE_PACKAGE_MAP
+  --sample_package_map SAMPLE_PACKAGE_MAP
                         File to record which packages relate to each unique sample
-  --unique-organisms UNIQUE_ORGANISMS
+  --transformation_changes TRANSFORMATION_CHANGES
+                        File to record the transformation changes made during sample merging
+  --unique_organisms UNIQUE_ORGANISMS
                         File to record unique organisms extracted from the data
-  --organism-conflicts ORGANISM_CONFLICTS
+  --organism_conflicts ORGANISM_CONFLICTS
                         File to record conflicts between organisms with the same organism_grouping_key
-  --organism-package-map ORGANISM_PACKAGE_MAP
+  --organism_package_map ORGANISM_PACKAGE_MAP
                         File to record which packages relate to each unique organism
-  --transformation-changes TRANSFORMATION_CHANGES
-                        File to record the transformation changes made during sample & organism merging
-  --sample-ignored-fields SAMPLE_IGNORED_FIELDS
+  --sample_ignored_fields SAMPLE_IGNORED_FIELDS
                         Comma-separated list of sample fields to ignore when determining uniqueness. Conflicts in these fields will still be reported but won't prevent inclusion in the unique samples list.
-  --organism-ignored-fields ORGANISM_IGNORED_FIELDS
+  --organism_ignored_fields ORGANISM_IGNORED_FIELDS
                         Comma-separated list of organism fields to ignore when determining uniqueness. Conflicts in these fields will still be reported but won't prevent inclusion in the unique organisms list.
+  --experiments_output EXPERIMENTS_OUTPUT
+                        File to record extracted experiments data
 ```
 
 ### Deployment

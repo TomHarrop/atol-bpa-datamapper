@@ -17,47 +17,52 @@ def parse_args_for_transform():
     transform_group = parser.add_argument_group("Transform options")
 
     transform_group.add_argument(
-        "--sample-conflicts",
+        "--sample_conflicts",
         help="File to record conflicts between samples with the same bpa_sample_id",
     )
 
     transform_group.add_argument(
-        "--sample-package-map",
+        "--sample_package_map",
         help="File to record which packages relate to each unique sample",
     )
 
     transform_group.add_argument(
-        "--transformation-changes",
+        "--transformation_changes",
         help="File to record the transformation changes made during sample merging",
     )
 
     transform_group.add_argument(
-        "--unique-organisms",
+        "--unique_organisms",
         help="File to record unique organisms extracted from the data",
     )
 
     transform_group.add_argument(
-        "--organism-conflicts",
+        "--organism_conflicts",
         help="File to record conflicts between organisms with the same organism_grouping_key",
     )
 
     transform_group.add_argument(
-        "--organism-package-map",
+        "--organism_package_map",
         help="File to record which packages relate to each unique organism",
     )
 
     transform_group.add_argument(
-        "--sample-ignored-fields",
-        help="Comma-separated list of sample fields to ignore when determining uniqueness. Conflicts in these fields will still be reported but won't prevent inclusion in the unique samples list.",
+        "--sample_ignored_fields",
+        help=(
+            "Comma-separated list of sample fields to ignore "
+            "when determining uniqueness. Conflicts in these "
+            "fields will still be reported but won't prevent "
+            "inclusion in the unique samples list."
+        ),
     )
 
     transform_group.add_argument(
-        "--organism-ignored-fields",
+        "--organism_ignored_fields",
         help="Comma-separated list of organism fields to ignore when determining uniqueness. Conflicts in these fields will still be reported but won't prevent inclusion in the unique organisms list.",
     )
 
     transform_group.add_argument(
-        "--experiments-output",
+        "--experiments_output",
         help="File to record extracted experiments data",
     )
 
