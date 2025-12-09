@@ -35,26 +35,34 @@ GetSingleFailures <- function(x, decision_log, single_fails) {
   return(single_rejection_counts)
 }
 
-args <- commandArgs(trailingOnly = TRUE)
-if (length(args) < 1) {
-  results_dir <- "2025-07-02_15210"
+
+if (exists("snakemake")) {
+  log <- file(snakemake@log[[1]], open = "wt")
+  sink(log, type = "message")
+  sink(log, append = TRUE, type = "output")
+
+  decision_log_file <- snakemake@input[["decision_log"]]
+  failed_counts_file <- snakemake@output[["failed_counts"]]
+  single_fails_file <- snakemake@output[["single_fails"]]
+} else {
+  args <- commandArgs(trailingOnly = TRUE)
+  if (length(args) < 1) {
+    results_dir <- "2025-07-02_15210"
+  }
+  results_dir <- args[1]
+
+  decision_log_file <- paste(c("results", results_dir, "decision_log.csv.gz"),
+    collapse = "/"
+  )
+  failed_counts_file <- paste(c("results", results_dir, "failed_counts.csv"),
+    collapse = "/"
+  )
+  single_fails_file <- paste(c("results", results_dir, "single_fail_values.csv"),
+    collapse = "/"
+  )
 }
-results_dir <- args[1]
 
-
-decision_log_file <- paste(c("results", results_dir, "decision_log.csv.gz"),
-  collapse = "/"
-)
-failed_counts_file <- paste(c("results", results_dir, "failed_counts.csv"),
-  collapse = "/"
-)
-single_fails_file <- paste(c("results", results_dir, "single_fail_values.csv"),
-  collapse = "/"
-)
-
-
-
-decision_log <- fread(decision_log_file)
+decision_log <- fread(cmd = paste("gzip -dc", decision_log_file))
 
 col_classes <- decision_log[, sapply(.SD, class)]
 lgc_cols <- names(col_classes[col_classes == "logical"])
