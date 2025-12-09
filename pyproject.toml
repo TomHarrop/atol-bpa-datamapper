@@ -32,7 +32,7 @@ Homepage = "https://github.com/tomharrop/atol-bpa-datamapper"
 license-files = ["LICENSE"]
 
 [tool.setuptools.package-data]
-atol_bpa_datamapper = ["config/*.json"]
+atol_bpa_datamapper = ["config/*.json", "config/*.tsv"]
 
 [tool.setuptools.exclude-package-data]
 "*" = ["dev/*"]

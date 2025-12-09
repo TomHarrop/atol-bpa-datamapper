@@ -13,55 +13,54 @@ def get_config_filepath(filename):
 def parse_args_for_transform():
     parser, input_group, output_group, options_group = shared_args()
     parser.description = "Transform mapped metadata to extract unique samples"
-    
+
     transform_group = parser.add_argument_group("Transform options")
-    
+
     transform_group.add_argument(
         "--sample-conflicts",
         help="File to record conflicts between samples with the same bpa_sample_id",
     )
-    
+
     transform_group.add_argument(
         "--sample-package-map",
         help="File to record which packages relate to each unique sample",
     )
-    
+
     transform_group.add_argument(
         "--transformation-changes",
         help="File to record the transformation changes made during sample merging",
     )
-    
-    
+
     transform_group.add_argument(
         "--unique-organisms",
         help="File to record unique organisms extracted from the data",
     )
-    
+
     transform_group.add_argument(
         "--organism-conflicts",
         help="File to record conflicts between organisms with the same organism_grouping_key",
     )
-    
+
     transform_group.add_argument(
         "--organism-package-map",
         help="File to record which packages relate to each unique organism",
     )
-    
+
     transform_group.add_argument(
         "--sample-ignored-fields",
         help="Comma-separated list of sample fields to ignore when determining uniqueness. Conflicts in these fields will still be reported but won't prevent inclusion in the unique samples list.",
     )
-    
+
     transform_group.add_argument(
         "--organism-ignored-fields",
         help="Comma-separated list of organism fields to ignore when determining uniqueness. Conflicts in these fields will still be reported but won't prevent inclusion in the unique organisms list.",
     )
-    
+
     transform_group.add_argument(
         "--experiments-output",
         help="File to record extracted experiments data",
     )
-    
+
     return parser.parse_args()
 
 
@@ -147,8 +146,8 @@ def parse_args_for_mapping():
 
     input_group.add_argument(
         "--taxids_to_augustus_dataset_mapping",
-        required=True,
-        help="File that maps Augustus datasets to NCBI TaxIDs. See dev/resources/taxid_to_augustus_dataset.tsv",
+        help="File that maps Augustus datasets to NCBI TaxIDs. See config/taxid_to_augustus_dataset.tsv",
+        default=get_config_filepath("taxid_to_augustus_dataset.tsv"),
     )
 
     mapping_group.add_argument(
