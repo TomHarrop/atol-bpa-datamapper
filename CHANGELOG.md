@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.16 (2025-12-09)
+
+### Changes
+
+* Argument format for transform-data.
+
 ## v0.1.15 (2025-12-09)
 
 ### Changes
