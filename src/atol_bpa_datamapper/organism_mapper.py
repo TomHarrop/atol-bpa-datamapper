@@ -321,6 +321,36 @@ class NcbiTaxdump:
         logger.debug(f"ancestor_taxids: {ancestor_taxids}")
         return ancestor_taxids
 
+    def get_taxonomy_string(self, ancestor_taxids):
+
+        ancestor_names_all = [
+            self.get_scientific_name_txt(int(x)) for x in ancestor_taxids
+        ]
+        ancestor_names = [x for x in ancestor_names_all if x not in [None, "root"]]
+
+        if len(ancestor_names) == 0:
+            return None
+        else:
+            name_list = ancestor_names[::-1]
+            return "; ".join(name_list)
+
+    def get_order_and_family(self, ancestor_taxids):
+        order = None
+        family = None
+
+        for taxid in ancestor_taxids:
+            taxid_int = int(taxid)
+            rank = self.get_rank(taxid_int)
+            if rank == "family":
+                family = self.get_scientific_name_txt(taxid_int)
+            if rank == "order":
+                order = self.get_scientific_name_txt(taxid_int)
+            # if we've found the order, we can stop
+            if order is not None:
+                return order, family
+
+        return order, family
+
     def get_busco_lineage(self, taxid, ancestor_taxids):
         """
         Find the closest ancestor that is in the BUSCO taxid map and return the
@@ -417,17 +447,17 @@ class OrganismSection(dict):
         if self.has_taxid_at_accepted_level and self.scientific_name_source == "ncbi":
             self.organism_grouping_key = f"taxid{self.taxon_id}"
             ancestor_taxids = ncbi_taxdump.get_ancestor_taxids(self.taxon_id)
-            ancestor_names_all = [
-                ncbi_taxdump.get_scientific_name_txt(int(x)) for x in ancestor_taxids
-            ]
-            ancestor_names = [x for x in ancestor_names_all if x not in [None, "root"]]
 
-            if len(ancestor_names) > 0:
-                name_list = ancestor_names[::-1]
-                name_list.append(self.scientific_name)
-                self.tax_string = "; ".join(name_list)
+            tax_string = ncbi_taxdump.get_taxonomy_string(ancestor_taxids)
+
+            if self.authority:
+                self.tax_string = f"{tax_string}; {self.authority}"
             else:
-                self.tax_string = None
+                self.tax_string = f"{tax_string}; {self.scientific_name}"
+
+            self.ncbi_order, self.ncbi_family = ncbi_taxdump.get_order_and_family(
+                ancestor_taxids
+            )
 
             self.busco_dataset_name = ncbi_taxdump.get_busco_lineage(
                 self.taxon_id, ancestor_taxids

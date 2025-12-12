@@ -174,7 +174,7 @@ rule filter_packages:
         call=format_call("filter_packages", use_container),
     log:
         log=Path(result_path, "logs", "filter_packages.log"),
-        decision_log=Path(result_path, "filter_packages", "decision_log.jsonl.gz"),
+        decision_log=Path(result_path, "filter_packages", "decision_log.csv.gz"),
     container:
         container_uri if use_container else None
     shell:

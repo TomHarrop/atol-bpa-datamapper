@@ -17,7 +17,7 @@ rule flatten_mapping_output:
 
 rule analyse_decision_log:
     input:
-        decision_log=Path(result_path, "filter_packages", "decision_log.jsonl.gz"),
+        decision_log=Path(result_path, "filter_packages", "decision_log.csv.gz"),
     output:
         failed_counts=Path(result_path, "filter_packages", "failed_counts.csv"),
         single_fails=Path(result_path, "filter_packages", "single_fail_values.csv"),

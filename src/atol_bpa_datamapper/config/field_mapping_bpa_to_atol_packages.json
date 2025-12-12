@@ -42,7 +42,9 @@
         "organism_grouping_key": [],
         "busco_dataset_name": [],
         "augustus_dataset_name": [],
-        "tax_string": []
+        "tax_string": [],
+        "ncbi_family": [],
+        "ncbi_order": []
     },
     "sample": {
         "specimen_id": [
