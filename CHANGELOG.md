@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.17 (2025-12-12)
+
+### Changes
+
+* Get the order and family from the NCBI taxonomy.
+
 ## v0.1.16 (2025-12-09)
 
 ### Changes
