@@ -90,6 +90,9 @@ rule transform_data:
         organism_package_map=Path(
             result_path, "transform_data", "organism_package_map.jsonl.gz"
         ),
+        experiments_output=Path(
+            result_path, "transform_data", "experiments_output.json.gz"
+        ),
     params:
         call=format_call("transform_data", use_container),
     log:
@@ -104,6 +107,7 @@ rule transform_data:
         "--unique_organisms {output.unique_organisms} "
         "--organism_conflicts {output.organism_conflicts} "
         "--organism_package_map {output.organism_package_map} "
+        "--experiments_output {output.experiments_output} "
         "<{input.mapped} "
         ">{output.transformed} "
         "2> {log.log}"

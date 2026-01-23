@@ -34,9 +34,6 @@
         "taxon_id": [
             "taxon_id"
         ],
-        "common_name": [
-            "common_name"
-        ],
         "ncbi_common_name": [],
         "atol_scientific_name": [],
         "organism_grouping_key": [],
