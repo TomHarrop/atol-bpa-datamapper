@@ -12,6 +12,7 @@ from .arg_parser import parse_args_for_transform
 from .io import read_jsonl_file, write_json
 from .logger import logger, setup_logger
 import json
+import os
 from collections import defaultdict
 from datetime import datetime
 from abc import ABC, abstractmethod
@@ -657,16 +658,73 @@ def extract_experiment(experiments_data, package):
         logger.error(f"Error processing package: {str(e)}")
 
 
-def get_transformer(transformer_type, args, ignored_fields):
+def _load_specimen_ignored_fields_config():
+    """
+    Load specimen ignored fields from:
+      src/atol_bpa_datamapper/config/specimen_ignored_fields.json
+    """
+    config_path = os.path.join(
+        os.path.dirname(__file__), "config", "specimen_ignored_fields.json"
+    )
 
-    user_ignored_fields = vars(args).get(ignored_fields, None)
-    ignored_fields_list = []
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
 
-    if user_ignored_fields is not None:
-        ignored_fields_list = user_ignored_fields.split(",")
-        logger.info(f"Ignoring fields in {transformer_type}: {ignored_fields_list}")
+        if data is None:
+            return []
 
-    return transformer_type(ignored_fields=ignored_fields_list)
+        if not isinstance(data, list) or any(not isinstance(x, str) for x in data):
+            raise ValueError("Expected a JSON array of strings")
+
+        # Normalize + drop blanks
+        return [x.strip() for x in data if x.strip()]
+    except FileNotFoundError:
+        logger.warning(
+            f"Specimen ignored fields config not found at {config_path}; using []."
+        )
+        return []
+    except Exception as e:
+        logger.warning(
+            f"Failed to read specimen ignored fields config at {config_path}: {e}; using []."
+        )
+        return []
+
+
+def get_transformer(
+    transformer_type, args=None, ignored_fields=None, ignored_fields_list=None
+):
+    """
+    Build a transformer with ignored fields coming from:
+      1) ignored_fields_list (explicit list passed by caller)
+      2) optional CLI arg (comma-separated) referenced by `ignored_fields`
+    """
+    merged = []
+
+    # 1) Explicit list (e.g. loaded from JSON config in main)
+    if ignored_fields_list:
+        merged.extend(ignored_fields_list)
+
+    # 2) Optional CLI arg
+    if args is not None and ignored_fields:
+        user_ignored_fields = vars(args).get(ignored_fields, None)
+        if user_ignored_fields:
+            merged.extend(
+                [x.strip() for x in user_ignored_fields.split(",") if x.strip()]
+            )
+
+    # De-duplicate while preserving order
+    deduped = []
+    seen = set()
+    for f in merged:
+        if f not in seen:
+            seen.add(f)
+            deduped.append(f)
+
+    if deduped:
+        logger.info(f"Ignoring fields in {transformer_type.__name__}: {deduped}")
+
+    return transformer_type(ignored_fields=deduped)
 
 
 def main():
@@ -676,14 +734,20 @@ def main():
 
     sample_transformer = get_transformer(
         SampleTransformer,
-        args,
-        "sample_ignored_fields",
+        args=args,
+        ignored_fields="sample_ignored_fields",
     )
     organism_transformer = get_transformer(
-        OrganismTransformer, args, "organism_ignored_fields"
+        OrganismTransformer,
+        args=args,
+        ignored_fields="organism_ignored_fields",
     )
+
+    # Specimen ignored fields are config-only (no CLI)
+    specimen_ignored_fields_list = _load_specimen_ignored_fields_config()
     specimen_transformer = get_transformer(
-        SpecimenTransformer, args, "specimen_ignored_fields"
+        SpecimenTransformer,
+        ignored_fields_list=specimen_ignored_fields_list,
     )
 
     input_data = read_jsonl_file(args.input)
@@ -720,7 +784,6 @@ def main():
     sample_results = sample_transformer.get_results()
     organism_results = organism_transformer.get_results()
     specimen_results = specimen_transformer.get_results()
-
 
     if not args.dry_run:
         # Write sample outputs
@@ -765,7 +828,7 @@ def main():
             write_json(experiments_data, args.experiments_output)
 
         if args.specimens_output:
-            logger.info(f"Writing specimens data to {args.specimens_output}")
+            logger.info(f"Writing specimens  to {args.specimens_output}")
             write_json(specimen_results["unique_specimens"], args.specimens_output)
 
         if args.specimen_conflicts:
@@ -774,11 +837,18 @@ def main():
 
         if args.specimen_package_map:
             logger.info(f"Writing specimen_package_map to {args.specimen_package_map}")
-            write_json(specimen_results["specimen_package_map"], args.specimen_package_map)
+            write_json(
+                specimen_results["specimen_package_map"], args.specimen_package_map
+            )
 
         if args.specimen_transformation_changes:
-            logger.info(f"Writing specimens data to {args.specimen_transformation_changes}")
-            write_json(specimen_results["specimen_transformation_changes"], args.specimen_transformation_changes)
+            logger.info(
+                f"Writing specimen_transformation_changes to {args.specimen_transformation_changes}"
+            )
+            write_json(
+                specimen_results["specimen_transformation_changes"],
+                args.specimen_transformation_changes,
+            )
 
     # Log summary statistics
     n_unique_samples = len(sample_results["unique_samples"])
@@ -791,6 +861,7 @@ def main():
     logger.info(f"Found {n_unique_organisms} unique organisms")
     logger.info(f"Found {n_organism_conflicts} organisms with conflicts")
     logger.info(f"Found {len(experiments_data)} experiments")
+    logger.info(f"Found {len(specimen_results["unique_specimens"])} specimens")
 
 
 if __name__ == "__main__":

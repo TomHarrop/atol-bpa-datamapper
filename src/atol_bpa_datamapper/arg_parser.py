@@ -65,14 +65,6 @@ def parse_args_for_transform():
     )
 
     transform_group.add_argument(
-        "--specimen_ignored_fields",
-        help=(
-            "Comma-separated list of specimen fields to ignore "
-            "when determining uniqueness. Conflicts in these fields will still be reported but won't prevent inclusion in the unique organisms list."
-        ),
-    )
-
-    transform_group.add_argument(
         "--experiments_output",
         help="File to record extracted experiments data",
     )
@@ -93,9 +85,6 @@ def parse_args_for_transform():
     transform_group.add_argument(
         "--specimen_transformation_changes",
     )
-
-
-
 
     return parser.parse_args()
 
