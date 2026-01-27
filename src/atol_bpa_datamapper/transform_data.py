@@ -17,16 +17,6 @@ from abc import ABC, abstractmethod
 import json
 import os
 
-from dataclasses import dataclass  # <-- add
-
-
-@dataclass
-class _RepresentativeState:
-    """Tracks the current representative for a specimen key."""
-    score: tuple
-    package_id: str
-
-
 class EntityTransformer(ABC):
     """
     Abstract base class for transforming entity data from multiple packages
@@ -732,16 +722,22 @@ def _load_specimen_representative_selection_config():
 
     rules = cfg.get("priority_rules")
     if not isinstance(rules, list) or not rules:
-        raise ValueError("specimen_representative_selection.json must include priority_rules (non-empty array)")
+        raise ValueError(
+            "specimen_representative_selection.json must include priority_rules (non-empty array)"
+        )
 
     tie = cfg.get("tie_breaker") or {}
     if not isinstance(tie, dict):
         raise ValueError("tie_breaker must be an object")
 
-    tie.setdefault("raw_data_release_date", "earliest")
-    tie.setdefault("missing_release_date", "last")
-    cfg["tie_breaker"] = tie
+    # raw_data_release_date direction is not configurable (always earliest)
+    tie.pop("raw_data_release_date", None)
 
+    tie.setdefault("missing_release_date", "last")
+    if tie["missing_release_date"] not in ("last", "first"):
+        raise ValueError("tie_breaker.missing_release_date must be 'last' or 'first'")
+
+    cfg["tie_breaker"] = tie
     return cfg
 
 
