@@ -11,11 +11,11 @@ This script processes mapped metadata packages to:
 from .arg_parser import parse_args_for_transform
 from .io import read_jsonl_file, write_json
 from .logger import logger, setup_logger
-import json
-import os
 from collections import defaultdict
 from datetime import datetime
 from abc import ABC, abstractmethod
+import json
+import os
 
 
 class EntityTransformer(ABC):
@@ -525,6 +525,9 @@ class SpecimenTransformer(EntityTransformer):
             ["taxon_id", "specimen_id", "collection_date"],
             ignored_fields,
         )
+        self._rep_cfg = _load_specimen_representative_selection_config()
+        self._best_rank_by_key = {}
+        self._rep_package_id_by_key = {}
 
     def _get_entity_data(self, package):
         sample = package.get("sample")
@@ -677,6 +680,47 @@ def _load_specimen_ignored_fields_config():
         raise ValueError("Expected a JSON array of strings")
 
     return [x.strip() for x in data if x.strip()]
+
+
+def _load_specimen_representative_selection_config():
+    config_path = os.path.join(
+        os.path.dirname(__file__),
+        "config",
+        "specimen_representative_selection.json",
+    )
+
+    with open(config_path, "r", encoding="utf-8") as f:
+        cfg = json.load(f)
+
+    if not isinstance(cfg, dict):
+        raise ValueError("specimen_representative_selection.json must be a JSON object")
+
+    rules = cfg.get("priority_rules")
+    if not isinstance(rules, list) or not rules:
+        raise ValueError("specimen_representative_selection.json must include priority_rules (non-empty array)")
+
+    tie = cfg.get("tie_breaker") or {}
+    if not isinstance(tie, dict):
+        raise ValueError("tie_breaker must be an object")
+
+    tie.setdefault("raw_data_release_date", "earliest")
+    tie.setdefault("missing_release_date", "last")
+    cfg["tie_breaker"] = tie
+
+    return cfg
+
+
+def _parse_release_date(value):
+    if value is None or not isinstance(value, str):
+        return None
+    s = value.strip()
+    if not s:
+        return None
+    try:
+        # supports "YYYY-MM-DD" and ISO timestamps (we only care about date)
+        return datetime.fromisoformat(s[:10]).date()
+    except Exception:
+        return None
 
 
 def get_transformer(
