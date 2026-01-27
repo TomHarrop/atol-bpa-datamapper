@@ -667,28 +667,16 @@ def _load_specimen_ignored_fields_config():
         os.path.dirname(__file__), "config", "specimen_ignored_fields.json"
     )
 
-    try:
-        with open(config_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
+    with open(config_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
 
-        if data is None:
-            return []
-
-        if not isinstance(data, list) or any(not isinstance(x, str) for x in data):
-            raise ValueError("Expected a JSON array of strings")
-
-        # Normalize + drop blanks
-        return [x.strip() for x in data if x.strip()]
-    except FileNotFoundError:
-        logger.warning(
-            f"Specimen ignored fields config not found at {config_path}; using []."
-        )
+    if data is None:
         return []
-    except Exception as e:
-        logger.warning(
-            f"Failed to read specimen ignored fields config at {config_path}: {e}; using []."
-        )
-        return []
+
+    if not isinstance(data, list) or any(not isinstance(x, str) for x in data):
+        raise ValueError("Expected a JSON array of strings")
+
+    return [x.strip() for x in data if x.strip()]
 
 
 def get_transformer(
@@ -828,7 +816,7 @@ def main():
             write_json(experiments_data, args.experiments_output)
 
         if args.specimens_output:
-            logger.info(f"Writing specimens  to {args.specimens_output}")
+            logger.info(f"Writing specimens to {args.specimens_output}")
             write_json(specimen_results["unique_specimens"], args.specimens_output)
 
         if args.specimen_conflicts:
