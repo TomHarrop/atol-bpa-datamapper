@@ -511,11 +511,9 @@ class SpecimenTransformer(EntityTransformer):
     """
     Transform specimen data derived from packages into unique specimens.
 
-    Key fields are defined by self.key_fields.
-    Source fields:
-      - specimen_id/collection_date/etc from package['sample']
-      - taxon_id from package['organism']
-    Metadata: for now, use the entire sample section + taxon_id.
+    Representative selection (when more than one sample exists for the same key):
+      1) priority_rules from JSON config
+      2) earliest experiment.raw_data_release_date
     """
 
     def __init__(self, ignored_fields=None):
@@ -559,26 +557,123 @@ class SpecimenTransformer(EntityTransformer):
         """
         if len(self.key_fields) == 1:
             return {self.key_fields[0]: entity_key}
-
-        # entity_key should be a tuple here (normalized by base class)
         return dict(zip(self.key_fields, entity_key))
 
-    def _record_new_entity(self, entity_key, entity_data, package_id):
-        rec = {"package_id": package_id, "action": "add_specimen", "data": entity_data}
-        rec.update(self._key_dict(entity_key))
-        self.transformation_changes.append(rec)
+    def _candidate_priority_index(self, experiment):
+        """
+        Return the index of the first matching rule in priority_rules.
+        Lower is better. Non-matching candidates sort after all rules.
 
-    def _record_entity_change(
-        self, entity_key, package_id, has_conflicts, has_critical_conflicts
-    ):
-        rec = {
-            "package_id": package_id,
-            "action": "merge",
-            "conflicts": has_conflicts,
-            "critical_conflicts": has_critical_conflicts,
+        Rules match controlled vocabulary values directly:
+          platform: one of ILLUMINA / OXFORD_NANOPORE / PACBIO_SMRT
+          library_strategy: one of Hi-C / RNA-Seq / WGS (optional in rule)
+        """
+        experiment = experiment if isinstance(experiment, dict) else {}
+        platform = experiment.get("platform")
+        library_strategy = experiment.get("library_strategy")
+
+        p = platform.strip() if isinstance(platform, str) else None
+        ls = library_strategy.strip() if isinstance(library_strategy, str) else None
+
+        rules = self._rep_cfg.get("priority_rules", [])
+        for i, rule in enumerate(rules):
+            if not isinstance(rule, dict):
+                continue
+
+            rp = rule.get("platform")
+            rls = rule.get("library_strategy")
+
+            if rp is not None and rp != p:
+                continue
+            if rls is not None and rls != ls:
+                continue
+
+            return i
+
+        return len(rules)
+
+    def _rank_candidate(self, package):
+        """
+        Lower is better:
+          (priority_index, release_date_for_sort)
+        """
+        experiment = package.get("experiment", {}) if isinstance(package, dict) else {}
+        pri = self._candidate_priority_index(experiment)
+
+        rd = _parse_release_date(experiment.get("raw_data_release_date"))
+
+        tie = self._rep_cfg.get("tie_breaker", {}) or {}
+        missing_policy = tie.get("missing_release_date", "last")
+
+        if rd is None:
+            rd_sort = datetime.max.date() if missing_policy == "last" else datetime.min.date()
+        else:
+            rd_sort = rd
+
+        meta = {
+            "platform": experiment.get("platform"),
+            "library_strategy": experiment.get("library_strategy"),
+            "raw_data_release_date": experiment.get("raw_data_release_date"),
+            "priority_index": pri,
         }
-        rec.update(self._key_dict(entity_key))
-        self.transformation_changes.append(rec)
+        return (pri, rd_sort), meta
+
+    def process_package(self, package):
+        """
+        Override default merge/conflict behavior:
+        for specimens, keep ONLY a representative sample per specimen key.
+        """
+        package_id = package.get("experiment", {}).get("bpa_package_id", "unknown")
+
+        entity_data = self._get_entity_data(package)
+        if not entity_data:
+            logger.warning(
+                f"No {self.entity_type} data found/derived in package {package_id}, skipping"
+            )
+            return False
+
+        raw_key = self._get_entity_key(entity_data)
+        entity_key = self._normalize_entity_key(raw_key)
+        if entity_key is None:
+            logger.warning(
+                f"No valid {self.entity_type} key found in package {package_id}, skipping"
+            )
+            return False
+
+        # Track all contributing packages for this specimen key
+        self.entity_to_package_map[entity_key].append(package_id)
+
+        rank, meta = self._rank_candidate(package)
+
+        # First candidate becomes representative
+        if entity_key not in self.unique_entities:
+            self.unique_entities[entity_key] = entity_data.copy()
+            self._best_rank_by_key[entity_key] = rank
+            self._rep_package_id_by_key[entity_key] = package_id
+
+            rec = {"package_id": package_id, "action": "add_specimen", "data": entity_data}
+            rec.update(self._key_dict(entity_key))
+            self.transformation_changes.append(rec)
+            return True
+
+        # Replace if better than current representative
+        if rank < self._best_rank_by_key[entity_key]:
+            prev_pkg = self._rep_package_id_by_key.get(entity_key)
+
+            self.unique_entities[entity_key] = entity_data.copy()
+            self._best_rank_by_key[entity_key] = rank
+            self._rep_package_id_by_key[entity_key] = package_id
+
+            rec = {
+                "package_id": package_id,
+                "action": "replace_representative",
+                "replaced_package_id": prev_pkg,
+                "reason": meta,
+            }
+            rec.update(self._key_dict(entity_key))
+            self.transformation_changes.append(rec)
+
+        return True
 
     def _nest(self, root, entity_key, value):
         """
@@ -596,22 +691,24 @@ class SpecimenTransformer(EntityTransformer):
 
     def _build_results(self, unique_entities):
         unique_specimens = {}
-        specimen_conflicts = {}
         specimen_package_map = {}
+        specimen_representative_package_map = {}
 
         for entity_key, data in unique_entities.items():
             self._nest(unique_specimens, entity_key, data)
 
-        for entity_key, conflicts in self.entity_conflicts.items():
-            self._nest(specimen_conflicts, entity_key, conflicts)
-
         for entity_key, packages in self.entity_to_package_map.items():
             self._nest(specimen_package_map, entity_key, packages)
 
+        for entity_key, rep_pkg in self._rep_package_id_by_key.items():
+            self._nest(specimen_representative_package_map, entity_key, rep_pkg)
+
         return {
             "unique_specimens": unique_specimens,
-            "specimen_conflicts": specimen_conflicts,
+            # representative selection does not do conflict merging
+            "specimen_conflicts": {},
             "specimen_package_map": specimen_package_map,
+            "specimen_representative_package_map": specimen_representative_package_map,
             "specimen_transformation_changes": self.transformation_changes,
         }
 
@@ -655,7 +752,7 @@ def extract_experiment(experiments_data, package):
         # Add to dictionary with bpa_package_id as key
         experiments_data[bpa_package_id] = experiment
     except json.JSONDecodeError:
-        logger.error(f"Line {line_count}: Invalid JSON, skipping")
+        logger.error("Invalid JSON, skipping")
     except Exception as e:
         logger.error(f"Error processing package: {str(e)}")
 
@@ -892,7 +989,7 @@ def main():
     logger.info(f"Found {n_unique_organisms} unique organisms")
     logger.info(f"Found {n_organism_conflicts} organisms with conflicts")
     logger.info(f"Found {len(experiments_data)} experiments")
-    logger.info(f"Found {len(specimen_results["unique_specimens"])} specimens")
+    logger.info(f"Found {len(specimen_results['unique_specimens'])} specimens")
 
 
 if __name__ == "__main__":
