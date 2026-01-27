@@ -532,7 +532,10 @@ class SpecimenTransformer(EntityTransformer):
             ignored_fields,
         )
         self._rep_cfg = _load_specimen_representative_selection_config()
-        self._rep_state_by_key = {}  # entity_key -> _RepresentativeState
+
+        # entity_key -> (score_tuple, package_id)
+        # where score_tuple is comparable (lower is better)
+        self._rep_state_by_key = {}
 
     def _get_entity_data(self, package):
         sample = package.get("sample")
@@ -573,100 +576,6 @@ class SpecimenTransformer(EntityTransformer):
             return {self.key_fields[0]: entity_key}
         return dict(zip(self.key_fields, entity_key))
 
-    def _candidate_priority_index(self, experiment):
-        """
-        Return the index of the first matching rule in priority_rules.
-        Lower is better. Non-matching candidates sort after all rules.
-
-        Rules match controlled vocabulary values directly:
-          platform: one of ILLUMINA / OXFORD_NANOPORE / PACBIO_SMRT
-          library_strategy: one of Hi-C / RNA-Seq / WGS (optional in rule)
-        """
-        experiment = experiment if isinstance(experiment, dict) else {}
-        platform = experiment.get("platform")
-        library_strategy = experiment.get("library_strategy")
-
-        p = platform.strip() if isinstance(platform, str) else None
-        ls = library_strategy.strip() if isinstance(library_strategy, str) else None
-
-        rules = self._rep_cfg.get("priority_rules", [])
-        for i, rule in enumerate(rules):
-            if not isinstance(rule, dict):
-                continue
-
-            rp = rule.get("platform")
-            rls = rule.get("library_strategy")
-
-            if rp is not None and rp != p:
-                continue
-            if rls is not None and rls != ls:
-                continue
-
-            return i
-
-        return len(rules)
-
-    def _score_candidate(self, package):
-        """
-        Compute a comparable score for candidate selection. Lower is better.
-
-        Score = (priority_index, release_date_sort_key)
-
-        priority_index:
-          index of first matching rule in priority_rules; non-matching sorts last.
-
-        release_date_sort_key:
-          parsed date; missing dates sort last/first per config.
-        """
-        experiment = package.get("experiment", {}) if isinstance(package, dict) else {}
-
-        def _norm(v):
-            return v.strip() if isinstance(v, str) else None
-
-        platform = _norm(experiment.get("platform"))
-        library_strategy = _norm(experiment.get("library_strategy"))
-
-        rules = self._rep_cfg.get("priority_rules", []) or []
-        priority_index = len(rules)  # default: after all rules
-
-        for i, rule in enumerate(rules):
-            if not isinstance(rule, dict):
-                continue
-            rp = rule.get("platform")
-            rls = rule.get("library_strategy")
-
-            if rp is not None and rp != platform:
-                continue
-            if rls is not None and rls != library_strategy:
-                continue
-
-            priority_index = i
-            break
-
-        rd = _parse_release_date(experiment.get("raw_data_release_date"))
-
-        tie = (self._rep_cfg.get("tie_breaker") or {})
-        missing_policy = tie.get("missing_release_date", "last")
-
-        if rd is None:
-            rd_sort = (
-                datetime.max.date()
-                if missing_policy == "last"
-                else datetime.min.date()
-            )
-        else:
-            rd_sort = rd
-
-        # Keep reason minimal (useful for debugging without large payloads)
-        reason = {
-            "platform": experiment.get("platform"),
-            "library_strategy": experiment.get("library_strategy"),
-            "raw_data_release_date": experiment.get("raw_data_release_date"),
-            "priority_index": priority_index,
-        }
-
-        return (priority_index, rd_sort), reason
-
     def process_package(self, package):
         """
         Keep ONLY a representative sample per specimen key, chosen by _score_candidate.
@@ -696,9 +605,7 @@ class SpecimenTransformer(EntityTransformer):
         # First candidate becomes representative
         if entity_key not in self._rep_state_by_key:
             self.unique_entities[entity_key] = entity_data.copy()
-            self._rep_state_by_key[entity_key] = _RepresentativeState(
-                score=score, package_id=package_id
-            )
+            self._rep_state_by_key[entity_key] = (score, package_id)
 
             rec = {"package_id": package_id, "action": "add_specimen", "data": entity_data}
             rec.update(self._key_dict(entity_key))
@@ -706,39 +613,21 @@ class SpecimenTransformer(EntityTransformer):
             return True
 
         # Replace if better than current representative
-        current = self._rep_state_by_key[entity_key]
-        if score < current.score:
-            prev_pkg = current.package_id
-
+        current_score, current_pkg = self._rep_state_by_key[entity_key]
+        if score < current_score:
             self.unique_entities[entity_key] = entity_data.copy()
-            self._rep_state_by_key[entity_key] = _RepresentativeState(
-                score=score, package_id=package_id
-            )
+            self._rep_state_by_key[entity_key] = (score, package_id)
 
             rec = {
                 "package_id": package_id,
                 "action": "replace_representative",
-                "replaced_package_id": prev_pkg,
+                "replaced_package_id": current_pkg,
                 "reason": reason,
             }
             rec.update(self._key_dict(entity_key))
             self.transformation_changes.append(rec)
 
         return True
-
-    def _nest(self, root, entity_key, value):
-        """
-        Insert value into nested dict structure using the parts of entity_key.
-        Uses str() for JSON-friendly dict keys.
-        """
-        if len(self.key_fields) == 1:
-            root[str(entity_key)] = value
-            return
-
-        d = root
-        for part in entity_key[:-1]:
-            d = d.setdefault(str(part), {})
-        d[str(entity_key[-1])] = value
 
     def _build_results(self, unique_entities):
         unique_specimens = {}
@@ -751,8 +640,8 @@ class SpecimenTransformer(EntityTransformer):
         for entity_key, packages in self.entity_to_package_map.items():
             self._nest(specimen_package_map, entity_key, packages)
 
-        for entity_key, state in self._rep_state_by_key.items():
-            self._nest(specimen_representative_package_map, entity_key, state.package_id)
+        for entity_key, (_score, package_id) in self._rep_state_by_key.items():
+            self._nest(specimen_representative_package_map, entity_key, package_id)
 
         return {
             "unique_specimens": unique_specimens,
