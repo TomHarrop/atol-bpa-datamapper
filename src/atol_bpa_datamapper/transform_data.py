@@ -21,70 +21,81 @@ from abc import ABC, abstractmethod
 
 class EntityTransformer(ABC):
     """
-    Abstract base class for transforming entity data from multiple packages into unique entities.
+    Abstract base class for transforming entity data from multiple packages
+    into unique entities.
     """
 
-    def __init__(self, entity_type, key_field, ignored_fields=None):
+    def __init__(self, entity_type, key_fields, ignored_fields=None):
         """
         Args:
             entity_type: Logical entity type label (e.g. 'organism', 'sample', 'specimen')
-            key_field: Field name OR list/tuple of field names that make up the unique identifier
+            key_fields: Field name OR list/tuple of field names that make up the unique identifier
         """
         self.entity_type = entity_type
 
-        # Normalize key_field -> key_fields (list of field names)
-        if isinstance(key_field, (list, tuple)):
-            self.key_fields = list(key_field)
+        # Handle multiple keys e.g. for specimen (taxon_id, specimen_id)
+        if isinstance(key_fields, (list, tuple)):
+            self.key_fields = list(key_fields)
         else:
-            self.key_fields = [key_field]
+            self.key_fields = [key_fields]
 
-        self.key_field = key_field  # keep for backward compatibility / logging
         self.unique_entities = {}
         self.entity_conflicts = {}
         self.entity_to_package_map = defaultdict(list)
         self.transformation_changes = []
         self.ignored_fields = ignored_fields or []
 
-        # Exclude ALL key fields from conflict detection
         self.exclude_fields = list(self.key_fields)
 
     def _get_entity_data(self, package):
         """
-        Hook for extracting entity data from a package.
+        For extracting entity data from a package.
 
         Default behavior expects a top-level section matching self.entity_type.
-        Override when entity data is derived (e.g. specimen derived from sample+organism).
+        Override when entity data is derived (e.g. specimen derived from
+        sample+organism).
         """
         data = package.get(self.entity_type)
         return data if isinstance(data, dict) else None
 
-    def _stringify_entity_key(self, raw_key):
+    def _normalize_entity_key(self, raw_key):
         """
-        Convert raw key (str/tuple/list) into a stable string suitable for dict keys + JSON.
+        Normalize entity keys for internal storage:
+          - str -> stripped str
+          - (a, b) / [a, b] -> tuple(a, b) (with stripped strings)
+        Returns None when invalid.
         """
         if raw_key is None:
             return None
+
         if isinstance(raw_key, str):
-            return raw_key.strip() or None
+            key = raw_key.strip()
+            return key or None
+
         if isinstance(raw_key, (list, tuple)):
-            parts = [str(p).strip() for p in raw_key]
-            if any(not p for p in parts):
-                return None
-            # Chosen separator: unlikely to occur in IDs; adjust if needed
-            return "::".join(parts)
-        # Fallback
-        s = str(raw_key).strip()
-        return s or None
+            parts = []
+            for p in raw_key:
+                if p is None:
+                    return None
+                if isinstance(p, str):
+                    sp = p.strip()
+                    if not sp:
+                        return None
+                    parts.append(sp)
+                else:
+                    parts.append(p)
+            return tuple(parts)
+
+        # Fallback: ensure hashable
+        try:
+            hash(raw_key)
+        except TypeError:
+            return None
+        return raw_key
 
     def process_package(self, package):
         """
         Process a single package to extract entity information.
-
-        Args:
-            package: A raw package dictionary with entity data
-
-        Returns:
-            bool: True if the package was processed successfully
         """
         package_id = package.get("experiment", {}).get("bpa_package_id", "unknown")
 
@@ -96,10 +107,10 @@ class EntityTransformer(ABC):
             )
             return False
 
-        # Get the entity key (identifier) and normalize to string
+        # Get and normalize entity key (string or tuple)
         raw_key = self._get_entity_key(entity_data)
-        entity_key = self._stringify_entity_key(raw_key)
-        if not entity_key:
+        entity_key = self._normalize_entity_key(raw_key)
+        if entity_key is None:
             logger.warning(
                 f"No valid {self.entity_type} key found in package {package_id}, skipping"
             )
@@ -529,14 +540,60 @@ class SpecimenTransformer(EntityTransformer):
         return merged
 
     def _get_entity_key(self, entity_data):
-        # Composite raw key; base class stringifies to "taxon_id::specimen_id"
         return (entity_data.get("taxon_id"), entity_data.get("specimen_id"))
 
+    def _record_new_entity(self, entity_key, entity_data, package_id):
+        taxon_id, specimen_id = entity_key
+        self.transformation_changes.append(
+            {
+                "package_id": package_id,
+                "taxon_id": taxon_id,
+                "specimen_id": specimen_id,
+                "action": "add_specimen",
+                "data": entity_data,
+            }
+        )
+
+    def _record_entity_change(
+        self, entity_key, package_id, has_conflicts, has_critical_conflicts
+    ):
+        taxon_id, specimen_id = entity_key
+        self.transformation_changes.append(
+            {
+                "package_id": package_id,
+                "taxon_id": taxon_id,
+                "specimen_id": specimen_id,
+                "action": "merge",
+                "conflicts": has_conflicts,
+                "critical_conflicts": has_critical_conflicts,
+            }
+        )
+
     def _build_results(self, unique_entities):
+        # JSON-safe nested dicts: taxon_id -> specimen_id -> data
+        unique_specimens = {}
+        specimen_conflicts = {}
+        specimen_package_map = {}
+
+        for (taxon_id, specimen_id), data in unique_entities.items():
+            tkey = str(taxon_id)
+            skey = str(specimen_id)
+            unique_specimens.setdefault(tkey, {})[skey] = data
+
+        for (taxon_id, specimen_id), conflicts in self.entity_conflicts.items():
+            tkey = str(taxon_id)
+            skey = str(specimen_id)
+            specimen_conflicts.setdefault(tkey, {})[skey] = conflicts
+
+        for (taxon_id, specimen_id), packages in self.entity_to_package_map.items():
+            tkey = str(taxon_id)
+            skey = str(specimen_id)
+            specimen_package_map.setdefault(tkey, {})[skey] = packages
+
         return {
-            "unique_specimens": unique_entities,
-            "specimen_conflicts": self.entity_conflicts,
-            "specimen_package_map": dict(self.entity_to_package_map),
+            "unique_specimens": unique_specimens,
+            "specimen_conflicts": specimen_conflicts,
+            "specimen_package_map": specimen_package_map,
             "specimen_transformation_changes": self.transformation_changes,
         }
 
