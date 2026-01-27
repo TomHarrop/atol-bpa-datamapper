@@ -17,7 +17,6 @@ import gzip
 from collections import defaultdict
 from datetime import datetime
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 
 class EntityTransformer(ABC):
@@ -29,19 +28,19 @@ class EntityTransformer(ABC):
         """
         Args:
             entity_type: Logical entity type label (e.g. 'organism', 'sample', 'specimen')
-            key_field: Field name OR list of field names that make up the unique identifier
+            key_field: Field name OR list/tuple of field names that make up the unique identifier
         """
         self.entity_type = entity_type
 
-        # Normalize key_field -> key_fields (list[str])
+        # Normalize key_field -> key_fields (list of field names)
         if isinstance(key_field, (list, tuple)):
-            self.key_fields: List[str] = list(key_field)
+            self.key_fields = list(key_field)
         else:
             self.key_fields = [key_field]
 
         self.key_field = key_field  # keep for backward compatibility / logging
-        self.unique_entities: Dict[str, Dict[str, Any]] = {}
-        self.entity_conflicts: Dict[str, Dict[str, Any]] = {}
+        self.unique_entities = {}
+        self.entity_conflicts = {}
         self.entity_to_package_map = defaultdict(list)
         self.transformation_changes = []
         self.ignored_fields = ignored_fields or []
@@ -49,7 +48,7 @@ class EntityTransformer(ABC):
         # Exclude ALL key fields from conflict detection
         self.exclude_fields = list(self.key_fields)
 
-    def _get_entity_data(self, package: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _get_entity_data(self, package):
         """
         Hook for extracting entity data from a package.
 
@@ -59,7 +58,7 @@ class EntityTransformer(ABC):
         data = package.get(self.entity_type)
         return data if isinstance(data, dict) else None
 
-    def _stringify_entity_key(self, raw_key: Any) -> Optional[str]:
+    def _stringify_entity_key(self, raw_key):
         """
         Convert raw key (str/tuple/list) into a stable string suitable for dict keys + JSON.
         """
@@ -117,7 +116,6 @@ class EntityTransformer(ABC):
         has_critical_conflicts = False
 
         if entity_key in self.unique_entities:
-            # Entity already exists, check for conflicts
             existing_entity = self.unique_entities[entity_key]
             conflicts, has_critical_conflicts = self._detect_conflicts(
                 entity_key, existing_entity, entity_data, package_id
@@ -136,13 +134,9 @@ class EntityTransformer(ABC):
                         if value not in self.entity_conflicts[entity_key][field]:
                             self.entity_conflicts[entity_key][field].append(value)
         else:
-            # New entity, just add it
             self.unique_entities[entity_key] = entity_data.copy()
-
-            # Record the transformation change
             self._record_new_entity(entity_key, entity_data, package_id)
 
-        # Record the transformation change for existing entities
         if entity_key in self.unique_entities and entity_key != package_id:
             self._record_entity_change(
                 entity_key, package_id, has_conflicts, has_critical_conflicts
@@ -517,7 +511,7 @@ class SpecimenTransformer(EntityTransformer):
     def __init__(self, ignored_fields=None):
         super().__init__("specimen", ["taxon_id", "specimen_id"], ignored_fields)
 
-    def _get_entity_data(self, package: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _get_entity_data(self, package):
         sample = package.get("sample")
         organism = package.get("organism")
 
@@ -530,12 +524,11 @@ class SpecimenTransformer(EntityTransformer):
         if not taxon_id or not specimen_id:
             return None
 
-        # For now: entire sample section + taxon_id (so key + metadata live together)
         merged = sample.copy()
         merged["taxon_id"] = taxon_id
         return merged
 
-    def _get_entity_key(self, entity_data: Dict[str, Any]):
+    def _get_entity_key(self, entity_data):
         # Composite raw key; base class stringifies to "taxon_id::specimen_id"
         return (entity_data.get("taxon_id"), entity_data.get("specimen_id"))
 
