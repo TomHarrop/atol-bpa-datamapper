@@ -186,6 +186,30 @@ def main():
     vocab_output_file = Path("results", outdir, "value_mapping_bpa_to_atol.json")
     write_output(vocab_dict, vocab_output_file)
 
+    # output condensed lists for BPA
+    condensed_schema_file = Path("results", outdir, "atol_required_fields.csv")
+    condensed_vocab_file = Path("results", outdir, "atol_vocab_condensed.csv")
+
+    sort_colums = ["category", "atol_field"]
+
+    metadata_to_condense = [
+        sample_data,
+        experiment_data,
+        package_level_data,
+        resource_level_data,
+    ]
+
+    pd.concat(
+        [
+            x.groupby("atol_field").first().dropna(subset=["bpa_field"])
+            for x in metadata_to_condense
+        ]
+    ).drop_duplicates().sort_values(sort_colums).to_csv(condensed_schema_file)
+
+    vocabulary.drop(columns=["allowed_value"]).sort_values(
+        sort_colums
+    ).drop_duplicates().dropna(subset="atol_value").to_csv(condensed_vocab_file, index=False)
+
 
 if __name__ == "__main__":
     main()
