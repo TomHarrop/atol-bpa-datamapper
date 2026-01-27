@@ -536,6 +536,12 @@ class SpecimenTransformer(EntityTransformer):
         merged = sample.copy()
         merged["taxon_id"] = organism.get("taxon_id")
 
+        # Drop ignored fields from the OUTPUT entity data (but never drop key fields)
+        if self.ignored_fields:
+            for f in self.ignored_fields:
+                if f not in self.key_fields:
+                    merged.pop(f, None)
+
         # Require that all key fields exist (and are non-empty) in the merged dict
         for k in self.key_fields:
             v = merged.get(k)
