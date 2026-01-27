@@ -17,33 +17,65 @@ import gzip
 from collections import defaultdict
 from datetime import datetime
 from abc import ABC, abstractmethod
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 
 class EntityTransformer(ABC):
     """
     Abstract base class for transforming entity data from multiple packages into unique entities.
-
-    This class provides common functionality for extracting unique entities,
-    detecting conflicts, and tracking relationships between entities and packages.
     """
 
     def __init__(self, entity_type, key_field, ignored_fields=None):
         """
-        Initialize the EntityTransformer.
-
         Args:
-            entity_type: The type of entity being transformed (e.g., 'organism', 'sample')
-            key_field: The field used as the unique identifier for this entity type
-            ignored_fields: List of field names that should be ignored when determining uniqueness
+            entity_type: Logical entity type label (e.g. 'organism', 'sample', 'specimen')
+            key_field: Field name OR list of field names that make up the unique identifier
         """
         self.entity_type = entity_type
-        self.key_field = key_field
-        self.unique_entities = {}
-        self.entity_conflicts = {}
+
+        # Normalize key_field -> key_fields (list[str])
+        if isinstance(key_field, (list, tuple)):
+            self.key_fields: List[str] = list(key_field)
+        else:
+            self.key_fields = [key_field]
+
+        self.key_field = key_field  # keep for backward compatibility / logging
+        self.unique_entities: Dict[str, Dict[str, Any]] = {}
+        self.entity_conflicts: Dict[str, Dict[str, Any]] = {}
         self.entity_to_package_map = defaultdict(list)
         self.transformation_changes = []
         self.ignored_fields = ignored_fields or []
-        self.exclude_fields = [key_field]
+
+        # Exclude ALL key fields from conflict detection
+        self.exclude_fields = list(self.key_fields)
+
+    def _get_entity_data(self, package: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """
+        Hook for extracting entity data from a package.
+
+        Default behavior expects a top-level section matching self.entity_type.
+        Override when entity data is derived (e.g. specimen derived from sample+organism).
+        """
+        data = package.get(self.entity_type)
+        return data if isinstance(data, dict) else None
+
+    def _stringify_entity_key(self, raw_key: Any) -> Optional[str]:
+        """
+        Convert raw key (str/tuple/list) into a stable string suitable for dict keys + JSON.
+        """
+        if raw_key is None:
+            return None
+        if isinstance(raw_key, str):
+            return raw_key.strip() or None
+        if isinstance(raw_key, (list, tuple)):
+            parts = [str(p).strip() for p in raw_key]
+            if any(not p for p in parts):
+                return None
+            # Chosen separator: unlikely to occur in IDs; adjust if needed
+            return "::".join(parts)
+        # Fallback
+        s = str(raw_key).strip()
+        return s or None
 
     def process_package(self, package):
         """
@@ -57,17 +89,21 @@ class EntityTransformer(ABC):
         """
         package_id = package.get("experiment", {}).get("bpa_package_id", "unknown")
 
-        # Check if the entity section exists in the package
-        if self.entity_type not in package:
-            logger.warning(f"Package {package_id} has no {self.entity_type} section")
+        # Get entity data (may be derived)
+        entity_data = self._get_entity_data(package)
+        if not entity_data:
+            logger.warning(
+                f"No {self.entity_type} data found/derived in package {package_id}, skipping"
+            )
             return False
 
-        entity_data = package[self.entity_type]
-
-        # Get the entity key (identifier)
-        entity_key = self._get_entity_key(entity_data)
+        # Get the entity key (identifier) and normalize to string
+        raw_key = self._get_entity_key(entity_data)
+        entity_key = self._stringify_entity_key(raw_key)
         if not entity_key:
-            logger.warning(f"Package {package_id} has no valid {self.key_field}")
+            logger.warning(
+                f"No valid {self.entity_type} key found in package {package_id}, skipping"
+            )
             return False
 
         # Track entity to package map
@@ -469,30 +505,48 @@ class SampleTransformer(EntityTransformer):
 
 class SpecimenTransformer(EntityTransformer):
     """
-    Transform sample data from multiple packages into unique samples.
-    Samples are identified by their bpa_sample_id.
+    Transform specimen data derived from packages into unique specimens.
+
+    Key: (taxon_id, specimen_id)
+    Source fields:
+      - specimen_id from package['sample']
+      - taxon_id from package['organism']
+    Metadata: for now, use the entire sample section (agnostic / TBD subset later).
     """
 
     def __init__(self, ignored_fields=None):
-        super().__init__("sample", ["taxon_id", "specimen_id"], ignored_fields)
+        super().__init__("specimen", ["taxon_id", "specimen_id"], ignored_fields)
 
-    def _get_entity_key(self, entity_data):
-        return entity_data.get("specimen_id")
+    def _get_entity_data(self, package: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        sample = package.get("sample")
+        organism = package.get("organism")
 
-    def _build_results(self):
-        raise NotImplementedError("TODO SpecimenTransformer._build_results()")
+        if not isinstance(sample, dict) or not isinstance(organism, dict):
+            return None
 
-    # TODO
-    # - Specimen is different because there are >1 keys (at least taxid and
-    # specimen_id, maybe collection_date too.) Handle multiple keys in
-    # EntityTransformer class.
+        taxon_id = organism.get("taxon_id")
+        specimen_id = sample.get("specimen_id")
 
-    # - In the build_results method for SpecimenTransformer, we need to choose
-    #   a representative specimen across the samples based on:
-    #   - PacBio > ONT > Hi-C > RNAseq > Illumina WGS
-    #   - If there are still ties, earliest-deposited sample takes priority (?)
-    #   - Keep a map of taxid + specimen_id : child samples
-    #   - Get the representative metadata for the specimen (e.g. drop tissue)
+        if not taxon_id or not specimen_id:
+            return None
+
+        # For now: entire sample section + taxon_id (so key + metadata live together)
+        merged = sample.copy()
+        merged["taxon_id"] = taxon_id
+        return merged
+
+    def _get_entity_key(self, entity_data: Dict[str, Any]):
+        # Composite raw key; base class stringifies to "taxon_id::specimen_id"
+        return (entity_data.get("taxon_id"), entity_data.get("specimen_id"))
+
+    def _build_results(self, unique_entities):
+        return {
+            "unique_specimens": unique_entities,
+            "specimen_conflicts": self.entity_conflicts,
+            "specimen_package_map": dict(self.entity_to_package_map),
+            "specimen_transformation_changes": self.transformation_changes,
+        }
+
 
 def extract_experiment(experiments_data, package):
 
