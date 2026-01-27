@@ -17,6 +17,15 @@ from abc import ABC, abstractmethod
 import json
 import os
 
+from dataclasses import dataclass  # <-- add
+
+
+@dataclass
+class _RepresentativeState:
+    """Tracks the current representative for a specimen key."""
+    score: tuple
+    package_id: str
+
 
 class EntityTransformer(ABC):
     """
@@ -523,8 +532,7 @@ class SpecimenTransformer(EntityTransformer):
             ignored_fields,
         )
         self._rep_cfg = _load_specimen_representative_selection_config()
-        self._best_rank_by_key = {}
-        self._rep_package_id_by_key = {}
+        self._rep_state_by_key = {}  # entity_key -> _RepresentativeState
 
     def _get_entity_data(self, package):
         sample = package.get("sample")
@@ -598,36 +606,70 @@ class SpecimenTransformer(EntityTransformer):
 
         return len(rules)
 
-    def _rank_candidate(self, package):
+    def _score_candidate(self, package):
         """
-        Lower is better:
-          (priority_index, release_date_for_sort)
+        Compute a comparable score for candidate selection. Lower is better.
+
+        Score = (priority_index, release_date_sort_key)
+
+        priority_index:
+          index of first matching rule in priority_rules; non-matching sorts last.
+
+        release_date_sort_key:
+          parsed date; missing dates sort last/first per config.
         """
         experiment = package.get("experiment", {}) if isinstance(package, dict) else {}
-        pri = self._candidate_priority_index(experiment)
+
+        def _norm(v):
+            return v.strip() if isinstance(v, str) else None
+
+        platform = _norm(experiment.get("platform"))
+        library_strategy = _norm(experiment.get("library_strategy"))
+
+        rules = self._rep_cfg.get("priority_rules", []) or []
+        priority_index = len(rules)  # default: after all rules
+
+        for i, rule in enumerate(rules):
+            if not isinstance(rule, dict):
+                continue
+            rp = rule.get("platform")
+            rls = rule.get("library_strategy")
+
+            if rp is not None and rp != platform:
+                continue
+            if rls is not None and rls != library_strategy:
+                continue
+
+            priority_index = i
+            break
 
         rd = _parse_release_date(experiment.get("raw_data_release_date"))
 
-        tie = self._rep_cfg.get("tie_breaker", {}) or {}
+        tie = (self._rep_cfg.get("tie_breaker") or {})
         missing_policy = tie.get("missing_release_date", "last")
 
         if rd is None:
-            rd_sort = datetime.max.date() if missing_policy == "last" else datetime.min.date()
+            rd_sort = (
+                datetime.max.date()
+                if missing_policy == "last"
+                else datetime.min.date()
+            )
         else:
             rd_sort = rd
 
-        meta = {
+        # Keep reason minimal (useful for debugging without large payloads)
+        reason = {
             "platform": experiment.get("platform"),
             "library_strategy": experiment.get("library_strategy"),
             "raw_data_release_date": experiment.get("raw_data_release_date"),
-            "priority_index": pri,
+            "priority_index": priority_index,
         }
-        return (pri, rd_sort), meta
+
+        return (priority_index, rd_sort), reason
 
     def process_package(self, package):
         """
-        Override default merge/conflict behavior:
-        for specimens, keep ONLY a representative sample per specimen key.
+        Keep ONLY a representative sample per specimen key, chosen by _score_candidate.
         """
         package_id = package.get("experiment", {}).get("bpa_package_id", "unknown")
 
@@ -649,13 +691,14 @@ class SpecimenTransformer(EntityTransformer):
         # Track all contributing packages for this specimen key
         self.entity_to_package_map[entity_key].append(package_id)
 
-        rank, meta = self._rank_candidate(package)
+        score, reason = self._score_candidate(package)
 
         # First candidate becomes representative
-        if entity_key not in self.unique_entities:
+        if entity_key not in self._rep_state_by_key:
             self.unique_entities[entity_key] = entity_data.copy()
-            self._best_rank_by_key[entity_key] = rank
-            self._rep_package_id_by_key[entity_key] = package_id
+            self._rep_state_by_key[entity_key] = _RepresentativeState(
+                score=score, package_id=package_id
+            )
 
             rec = {"package_id": package_id, "action": "add_specimen", "data": entity_data}
             rec.update(self._key_dict(entity_key))
@@ -663,18 +706,20 @@ class SpecimenTransformer(EntityTransformer):
             return True
 
         # Replace if better than current representative
-        if rank < self._best_rank_by_key[entity_key]:
-            prev_pkg = self._rep_package_id_by_key.get(entity_key)
+        current = self._rep_state_by_key[entity_key]
+        if score < current.score:
+            prev_pkg = current.package_id
 
             self.unique_entities[entity_key] = entity_data.copy()
-            self._best_rank_by_key[entity_key] = rank
-            self._rep_package_id_by_key[entity_key] = package_id
+            self._rep_state_by_key[entity_key] = _RepresentativeState(
+                score=score, package_id=package_id
+            )
 
             rec = {
                 "package_id": package_id,
                 "action": "replace_representative",
                 "replaced_package_id": prev_pkg,
-                "reason": meta,
+                "reason": reason,
             }
             rec.update(self._key_dict(entity_key))
             self.transformation_changes.append(rec)
@@ -706,12 +751,11 @@ class SpecimenTransformer(EntityTransformer):
         for entity_key, packages in self.entity_to_package_map.items():
             self._nest(specimen_package_map, entity_key, packages)
 
-        for entity_key, rep_pkg in self._rep_package_id_by_key.items():
-            self._nest(specimen_representative_package_map, entity_key, rep_pkg)
+        for entity_key, state in self._rep_state_by_key.items():
+            self._nest(specimen_representative_package_map, entity_key, state.package_id)
 
         return {
             "unique_specimens": unique_specimens,
-            # representative selection does not do conflict merging
             "specimen_conflicts": {},
             "specimen_package_map": specimen_package_map,
             "specimen_representative_package_map": specimen_representative_package_map,
