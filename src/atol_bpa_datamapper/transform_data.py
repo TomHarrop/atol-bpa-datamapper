@@ -519,7 +519,6 @@ class SpecimenTransformer(EntityTransformer):
     """
 
     def __init__(self, ignored_fields=None):
-        # Change key fields here; the rest of the implementation adapts automatically.
         super().__init__(
             "specimen",
             ["taxon_id", "specimen_id", "collection_date"],
