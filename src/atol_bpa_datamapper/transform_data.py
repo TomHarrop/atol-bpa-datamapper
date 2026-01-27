@@ -510,15 +510,20 @@ class SpecimenTransformer(EntityTransformer):
     """
     Transform specimen data derived from packages into unique specimens.
 
-    Key: (taxon_id, specimen_id)
+    Key fields are defined by self.key_fields.
     Source fields:
-      - specimen_id from package['sample']
+      - specimen_id/collection_date/etc from package['sample']
       - taxon_id from package['organism']
-    Metadata: for now, use the entire sample section (agnostic / TBD subset later).
+    Metadata: for now, use the entire sample section + taxon_id.
     """
 
     def __init__(self, ignored_fields=None):
-        super().__init__("specimen", ["taxon_id", "specimen_id"], ignored_fields)
+        # Change key fields here; the rest of the implementation adapts automatically.
+        super().__init__(
+            "specimen",
+            ["taxon_id", "specimen_id", "collection_date"],
+            ignored_fields,
+        )
 
     def _get_entity_data(self, package):
         sample = package.get("sample")
@@ -527,66 +532,78 @@ class SpecimenTransformer(EntityTransformer):
         if not isinstance(sample, dict) or not isinstance(organism, dict):
             return None
 
-        taxon_id = organism.get("taxon_id")
-        specimen_id = sample.get("specimen_id")
-
-        if not taxon_id or not specimen_id:
-            return None
-
         merged = sample.copy()
-        merged["taxon_id"] = taxon_id
+        merged["taxon_id"] = organism.get("taxon_id")
+
+        # Require that all key fields exist (and are non-empty) in the merged dict
+        for k in self.key_fields:
+            v = merged.get(k)
+            if v is None:
+                return None
+            if isinstance(v, str) and not v.strip():
+                return None
+
         return merged
 
     def _get_entity_key(self, entity_data):
-        return (entity_data.get("taxon_id"), entity_data.get("specimen_id"))
+        # Build a composite key tuple in the same order as self.key_fields
+        return tuple(entity_data.get(k) for k in self.key_fields)
+
+    def _key_dict(self, entity_key):
+        """
+        Convert an entity_key (string or tuple) into a dict keyed by self.key_fields.
+        Ensures transformation_changes stays JSON-friendly and doesn't rely on arity.
+        """
+        if len(self.key_fields) == 1:
+            return {self.key_fields[0]: entity_key}
+
+        # entity_key should be a tuple here (normalized by base class)
+        return dict(zip(self.key_fields, entity_key))
 
     def _record_new_entity(self, entity_key, entity_data, package_id):
-        taxon_id, specimen_id = entity_key
-        self.transformation_changes.append(
-            {
-                "package_id": package_id,
-                "taxon_id": taxon_id,
-                "specimen_id": specimen_id,
-                "action": "add_specimen",
-                "data": entity_data,
-            }
-        )
+        rec = {"package_id": package_id, "action": "add_specimen", "data": entity_data}
+        rec.update(self._key_dict(entity_key))
+        self.transformation_changes.append(rec)
 
     def _record_entity_change(
         self, entity_key, package_id, has_conflicts, has_critical_conflicts
     ):
-        taxon_id, specimen_id = entity_key
-        self.transformation_changes.append(
-            {
-                "package_id": package_id,
-                "taxon_id": taxon_id,
-                "specimen_id": specimen_id,
-                "action": "merge",
-                "conflicts": has_conflicts,
-                "critical_conflicts": has_critical_conflicts,
-            }
-        )
+        rec = {
+            "package_id": package_id,
+            "action": "merge",
+            "conflicts": has_conflicts,
+            "critical_conflicts": has_critical_conflicts,
+        }
+        rec.update(self._key_dict(entity_key))
+        self.transformation_changes.append(rec)
+
+    def _nest(self, root, entity_key, value):
+        """
+        Insert value into nested dict structure using the parts of entity_key.
+        Uses str() for JSON-friendly dict keys.
+        """
+        if len(self.key_fields) == 1:
+            root[str(entity_key)] = value
+            return
+
+        d = root
+        for part in entity_key[:-1]:
+            d = d.setdefault(str(part), {})
+        d[str(entity_key[-1])] = value
 
     def _build_results(self, unique_entities):
-        # JSON-safe nested dicts: taxon_id -> specimen_id -> data
         unique_specimens = {}
         specimen_conflicts = {}
         specimen_package_map = {}
 
-        for (taxon_id, specimen_id), data in unique_entities.items():
-            tkey = str(taxon_id)
-            skey = str(specimen_id)
-            unique_specimens.setdefault(tkey, {})[skey] = data
+        for entity_key, data in unique_entities.items():
+            self._nest(unique_specimens, entity_key, data)
 
-        for (taxon_id, specimen_id), conflicts in self.entity_conflicts.items():
-            tkey = str(taxon_id)
-            skey = str(specimen_id)
-            specimen_conflicts.setdefault(tkey, {})[skey] = conflicts
+        for entity_key, conflicts in self.entity_conflicts.items():
+            self._nest(specimen_conflicts, entity_key, conflicts)
 
-        for (taxon_id, specimen_id), packages in self.entity_to_package_map.items():
-            tkey = str(taxon_id)
-            skey = str(specimen_id)
-            specimen_package_map.setdefault(tkey, {})[skey] = packages
+        for entity_key, packages in self.entity_to_package_map.items():
+            self._nest(specimen_package_map, entity_key, packages)
 
         return {
             "unique_specimens": unique_specimens,
