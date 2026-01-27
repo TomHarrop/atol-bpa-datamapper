@@ -12,8 +12,6 @@ from .arg_parser import parse_args_for_transform
 from .io import read_jsonl_file, write_json
 from .logger import logger, setup_logger
 import json
-import os
-import gzip
 from collections import defaultdict
 from datetime import datetime
 from abc import ABC, abstractmethod
@@ -49,7 +47,7 @@ class EntityTransformer(ABC):
 
     def _get_entity_data(self, package):
         """
-        For extracting entity data from a package.
+        Extract entity data from a package.
 
         Default behavior expects a top-level section matching self.entity_type.
         Override when entity data is derived (e.g. specimen derived from
@@ -706,6 +704,7 @@ def main():
     organism_results = organism_transformer.get_results()
     specimen_results = specimen_transformer.get_results()
 
+
     if not args.dry_run:
         # Write sample outputs
         if args.output:
@@ -747,6 +746,22 @@ def main():
         if args.experiments_output:
             logger.info(f"Writing experiments data to {args.experiments_output}")
             write_json(experiments_data, args.experiments_output)
+
+        if args.specimens_output:
+            logger.info(f"Writing specimens data to {args.specimens_output}")
+            write_json(specimen_results["unique_specimens"], args.specimens_output)
+
+        if args.specimen_conflicts:
+            logger.info(f"Writing specimen_conflicts to {args.specimen_conflicts}")
+            write_json(specimen_results["specimen_conflicts"], args.specimen_conflicts)
+
+        if args.specimen_package_map:
+            logger.info(f"Writing specimen_package_map to {args.specimen_package_map}")
+            write_json(specimen_results["specimen_package_map"], args.specimen_package_map)
+
+        if args.specimen_transformation_changes:
+            logger.info(f"Writing specimens data to {args.specimen_transformation_changes}")
+            write_json(specimen_results["specimen_transformation_changes"], args.specimen_transformation_changes)
 
     # Log summary statistics
     n_unique_samples = len(sample_results["unique_samples"])

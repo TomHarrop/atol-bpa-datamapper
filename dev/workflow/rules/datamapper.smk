@@ -93,6 +93,16 @@ rule transform_data:
         experiments_output=Path(
             result_path, "transform_data", "experiments_output.json.gz"
         ),
+        specimens_output=Path(result_path, "transform_data", "specimens_output.json.gz"),
+        specimen_conflicts=Path(
+            result_path, "transform_data", "specimen_conflicts.json.gz"
+        ),
+        specimen_package_map=Path(
+            result_path, "transform_data", "specimen_package_map.json.gz"
+        ),
+        specimen_transformation_changes=Path(
+            result_path, "transform_data", "specimen_transformation_changes.json.gz"
+        ),
     params:
         call=format_call("transform_data", use_container),
     log:
@@ -108,6 +118,10 @@ rule transform_data:
         "--organism_conflicts {output.organism_conflicts} "
         "--organism_package_map {output.organism_package_map} "
         "--experiments_output {output.experiments_output} "
+        "--specimens_output {output.specimens_output} "
+        "--specimen_conflicts {output.specimen_conflicts} "
+        "--specimen_package_map {output.specimen_package_map} "
+        "--specimen_transformation_changes {output.specimen_transformation_changes} "
         "<{input.mapped} "
         ">{output.transformed} "
         "2> {log.log}"

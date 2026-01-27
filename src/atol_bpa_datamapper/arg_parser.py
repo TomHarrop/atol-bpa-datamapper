@@ -77,6 +77,26 @@ def parse_args_for_transform():
         help="File to record extracted experiments data",
     )
 
+    transform_group.add_argument(
+        "--specimens_output",
+        help="File to record extracted specimens data",
+    )
+
+    transform_group.add_argument(
+        "--specimen_conflicts",
+    )
+
+    transform_group.add_argument(
+        "--specimen_package_map",
+    )
+
+    transform_group.add_argument(
+        "--specimen_transformation_changes",
+    )
+
+
+
+
     return parser.parse_args()
 
 
