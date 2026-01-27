@@ -11,9 +11,9 @@ This script processes mapped metadata packages to:
 from .arg_parser import parse_args_for_transform
 from .io import read_jsonl_file, write_json
 from .logger import logger, setup_logger
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import datetime
-from abc import ABC, abstractmethod
 import json
 import os
 
