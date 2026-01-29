@@ -13,7 +13,7 @@ from .io import read_jsonl_file, write_json
 from .logger import logger, setup_logger
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, date
 import json
 import os
 
@@ -232,6 +232,19 @@ class EntityTransformer(ABC):
         # Build the results dictionary with entity-specific keys
         results = self._build_results(unique_entities_without_critical_conflicts)
         return results
+
+    def get_results_keep_conflicts(self):
+        """
+        Get results WITHOUT filtering out entities with critical conflicts.
+        
+        Used for entities (like specimens) where we want to:
+        1. Report conflicts for transparency
+        2. Keep the representative selected by priority rules
+        
+        Returns:
+            dict: Results with all unique entities (conflicts reported but not excluded)
+        """
+        return self._build_results(self.unique_entities)
 
     @abstractmethod
     def _get_entity_key(self, entity_data):
@@ -510,22 +523,38 @@ class SpecimenTransformer(EntityTransformer):
     """
     Transform specimen data derived from packages into unique specimens.
 
-    Representative selection (when more than one sample exists for the same key):
-      1) priority_rules from JSON config
-      2) earliest experiment.raw_data_release_date
+    Specimens are uniquely identified by (taxon_id, specimen_id).
+
+    When multiple packages exist for the same specimen key:
+      1) Conflicts are detected and reported (like samples/organisms)
+      2) A representative package is selected using priority rules: -
+         Platform/library_strategy priority from config - Earliest
+         raw_data_release_date as tie-breaker
+      3) All candidates and selection reasoning are tracked
     """
 
     def __init__(self, ignored_fields=None):
         super().__init__(
             "specimen",
-            ["taxon_id", "specimen_id", "collection_date"],
+            ["taxon_id", "specimen_id"],
             ignored_fields,
         )
         self._rep_cfg = _load_specimen_representative_selection_config()
 
-        # entity_key -> (score_tuple, package_id)
-        # where score_tuple is comparable (lower is better)
+        # Track representative selection: entity_key -> (score_tuple, package_id, reason)
         self._rep_state_by_key = {}
+        
+        # Track all candidates for transparency: entity_key -> [(package_id, score, reason), ...]
+        self._candidates_by_key = defaultdict(list)
+
+    def get_results(self):
+        """
+        Override base class to keep specimens with conflicts.
+        
+        Unlike samples/organisms, specimens use representative selection,
+        so we report conflicts but don't exclude the specimen.
+        """
+        return self.get_results_keep_conflicts()
 
     def _get_entity_data(self, package):
         sample = package.get("sample")
@@ -536,12 +565,6 @@ class SpecimenTransformer(EntityTransformer):
 
         merged = sample.copy()
         merged["taxon_id"] = organism.get("taxon_id")
-
-        # Drop ignored fields from the OUTPUT entity data (but never drop key fields)
-        if self.ignored_fields:
-            for f in self.ignored_fields:
-                if f not in self.key_fields:
-                    merged.pop(f, None)
 
         # Require that all key fields exist (and are non-empty) in the merged dict
         for k in self.key_fields:
@@ -603,13 +626,18 @@ class SpecimenTransformer(EntityTransformer):
         experiment = package.get("experiment", {}) if isinstance(package, dict) else {}
 
         def _norm(v):
-            return v.strip() if isinstance(v, str) else None
+            """Normalize and uppercase for case-insensitive comparison"""
+            if not isinstance(v, str):
+                return None
+            s = v.strip()
+            return s.upper() if s else None
 
         platform = _norm(experiment.get("platform"))
         library_strategy = _norm(experiment.get("library_strategy"))
 
         rules = self._rep_cfg.get("priority_rules", []) or []
         priority_index = len(rules)  # default: after all rules
+        matched_rule = None
 
         for i, rule in enumerate(rules):
             if not isinstance(rule, dict):
@@ -626,13 +654,14 @@ class SpecimenTransformer(EntityTransformer):
             if rls is not None and library_strategy is None:
                 continue
 
-            # Now check actual matching
+            # Now check actual matching (case-insensitive via _norm)
             if rp is not None and rp != platform:
                 continue
             if rls is not None and rls != library_strategy:
                 continue
 
             priority_index = i
+            matched_rule = rule
             break
 
         rd = _parse_release_date(experiment.get("raw_data_release_date"))
@@ -642,26 +671,33 @@ class SpecimenTransformer(EntityTransformer):
 
         if rd is None:
             rd_sort = (
-                datetime.max.date()
+                date.max
                 if missing_policy == "last"
-                else datetime.min.date()
+                else date.min
             )
         else:
             rd_sort = rd
 
-        # Keep reason minimal (useful for debugging without large payloads)
+        # Build comprehensive reason for transparency
         reason = {
             "platform": experiment.get("platform"),
             "library_strategy": experiment.get("library_strategy"),
             "raw_data_release_date": experiment.get("raw_data_release_date"),
             "priority_index": priority_index,
+            "matched_rule": matched_rule,
+            "score": (priority_index, rd_sort.isoformat() if isinstance(rd_sort, date) else str(rd_sort))
         }
 
         return ((priority_index, rd_sort), reason)
 
     def process_package(self, package):
         """
-        Keep ONLY a representative sample per specimen key, chosen by _score_candidate.
+        Process package with conflict detection AND representative selection.
+        
+        This hybrid approach:
+        1. Detects conflicts between packages (like samples/organisms)
+        2. Selects a representative package based on priority rules
+        3. Tracks all candidates for transparency
         """
         package_id = package.get("experiment", {}).get("bpa_package_id", "unknown")
 
@@ -683,29 +719,80 @@ class SpecimenTransformer(EntityTransformer):
         # Track all contributing packages for this specimen key
         self.entity_to_package_map[entity_key].append(package_id)
 
+        # Score this candidate
         score, reason = self._score_candidate(package)
+        self._candidates_by_key[entity_key].append({
+            "package_id": package_id,
+            "score": reason["score"],
+            "reason": reason
+        })
 
-        # First candidate becomes representative
-        if entity_key not in self._rep_state_by_key:
+        # Pre-process (no-op for specimens, but maintains pattern)
+        self._pre_process_entity(entity_key, entity_data, package_id)
+
+        # Check for conflicts (standard conflict detection)
+        has_conflicts = False
+        has_critical_conflicts = False
+
+        if entity_key in self.unique_entities:
+            existing_entity = self.unique_entities[entity_key]
+            conflicts, has_critical_conflicts = self._detect_conflicts(
+                entity_key, existing_entity, entity_data, package_id
+            )
+
+            if conflicts:
+                has_conflicts = True
+                if entity_key not in self.entity_conflicts:
+                    self.entity_conflicts[entity_key] = {}
+
+                for field, conflict_values in conflicts.items():
+                    if field not in self.entity_conflicts[entity_key]:
+                        self.entity_conflicts[entity_key][field] = []
+
+                    for value in conflict_values:
+                        if value not in self.entity_conflicts[entity_key][field]:
+                            self.entity_conflicts[entity_key][field].append(value)
+
+            # Determine if we should replace the representative
+            current_score, current_pkg, _ = self._rep_state_by_key.get(entity_key, (None, None, None))
+            
+            if current_score is None or score < current_score:
+                # Replace with better candidate
+                self.unique_entities[entity_key] = entity_data.copy()
+                self._rep_state_by_key[entity_key] = (score, package_id, reason)
+
+                # Drop ignored fields AFTER conflict detection but before storage
+                if self.ignored_fields:
+                    for f in self.ignored_fields:
+                        if f not in self.key_fields:
+                            self.unique_entities[entity_key].pop(f, None)
+
+                rec = {
+                    "package_id": package_id,
+                    "action": "replace_representative",
+                    "replaced_package_id": current_pkg,
+                    "reason": reason,
+                    "conflicts": has_conflicts,
+                    "critical_conflicts": has_critical_conflicts,
+                }
+                rec.update(self._key_dict(entity_key))
+                self.transformation_changes.append(rec)
+        else:
+            # First package for this specimen key
             self.unique_entities[entity_key] = entity_data.copy()
-            self._rep_state_by_key[entity_key] = (score, package_id)
+            self._rep_state_by_key[entity_key] = (score, package_id, reason)
 
-            rec = {"package_id": package_id, "action": "add_specimen", "data": entity_data}
-            rec.update(self._key_dict(entity_key))
-            self.transformation_changes.append(rec)
-            return True
-
-        # Replace if better than current representative
-        current_score, current_pkg = self._rep_state_by_key[entity_key]
-        if score < current_score:
-            self.unique_entities[entity_key] = entity_data.copy()
-            self._rep_state_by_key[entity_key] = (score, package_id)
+            # Drop ignored fields from the stored entity
+            if self.ignored_fields:
+                for f in self.ignored_fields:
+                    if f not in self.key_fields:
+                        self.unique_entities[entity_key].pop(f, None)
 
             rec = {
                 "package_id": package_id,
-                "action": "replace_representative",
-                "replaced_package_id": current_pkg,
-                "reason": reason,
+                "action": "add_specimen",
+                "data": entity_data,
+                "reason": reason
             }
             rec.update(self._key_dict(entity_key))
             self.transformation_changes.append(rec)
@@ -716,6 +803,8 @@ class SpecimenTransformer(EntityTransformer):
         unique_specimens = {}
         specimen_package_map = {}
         specimen_representative_package_map = {}
+        specimen_candidates = {}
+        specimen_conflicts = {}
 
         for entity_key, data in unique_entities.items():
             self._nest(unique_specimens, entity_key, data)
@@ -723,14 +812,25 @@ class SpecimenTransformer(EntityTransformer):
         for entity_key, packages in self.entity_to_package_map.items():
             self._nest(specimen_package_map, entity_key, packages)
 
-        for entity_key, (_score, package_id) in self._rep_state_by_key.items():
+        for entity_key, (_score, package_id, _reason) in self._rep_state_by_key.items():
             self._nest(specimen_representative_package_map, entity_key, package_id)
+
+        # Build candidates map for transparency
+        for entity_key, candidates in self._candidates_by_key.items():
+            # Sort by score for readability
+            sorted_candidates = sorted(candidates, key=lambda c: c["score"])
+            self._nest(specimen_candidates, entity_key, sorted_candidates)
+
+        # Nest conflicts too!
+        for entity_key, conflicts in self.entity_conflicts.items():
+            self._nest(specimen_conflicts, entity_key, conflicts)
 
         return {
             "unique_specimens": unique_specimens,
-            "specimen_conflicts": {},
+            "specimen_conflicts": specimen_conflicts,
             "specimen_package_map": specimen_package_map,
             "specimen_representative_package_map": specimen_representative_package_map,
+            "specimen_candidates": specimen_candidates,  # NEW: all candidates with scores
             "specimen_transformation_changes": self.transformation_changes,
         }
 
