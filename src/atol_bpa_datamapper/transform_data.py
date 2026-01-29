@@ -585,6 +585,80 @@ class SpecimenTransformer(EntityTransformer):
             d = d.setdefault(str(part), {})
         d[str(entity_key[-1])] = value
 
+    def _score_candidate(self, package):
+        """
+        Compute a comparable score for candidate selection. Lower is better.
+
+        Score = (priority_index, release_date_sort_key)
+
+        priority_index:
+          index of first matching rule in priority_rules; non-matching sorts last.
+
+        release_date_sort_key:
+          parsed date; missing dates sort last/first per config.
+        
+        Returns:
+            tuple: ((priority_index, release_date_sort_key), reason_dict)
+        """
+        experiment = package.get("experiment", {}) if isinstance(package, dict) else {}
+
+        def _norm(v):
+            return v.strip() if isinstance(v, str) else None
+
+        platform = _norm(experiment.get("platform"))
+        library_strategy = _norm(experiment.get("library_strategy"))
+
+        rules = self._rep_cfg.get("priority_rules", []) or []
+        priority_index = len(rules)  # default: after all rules
+
+        for i, rule in enumerate(rules):
+            if not isinstance(rule, dict):
+                logger.warning(f"Skipping invalid rule at index {i}: {rule}")
+                continue
+            
+            rp = _norm(rule.get("platform"))
+            rls = _norm(rule.get("library_strategy"))
+
+            # Skip rule if it requires platform but we don't have one
+            if rp is not None and platform is None:
+                continue
+            # Skip rule if it requires library_strategy but we don't have one
+            if rls is not None and library_strategy is None:
+                continue
+
+            # Now check actual matching
+            if rp is not None and rp != platform:
+                continue
+            if rls is not None and rls != library_strategy:
+                continue
+
+            priority_index = i
+            break
+
+        rd = _parse_release_date(experiment.get("raw_data_release_date"))
+
+        tie = self._rep_cfg.get("tie_breaker") or {}
+        missing_policy = tie.get("missing_release_date", "last")
+
+        if rd is None:
+            rd_sort = (
+                datetime.max.date()
+                if missing_policy == "last"
+                else datetime.min.date()
+            )
+        else:
+            rd_sort = rd
+
+        # Keep reason minimal (useful for debugging without large payloads)
+        reason = {
+            "platform": experiment.get("platform"),
+            "library_strategy": experiment.get("library_strategy"),
+            "raw_data_release_date": experiment.get("raw_data_release_date"),
+            "priority_index": priority_index,
+        }
+
+        return ((priority_index, rd_sort), reason)
+
     def process_package(self, package):
         """
         Keep ONLY a representative sample per specimen key, chosen by _score_candidate.
