@@ -8,7 +8,7 @@ This script processes mapped metadata packages to:
 4. Extract unique organisms based on organism_grouping_key
 """
 
-from .arg_parser import parse_args_for_transform
+from .arg_parser import get_config_filepath, parse_args_for_transform
 from .io import read_jsonl_file, write_json
 from .logger import logger, setup_logger
 from abc import ABC, abstractmethod
@@ -16,6 +16,7 @@ from collections import defaultdict
 from datetime import datetime, date
 import json
 import os
+
 
 class EntityTransformer(ABC):
     """
@@ -26,12 +27,13 @@ class EntityTransformer(ABC):
     def __init__(self, entity_type, key_fields, ignored_fields=None):
         """
         Args:
-            entity_type: Logical entity type label (e.g. 'organism', 'sample', 'specimen')
+            entity_type: The type of entity being transformed (e.g. 'organism', 'sample', 'specimen')
             key_fields: Field name OR list/tuple of field names that make up the unique identifier
+            ignored_fields: List of field names that should be ignored when determining uniqueness
         """
         self.entity_type = entity_type
 
-        # Handle multiple keys e.g. for specimen (taxon_id, specimen_id)
+        # Handle multiple keys
         if isinstance(key_fields, (list, tuple)):
             self.key_fields = list(key_fields)
         else:
@@ -42,7 +44,6 @@ class EntityTransformer(ABC):
         self.entity_to_package_map = defaultdict(list)
         self.transformation_changes = []
         self.ignored_fields = ignored_fields or []
-
         self.exclude_fields = list(self.key_fields)
 
     def _get_entity_data(self, package):
@@ -58,9 +59,9 @@ class EntityTransformer(ABC):
 
     def _normalize_entity_key(self, raw_key):
         """
-        Normalize entity keys for internal storage:
-          - str -> stripped str
-          - (a, b) / [a, b] -> tuple(a, b) (with stripped strings)
+            - Strip all strings
+            - Convert lists or tuples as tuples
+
         Returns None when invalid.
         """
         if raw_key is None:
@@ -91,10 +92,15 @@ class EntityTransformer(ABC):
             return None
         return raw_key
 
-    def process_package(self, package):
+    def _map_entity_to_package(self, package):
         """
-        Process a single package to extract entity information.
+        Get the entity_data and entity_key, add the key to the entity_to_package_map.
+        Return (package_id, entity_data, entity_key)
+
+        :param self: Description
+        :param package: Description
         """
+
         package_id = package.get("experiment", {}).get("bpa_package_id", "unknown")
 
         # Get entity data (may be derived)
@@ -103,7 +109,7 @@ class EntityTransformer(ABC):
             logger.warning(
                 f"No {self.entity_type} data found/derived in package {package_id}, skipping"
             )
-            return False
+            return (package_id, None, None)
 
         # Get and normalize entity key (string or tuple)
         raw_key = self._get_entity_key(entity_data)
@@ -112,10 +118,20 @@ class EntityTransformer(ABC):
             logger.warning(
                 f"No valid {self.entity_type} key found in package {package_id}, skipping"
             )
-            return False
+            return (package_id, entity_data, None)
 
         # Track entity to package map
         self.entity_to_package_map[entity_key].append(package_id)
+
+        return (package_id, entity_data, entity_key)
+
+    def process_package(self, package):
+        """
+        Process a single package to extract entity information.
+        """
+        package_id, entity_data, entity_key = self._map_entity_to_package(package)
+        if entity_data is None or entity_key is None:
+            return False
 
         # Process entity-specific data before conflict detection
         self._pre_process_entity(entity_key, entity_data, package_id)
@@ -236,11 +252,11 @@ class EntityTransformer(ABC):
     def get_results_keep_conflicts(self):
         """
         Get results WITHOUT filtering out entities with critical conflicts.
-        
+
         Used for entities (like specimens) where we want to:
         1. Report conflicts for transparency
         2. Keep the representative selected by priority rules
-        
+
         Returns:
             dict: Results with all unique entities (conflicts reported but not excluded)
         """
@@ -526,11 +542,11 @@ class SpecimenTransformer(EntityTransformer):
     Specimens are uniquely identified by (taxon_id, specimen_id).
 
     When multiple packages exist for the same specimen key:
-      1) Conflicts are detected and reported (like samples/organisms)
-      2) A representative package is selected using priority rules: -
-         Platform/library_strategy priority from config - Earliest
-         raw_data_release_date as tie-breaker
-      3) All candidates and selection reasoning are tracked
+      1) Conflicts are detected and reported
+      2) A representative package is selected using priority rules configured
+         in the config directory.
+      3) Candidates and selection reasoning are tracked to
+         --specimen_transformation_changes
     """
 
     def __init__(self, ignored_fields=None):
@@ -541,16 +557,18 @@ class SpecimenTransformer(EntityTransformer):
         )
         self._rep_cfg = _load_specimen_representative_selection_config()
 
-        # Track representative selection: entity_key -> (score_tuple, package_id, reason)
+        # Track representative selection: entity_key -> (score_tuple,
+        # package_id, reason)
         self._rep_state_by_key = {}
-        
-        # Track all candidates for transparency: entity_key -> [(package_id, score, reason), ...]
+
+        # Record all samples for a specimen: entity_key -> [(package_id, score,
+        # reason), ...]
         self._candidates_by_key = defaultdict(list)
 
     def get_results(self):
         """
         Override base class to keep specimens with conflicts.
-        
+
         Unlike samples/organisms, specimens use representative selection,
         so we report conflicts but don't exclude the specimen.
         """
@@ -566,7 +584,7 @@ class SpecimenTransformer(EntityTransformer):
         merged = sample.copy()
         merged["taxon_id"] = organism.get("taxon_id")
 
-        # Require that all key fields exist (and are non-empty) in the merged dict
+        # Drop this package if key_fields are missing
         for k in self.key_fields:
             v = merged.get(k)
             if v is None:
@@ -577,7 +595,6 @@ class SpecimenTransformer(EntityTransformer):
         return merged
 
     def _get_entity_key(self, entity_data):
-        # Build a composite key tuple in the same order as self.key_fields
         return tuple(entity_data.get(k) for k in self.key_fields)
 
     def _key_dict(self, entity_key):
@@ -593,7 +610,7 @@ class SpecimenTransformer(EntityTransformer):
         """
         Insert value into nested dict structure using the parts of entity_key.
         Uses str() for JSON-friendly dict keys.
-        
+
         For single key fields, stores directly as root[key] = value.
         For multiple key fields (tuple), creates nested structure:
           e.g., (taxon_id, specimen_id, date) -> root[taxon_id][specimen_id][date] = value
@@ -610,42 +627,32 @@ class SpecimenTransformer(EntityTransformer):
 
     def _score_candidate(self, package):
         """
-        Compute a comparable score for candidate selection. Lower is better.
+        Check the candidate against the priority rules and provide a score
+        (lower is better) and a reason_dict for tracking.
 
-        Score = (priority_index, release_date_sort_key)
+        Return a tuple of ((priority_index, release_date_sort_key),
+        reason_dict)
 
         priority_index:
-          index of first matching rule in priority_rules; non-matching sorts last.
+          index of first matching rule
 
         release_date_sort_key:
           parsed date; missing dates sort last/first per config.
-        
-        Returns:
-            tuple: ((priority_index, release_date_sort_key), reason_dict)
+
         """
         experiment = package.get("experiment", {}) if isinstance(package, dict) else {}
 
-        def _norm(v):
-            """Normalize and uppercase for case-insensitive comparison"""
-            if not isinstance(v, str):
-                return None
-            s = v.strip()
-            return s.upper() if s else None
-
-        platform = _norm(experiment.get("platform"))
-        library_strategy = _norm(experiment.get("library_strategy"))
+        platform = experiment.get("platform")
+        library_strategy = experiment.get("library_strategy")
 
         rules = self._rep_cfg.get("priority_rules", []) or []
-        priority_index = len(rules)  # default: after all rules
+        # default to highest score, override if we match
+        priority_index = len(rules)
         matched_rule = None
 
         for i, rule in enumerate(rules):
-            if not isinstance(rule, dict):
-                logger.warning(f"Skipping invalid rule at index {i}: {rule}")
-                continue
-            
-            rp = _norm(rule.get("platform"))
-            rls = _norm(rule.get("library_strategy"))
+            rp = rule.get("platform")
+            rls =rule.get("library_strategy")
 
             # Skip rule if it requires platform but we don't have one
             if rp is not None and platform is None:
@@ -654,12 +661,13 @@ class SpecimenTransformer(EntityTransformer):
             if rls is not None and library_strategy is None:
                 continue
 
-            # Now check actual matching (case-insensitive via _norm)
+            # Check match
             if rp is not None and rp != platform:
                 continue
             if rls is not None and rls != library_strategy:
                 continue
 
+            # if we get here, we have a match
             priority_index = i
             matched_rule = rule
             break
@@ -670,62 +678,43 @@ class SpecimenTransformer(EntityTransformer):
         missing_policy = tie.get("missing_release_date", "last")
 
         if rd is None:
-            rd_sort = (
-                date.max
-                if missing_policy == "last"
-                else date.min
-            )
+            rd_sort = date.max if missing_policy == "last" else date.min
         else:
             rd_sort = rd
 
-        # Build comprehensive reason for transparency
+        # Build comprehensive reason for this package (tracking info)
         reason = {
             "platform": experiment.get("platform"),
             "library_strategy": experiment.get("library_strategy"),
             "raw_data_release_date": experiment.get("raw_data_release_date"),
             "priority_index": priority_index,
             "matched_rule": matched_rule,
-            "score": (priority_index, rd_sort.isoformat() if isinstance(rd_sort, date) else str(rd_sort))
+            "score": (
+                priority_index,
+                rd_sort.isoformat() if isinstance(rd_sort, date) else str(rd_sort),
+            ),
         }
 
         return ((priority_index, rd_sort), reason)
 
     def process_package(self, package):
         """
-        Process package with conflict detection AND representative selection.
-        
-        This hybrid approach:
-        1. Detects conflicts between packages (like samples/organisms)
-        2. Selects a representative package based on priority rules
-        3. Tracks all candidates for transparency
+        For specimens we do conflict detection AND representative selection
+
+        1. Detect conflicts between packages
+        2. Select a representative package
+        3. Track score for all candidates
         """
-        package_id = package.get("experiment", {}).get("bpa_package_id", "unknown")
 
-        entity_data = self._get_entity_data(package)
-        if not entity_data:
-            logger.warning(
-                f"No {self.entity_type} data found/derived in package {package_id}, skipping"
-            )
+        package_id, entity_data, entity_key = self._map_entity_to_package(package)
+        if entity_data is None or entity_key is None:
             return False
 
-        raw_key = self._get_entity_key(entity_data)
-        entity_key = self._normalize_entity_key(raw_key)
-        if entity_key is None:
-            logger.warning(
-                f"No valid {self.entity_type} key found in package {package_id}, skipping"
-            )
-            return False
-
-        # Track all contributing packages for this specimen key
-        self.entity_to_package_map[entity_key].append(package_id)
-
-        # Score this candidate
+        # For specimens we score every candidate
         score, reason = self._score_candidate(package)
-        self._candidates_by_key[entity_key].append({
-            "package_id": package_id,
-            "score": reason["score"],
-            "reason": reason
-        })
+        self._candidates_by_key[entity_key].append(
+            {"package_id": package_id, "score": reason["score"], "reason": reason}
+        )
 
         # Pre-process (no-op for specimens, but maintains pattern)
         self._pre_process_entity(entity_key, entity_data, package_id)
@@ -754,8 +743,10 @@ class SpecimenTransformer(EntityTransformer):
                             self.entity_conflicts[entity_key][field].append(value)
 
             # Determine if we should replace the representative
-            current_score, current_pkg, _ = self._rep_state_by_key.get(entity_key, (None, None, None))
-            
+            current_score, current_pkg, _ = self._rep_state_by_key.get(
+                entity_key, (None, None, None)
+            )
+
             if current_score is None or score < current_score:
                 # Replace with better candidate
                 self.unique_entities[entity_key] = entity_data.copy()
@@ -792,7 +783,7 @@ class SpecimenTransformer(EntityTransformer):
                 "package_id": package_id,
                 "action": "add_specimen",
                 "data": entity_data,
-                "reason": reason
+                "reason": reason,
             }
             rec.update(self._key_dict(entity_key))
             self.transformation_changes.append(rec)
@@ -880,13 +871,8 @@ def extract_experiment(experiments_data, package):
 
 
 def _load_specimen_ignored_fields_config():
-    """
-    Load specimen ignored fields from:
-      src/atol_bpa_datamapper/config/specimen_ignored_fields.json
-    """
-    config_path = os.path.join(
-        os.path.dirname(__file__), "config", "specimen_ignored_fields.json"
-    )
+
+    config_path = get_config_filepath("specimen_ignored_fields.json")
 
     with open(config_path, "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -901,11 +887,7 @@ def _load_specimen_ignored_fields_config():
 
 
 def _load_specimen_representative_selection_config():
-    config_path = os.path.join(
-        os.path.dirname(__file__),
-        "config",
-        "specimen_representative_selection.json",
-    )
+    config_path = get_config_filepath("specimen_representative_selection.json")
 
     with open(config_path, "r", encoding="utf-8") as f:
         cfg = json.load(f)
@@ -941,7 +923,7 @@ def _parse_release_date(value):
     if not s:
         return None
     try:
-        # supports "YYYY-MM-DD" and ISO timestamps (we only care about date)
+        # parse to "YYYY-MM-DD", ignore time of day
         return datetime.fromisoformat(s[:10]).date()
     except Exception:
         return None
@@ -999,7 +981,7 @@ def main():
         ignored_fields="organism_ignored_fields",
     )
 
-    # Specimen ignored fields are config-only (no CLI)
+    # Specimen ignored fields are configured by JSON file (no CLI option)
     specimen_ignored_fields_list = _load_specimen_ignored_fields_config()
     specimen_transformer = get_transformer(
         SpecimenTransformer,

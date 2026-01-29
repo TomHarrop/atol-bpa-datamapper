@@ -71,7 +71,6 @@ def parse_args_for_transform():
 
     transform_group.add_argument(
         "--specimens_output",
-        help="File to record extracted specimens data",
     )
 
     transform_group.add_argument(
