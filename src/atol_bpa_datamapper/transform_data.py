@@ -566,6 +566,25 @@ class SpecimenTransformer(EntityTransformer):
             return {self.key_fields[0]: entity_key}
         return dict(zip(self.key_fields, entity_key))
 
+    def _nest(self, root, entity_key, value):
+        """
+        Insert value into nested dict structure using the parts of entity_key.
+        Uses str() for JSON-friendly dict keys.
+        
+        For single key fields, stores directly as root[key] = value.
+        For multiple key fields (tuple), creates nested structure:
+          e.g., (taxon_id, specimen_id, date) -> root[taxon_id][specimen_id][date] = value
+        """
+        if len(self.key_fields) == 1:
+            root[str(entity_key)] = value
+            return
+
+        # entity_key should be a tuple here (normalized by base class)
+        d = root
+        for part in entity_key[:-1]:
+            d = d.setdefault(str(part), {})
+        d[str(entity_key[-1])] = value
+
     def process_package(self, package):
         """
         Keep ONLY a representative sample per specimen key, chosen by _score_candidate.
