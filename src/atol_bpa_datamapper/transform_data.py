@@ -710,16 +710,19 @@ class SpecimenTransformer(EntityTransformer):
         if entity_data is None or entity_key is None:
             return False
 
-        # For specimens we score every candidate
+        # For specimens we score every candidate and include the results in
+        # tracking
         score, reason = self._score_candidate(package)
         self._candidates_by_key[entity_key].append(
             {"package_id": package_id, "score": reason["score"], "reason": reason}
         )
 
-        # Pre-process (no-op for specimens, but maintains pattern)
+        # doesn't do anything for specimens, in case we need it later
         self._pre_process_entity(entity_key, entity_data, package_id)
 
-        # Check for conflicts (standard conflict detection)
+        # Check for conflicts. It's slightly different for specimens because we
+        # need to check if the current package is a better representative than
+        # the current representative.
         has_conflicts = False
         has_critical_conflicts = False
 
@@ -752,7 +755,8 @@ class SpecimenTransformer(EntityTransformer):
                 self.unique_entities[entity_key] = entity_data.copy()
                 self._rep_state_by_key[entity_key] = (score, package_id, reason)
 
-                # Drop ignored fields AFTER conflict detection but before storage
+                # Drop the ignored_fields here so they are not included the
+                # output specimen metadata
                 if self.ignored_fields:
                     for f in self.ignored_fields:
                         if f not in self.key_fields:
@@ -769,11 +773,12 @@ class SpecimenTransformer(EntityTransformer):
                 rec.update(self._key_dict(entity_key))
                 self.transformation_changes.append(rec)
         else:
-            # First package for this specimen key
+            # First package for this specimen key so it's the representative by
+            # default
             self.unique_entities[entity_key] = entity_data.copy()
             self._rep_state_by_key[entity_key] = (score, package_id, reason)
 
-            # Drop ignored fields from the stored entity
+            # Drop ignored fields as above
             if self.ignored_fields:
                 for f in self.ignored_fields:
                     if f not in self.key_fields:
