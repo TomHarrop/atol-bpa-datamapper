@@ -249,19 +249,6 @@ class EntityTransformer(ABC):
         results = self._build_results(unique_entities_without_critical_conflicts)
         return results
 
-    def get_results_keep_conflicts(self):
-        """
-        Get results WITHOUT filtering out entities with critical conflicts.
-
-        Used for entities (like specimens) where we want to:
-        1. Report conflicts for transparency
-        2. Keep the representative selected by priority rules
-
-        Returns:
-            dict: Results with all unique entities (conflicts reported but not excluded)
-        """
-        return self._build_results(self.unique_entities)
-
     @abstractmethod
     def _get_entity_key(self, entity_data):
         """
@@ -567,12 +554,13 @@ class SpecimenTransformer(EntityTransformer):
 
     def get_results(self):
         """
-        Override base class to keep specimens with conflicts.
+        Override base class to keep specimens with conflicts, using the
+        SpecimenTransformer _build_results() method.
 
-        Unlike samples/organisms, specimens use representative selection,
-        so we report conflicts but don't exclude the specimen.
+        Unlike samples/organisms, we don't exclude the entities with critical
+        conflicts.
         """
-        return self.get_results_keep_conflicts()
+        return self._build_results(self.unique_entities)
 
     def _get_entity_data(self, package):
         sample = package.get("sample")
@@ -608,8 +596,7 @@ class SpecimenTransformer(EntityTransformer):
 
     def _nest(self, root, entity_key, value):
         """
-        Insert value into nested dict structure using the parts of entity_key.
-        Uses str() for JSON-friendly dict keys.
+        Handle multiple fields in the specimen key 
 
         For single key fields, stores directly as root[key] = value.
         For multiple key fields (tuple), creates nested structure:
@@ -619,7 +606,7 @@ class SpecimenTransformer(EntityTransformer):
             root[str(entity_key)] = value
             return
 
-        # entity_key should be a tuple here (normalized by base class)
+        # entity_key should be a tuple
         d = root
         for part in entity_key[:-1]:
             d = d.setdefault(str(part), {})
@@ -811,13 +798,13 @@ class SpecimenTransformer(EntityTransformer):
         for entity_key, (_score, package_id, _reason) in self._rep_state_by_key.items():
             self._nest(specimen_representative_package_map, entity_key, package_id)
 
-        # Build candidates map for transparency
+        # Report score for each candidate
         for entity_key, candidates in self._candidates_by_key.items():
-            # Sort by score for readability
+            # Sort by score
             sorted_candidates = sorted(candidates, key=lambda c: c["score"])
             self._nest(specimen_candidates, entity_key, sorted_candidates)
 
-        # Nest conflicts too!
+        # Report conflicts
         for entity_key, conflicts in self.entity_conflicts.items():
             self._nest(specimen_conflicts, entity_key, conflicts)
 
@@ -826,7 +813,7 @@ class SpecimenTransformer(EntityTransformer):
             "specimen_conflicts": specimen_conflicts,
             "specimen_package_map": specimen_package_map,
             "specimen_representative_package_map": specimen_representative_package_map,
-            "specimen_candidates": specimen_candidates,  # NEW: all candidates with scores
+            "specimen_candidates": specimen_candidates,
             "specimen_transformation_changes": self.transformation_changes,
         }
 
@@ -1021,6 +1008,7 @@ def main():
 
     logger.info(f"Processed {n_packages} packages")
     logger.info(f"Extracted sample data from {n_processed_samples} packages")
+    logger.info(f"Extracted specimen data from {n_processed_specimens} packages")
     logger.info(f"Extracted organism data from {n_processed_organisms} packages")
     logger.info(f"Extracted experiment data from {n_processed_experiments} packages")
 
@@ -1070,6 +1058,7 @@ def main():
             logger.info(f"Writing experiments data to {args.experiments_output}")
             write_json(experiments_data, args.experiments_output)
 
+        # write specimen outputs
         if args.specimens_output:
             logger.info(f"Writing specimens to {args.specimens_output}")
             write_json(specimen_results["unique_specimens"], args.specimens_output)
@@ -1095,16 +1084,17 @@ def main():
 
     # Log summary statistics
     n_unique_samples = len(sample_results["unique_samples"])
+    n_unique_specimens = len(specimen_results["unique_specimens"])
     n_sample_conflicts = len(sample_results["sample_conflicts"])
     n_unique_organisms = len(organism_results["unique_organisms"])
     n_organism_conflicts = len(organism_results["organism_conflicts"])
 
     logger.info(f"Found {n_unique_samples} unique samples")
     logger.info(f"Found {n_sample_conflicts} samples with conflicts")
+    logger.info(f"Found {n_unique_specimens} unique specimens")
     logger.info(f"Found {n_unique_organisms} unique organisms")
     logger.info(f"Found {n_organism_conflicts} organisms with conflicts")
     logger.info(f"Found {len(experiments_data)} experiments")
-    logger.info(f"Found {len(specimen_results['unique_specimens'])} specimens")
 
 
 if __name__ == "__main__":
