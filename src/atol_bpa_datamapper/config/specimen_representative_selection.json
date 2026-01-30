@@ -1,0 +1,26 @@
+{
+    "priority_rules": [
+        {
+            "platform": "PACBIO_SMRT"
+        },
+        {
+            "platform": "OXFORD_NANOPORE"
+        },
+        {
+            "platform": "ILLUMINA",
+            "library_strategy": "Hi-C"
+        },
+        {
+            "platform": "ILLUMINA",
+            "library_strategy": "WGS"
+        },
+        {
+            "platform": "ILLUMINA",
+            "library_strategy": "RNA-Seq"
+        }
+    ],
+    "tie_breaker": {
+        "raw_data_release_date": "earliest",
+        "missing_release_date": "last"
+    }
+}
