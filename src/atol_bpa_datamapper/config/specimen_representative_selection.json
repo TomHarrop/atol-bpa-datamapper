@@ -1,0 +1,48 @@
+{
+    "priority_rules": [
+        {
+            "platform": "PACBIO_SMRT",
+            "library_strategy": "WGS"
+        },
+        {
+            "platform": "PACBIO_SMRT",
+            "library_strategy": "WGA"
+        },
+        {
+            "platform": "OXFORD_NANOPORE",
+            "library_strategy": "WGS"
+        },
+        {
+            "platform": "OXFORD_NANOPORE",
+            "library_strategy": "WGA"
+        },
+        {
+            "platform": "ILLUMINA",
+            "library_strategy": "Hi-C"
+        },
+        {
+            "platform": "ILLUMINA",
+            "library_strategy": "RNA-Seq"
+        },
+        {
+            "platform": "PACBIO_SMRT",
+            "library_strategy": "RNA-Seq"
+        },
+        {
+            "platform": "OXFORD_NANOPORE",
+            "library_strategy": "RNA-Seq"
+        },
+        {
+            "platform": "ILLUMINA",
+            "library_strategy": "WGS"
+        },
+        {
+            "platform": "ILLUMINA",
+            "library_strategy": "WGA"
+        }
+    ],
+    "tie_breaker": {
+        "raw_data_release_date": "earliest",
+        "missing_release_date": "last"
+    }
+}

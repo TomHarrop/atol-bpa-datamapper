@@ -674,9 +674,6 @@
             "bpa-plants": [
                 "bpa-plants"
             ],
-            "bpa-wheat-pathogens-genomes": [
-                "bpa-wheat-pathogens-genomes"
-            ],
             "cipps": [
                 "cipps"
             ],
@@ -688,9 +685,6 @@
             ],
             "grasslands": [
                 "grasslands"
-            ],
-            "plant-pathogen": [
-                "plant-pathogen"
             ],
             "threatened-species": [
                 "threatened-species"

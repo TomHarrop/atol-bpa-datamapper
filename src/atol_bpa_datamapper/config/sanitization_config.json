@@ -40,6 +40,10 @@
         "lifestage": [
             "text_sanitization",
             "empty_string_sanitization"
+        ],
+        "specimen_id": [
+            "text_sanitization",
+            "empty_string_sanitization"
         ]
     },
     "sanitization_rules": {
@@ -54,15 +58,20 @@
         }
     },
     "null_values": [
+        "?",
         "",
         "N/A",
         "NA",
         "NAN",
+        "NO VOUCHER",
         "NONE",
         "NOT DETEMINED",
         "NOT DETERMINED",
         "NULL",
+        "PENDING",
         "SP",
+        "TBA",
+        "TBC",
         "UNDETERMINED SP",
         "UNDETERMINED",
         "UNKNOWN",
