@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.2.0 (2026-02-13)
+
+### New
+
+* Identify specimen information for samples.
+
+  new: Identify specimen information for samples
+
+### Other
+
+* Add NA specimen strings to config.
+
+* Merge pull request #36 from TomHarrop/condense_schema_and_vocab.
+
+  add condense code to read_schema script, should probably split
+
+* Add condense code to read_schema script, should probably split.
+
+* Update config and test workflow.
+
 ## v0.1.17 (2025-12-12)
 
 ### Changes
