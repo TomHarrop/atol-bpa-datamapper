@@ -8,7 +8,7 @@ import hashlib
 import pandas as pd
 import shelve
 import skbio.io
-
+from .utils.common import parse_taxon_id
 import re
 
 
@@ -586,20 +586,7 @@ class OrganismSection(dict):
         self.has_taxid_at_accepted_level = self.rank in ncbi_taxdump.accepted_ranks
 
     def format_taxon_id(self):
-        # check if the raw_taxon_id is an int
-        if self.raw_taxon_id is None:
-            return
-
         try:
-            self.taxon_id = int(self.raw_taxon_id)
-            self.raw_taxon_id_is_int = True
-            self.raw_taxon_id_coerced_to_int = False
-        except (ValueError, TypeError):
-            self.raw_taxon_id_is_int = False
-            # check if we can coerce taxon_id to int
-            try:
-                self.taxon_id = int(float(self.raw_taxon_id))
-                self.raw_taxon_id_coerced_to_int = True
-            except (ValueError, TypeError):
-                self.raw_taxon_id_coerced_to_int = False
-                self.taxon_id = None
+            self.taxon_id = parse_taxon_id(self.raw_taxon_id)
+        except (TypeError, ValueError):
+            self.taxon_id = None
