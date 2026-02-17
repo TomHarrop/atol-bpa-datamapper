@@ -2,7 +2,7 @@ from .arg_parser import parse_args_for_mapping
 from .config_parser import MetadataMap
 from .io import read_input, OutputWriter, write_mapping_log_to_csv, write_json
 from .logger import logger, setup_logger
-from .organism_mapper import OrganismSection, NcbiTaxdump
+from .organism_mapper import OrganismSection
 from collections import Counter
 
 
@@ -17,27 +17,17 @@ def main():
 
     # read the schemas
     package_level_map = MetadataMap(
-        args.package_field_mapping_file, 
+        args.package_field_mapping_file,
         args.value_mapping_file,
-        args.sanitization_config_file
+        args.sanitization_config_file,
     )
     resource_level_map = MetadataMap(
-        args.resource_field_mapping_file, 
+        args.resource_field_mapping_file,
         args.value_mapping_file,
-        args.sanitization_config_file
+        args.sanitization_config_file,
     )
 
     null_values = package_level_map.sanitization_config.get("null_values")
-
-    # set up taxonomy data
-    ncbi_taxdump = NcbiTaxdump(
-        nodes_file=args.nodes,
-        names_file=args.names,
-        taxids_to_busco_dataset_mapping=args.taxids_to_busco_dataset_mapping,
-        taxids_to_augustus_dataset_mapping=args.taxids_to_augustus_dataset_mapping,
-        cache_dir=args.cache_dir,
-        resolve_to_rank="species",
-    )
 
     # set up counters
     all_fields = sorted(
@@ -86,9 +76,7 @@ def main():
 
             # map the organism
             organism_section = OrganismSection(
-                package.id,
                 package.mapped_metadata["organism"],
-                ncbi_taxdump,
                 null_values,
             )
             grouping_log[package.id] = [organism_section.mapped_metadata]

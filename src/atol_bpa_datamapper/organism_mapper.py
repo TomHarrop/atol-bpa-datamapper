@@ -5,7 +5,7 @@ from .utils.common import parse_taxon_id
 
 class OrganismSection(dict):
 
-    def __init__(self, package_id, package_data, null_values=None):
+    def __init__(self, package_data, null_values=None):
 
         super().__init__()
         self.update(package_data)
