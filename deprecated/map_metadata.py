@@ -15,7 +15,3 @@ def main():
         resolve_to_rank="species",
     )
 
-    if not args.dry_run:
-        if args.grouping_log:
-            logger.info(f"Writing grouping log to {args.grouping_log}")
-            write_mapping_log_to_csv(grouping_log, args.grouping_log)
