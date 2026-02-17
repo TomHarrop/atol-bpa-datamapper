@@ -1,11 +1,11 @@
 def safe_get(accessor_fn, default=None):
     """
     Safely evaluates a nested attribute/dict chain using a lambda expression.
-    
+
     Parameters:
         accessor_fn (callable): A lambda that accesses the desired property chain.
         default: The fallback value if any attribute in the chain is None.
-        
+
     Returns:
         The result of accessor_fn() if successful, otherwise `default`.
     """
@@ -13,6 +13,7 @@ def safe_get(accessor_fn, default=None):
         return accessor_fn()
     except (AttributeError, KeyError, TypeError):
         return default
+
 
 def parse_taxon_id(raw):
     if raw is None:

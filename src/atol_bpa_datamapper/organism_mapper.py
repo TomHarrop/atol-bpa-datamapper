@@ -21,6 +21,8 @@ class OrganismSection(dict):
         if self.taxon_id is not None:
             self.organism_grouping_key = f"taxid{self.taxon_id}"
 
+        self.mapped_metadata = self.__dict__
+
     def format_taxon_id(self):
         try:
             self.taxon_id = parse_taxon_id(self.raw_taxon_id)

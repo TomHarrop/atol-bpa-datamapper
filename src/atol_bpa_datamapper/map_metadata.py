@@ -79,30 +79,36 @@ def main():
                 package.mapped_metadata["organism"],
                 null_values,
             )
-            grouping_log[package.id] = [organism_section.mapped_metadata]
-            grouping_key = organism_section.organism_grouping_key
-            if grouping_key is not None:
-                grouped_packages.setdefault(grouping_key, []).append(package.id)
 
-            logger.debug(f"Mapped organism info: {organism_section.mapped_metadata}")
+            if hasattr(organism_section, "organism_grouping_key"):
+                grouping_key = organism_section.organism_grouping_key
+                if grouping_key is not None:
+                    grouped_packages.setdefault(grouping_key, []).append(package.id)
 
-            # overwrite values in the organism section
-            for key, value in organism_section.mapped_metadata.items():
-                if key in package_level_map.expected_fields:
-                    logger.debug(
-                        f"organism_section mapped_metadata has key {key} with value {value}"
-                    )
+            if hasattr(organism_section, "mapped_metadata"):
+                grouping_log[package.id] = [organism_section.mapped_metadata]
 
-                    try:
-                        current_value = package.mapped_metadata["organism"][key]
-                    except KeyError:
-                        current_value = None
+                logger.debug(
+                    f"Mapped organism info: {organism_section.mapped_metadata}"
+                )
 
-                    if not value == current_value:
+                # overwrite values in the organism section
+                for key, value in organism_section.mapped_metadata.items():
+                    if key in package_level_map.expected_fields:
                         logger.debug(
-                            f"Updating organism key {key} from {current_value} to {value}"
+                            f"organism_section mapped_metadata has key {key} with value {value}"
                         )
-                        package.mapped_metadata["organism"][key] = value
+
+                        try:
+                            current_value = package.mapped_metadata["organism"][key]
+                        except KeyError:
+                            current_value = None
+
+                        if not value == current_value:
+                            logger.debug(
+                                f"Updating organism key {key} from {current_value} to {value}"
+                            )
+                            package.mapped_metadata["organism"][key] = value
 
             # map the resource-level metadata
             resource_mapped_metadata = {
@@ -165,9 +171,6 @@ def main():
         if args.mapping_log:
             logger.info(f"Writing mapping log to {args.mapping_log}")
             write_mapping_log_to_csv(mapping_log, args.mapping_log)
-        if args.grouping_log:
-            logger.info(f"Writing grouping log to {args.grouping_log}")
-            write_mapping_log_to_csv(grouping_log, args.grouping_log)
         if args.raw_field_usage:
             logger.info(f"Writing field usage counts to {args.raw_field_usage}")
             write_json(counters["raw_field_usage"], args.raw_field_usage)
@@ -180,6 +183,9 @@ def main():
         if args.mapped_value_usage:
             logger.info(f"Writing BPA value usage counts to {args.mapped_value_usage}")
             write_json(counters["mapped_value_usage"], args.mapped_value_usage)
+        if args.grouping_log:
+            logger.info(f"Writing grouping log to {args.grouping_log}")
+            write_mapping_log_to_csv(grouping_log, args.grouping_log)
         if args.grouped_packages:
             logger.info(f"Writing grouped_packages to {args.grouped_packages}")
             write_json(grouped_packages, args.grouped_packages)
