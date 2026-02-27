@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.0 (2026-02-27)
+
+### Changes
+
+* Check taxon ID is valid but defer all other taxonomy-based lookups.
+
+  fix: check taxon_id is valid
+
+### Fix
+
+* Check taxon_id is valid.
+
 ## v0.2.0 (2026-02-13)
 
 ### New
