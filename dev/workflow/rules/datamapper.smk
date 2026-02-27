@@ -51,20 +51,14 @@ rule mapper_version:
         mapped=Path(result_path, "mapped.jsonl.gz"),
         transformed=Path(result_path, "transformed.jsonl.gz"),
         datasets_timestamp=ancient("resources/datasets.jsonl.gz.TIMESTAMP"),
-        busco_timestamp=ancient("resources/mapping_taxids-busco_dataset_name.TIMESTAMP"),
-        taxdump_timestamp=ancient("resources/new_taxdump/TIMESTAMP"),
     output:
         version=Path(result_path, "mapper_version.txt"),
         datasets_timestamp=Path(result_path, "datasets.jsonl.gz.TIMESTAMP"),
-        busco_timestamp=Path(result_path, "mapping_taxids-busco_dataset_name.TIMESTAMP"),
-        taxdump_timestamp=Path(result_path, "new_taxdump.TIMESTAMP"),
     params:
         version=datamapper_version,
     shell:
         'echo "{params.version}" > {output.version} && '
-        "cp {input.datasets_timestamp} {output.datasets_timestamp} && "
-        "cp {input.busco_timestamp} {output.busco_timestamp} && "
-        "cp {input.taxdump_timestamp} {output.taxdump_timestamp}"
+        "cp {input.datasets_timestamp} {output.datasets_timestamp} "
 
 
 rule transform_data:
@@ -105,6 +99,7 @@ rule transform_data:
         ),
     params:
         call=format_call("transform_data", use_container),
+        organism_ignored_fields="scientific_name",
     log:
         log=Path(result_path, "logs", "transform_data.log"),
     container:
@@ -117,6 +112,7 @@ rule transform_data:
         "--unique_organisms {output.unique_organisms} "
         "--organism_conflicts {output.organism_conflicts} "
         "--organism_package_map {output.organism_package_map} "
+        "--organism_ignored_fields {params.organism_ignored_fields} "
         "--experiments_output {output.experiments_output} "
         "--specimens_output {output.specimens_output} "
         "--specimen_conflicts {output.specimen_conflicts} "
@@ -130,12 +126,6 @@ rule transform_data:
 rule map_metadata:
     input:
         filtered=Path(result_path, "filtered.jsonl.gz"),
-        nodes=ancient("resources/new_taxdump/nodes.dmp"),
-        names=ancient("resources/new_taxdump/names.dmp"),
-        taxids_to_busco_dataset_mapping=ancient(
-            "resources/"
-            "mapping_taxids-busco_dataset_name.eukaryota_odb10.2019-12-16.txt.tar.gz"
-        ),
     output:
         mapped=Path(result_path, "mapped.jsonl.gz"),
         raw_field_usage=Path(result_path, "map_metadata", "raw_field_usage.jsonl.gz"),
@@ -168,12 +158,9 @@ rule map_metadata:
         "--mapped_field_usage {output.mapped_field_usage} "
         "--mapped_value_usage {output.mapped_value_usage} "
         "--mapping_log {log.mapping_log} "
-        "--names {input.names} "
-        "--nodes {input.nodes} "
         "--raw_field_usage {output.raw_field_usage} "
         "--raw_value_usage {output.raw_value_usage} "
         "--sanitization_changes {output.sanitization_changes} "
-        "--taxids_to_busco_dataset_mapping {input.taxids_to_busco_dataset_mapping} "
         "--unused_field_counts {output.unused_field_counts} "
         "<{input.filtered} "
         ">{output.mapped} "
