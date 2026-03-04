@@ -571,6 +571,7 @@ class SpecimenTransformer(EntityTransformer):
 
         merged = sample.copy()
         merged["taxon_id"] = organism.get("taxon_id")
+        merged["organism_grouping_key"] = organism.get("organism_grouping_key")
 
         # Drop this package if key_fields are missing
         for k in self.key_fields:
@@ -1095,6 +1096,8 @@ def main():
     logger.info(f"Found {n_unique_organisms} unique organisms")
     logger.info(f"Found {n_organism_conflicts} organisms with conflicts")
     logger.info(f"Found {len(experiments_data)} experiments")
+    logger.info(f"Found {len(specimen_results['unique_specimens'])} unique specimens")
+    logger.info(f"Found {len(specimen_results['specimen_conflicts'])} specimens with conflicts")
 
 
 if __name__ == "__main__":
