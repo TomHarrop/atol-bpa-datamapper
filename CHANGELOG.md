@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.3.1 (2026-03-06)
+
+### Other
+
+* Merge pull request #41 from TomHarrop/add-organism-key-to-specimens.
+
+  feat: add organism grouping key to specimens
+
+* .gitignore .vscode files.
+
+* Add organism_grouping_key to merged specimens and log specimens in transform_data summary.
+
 ## v0.3.0 (2026-02-27)
 
 ### Changes
