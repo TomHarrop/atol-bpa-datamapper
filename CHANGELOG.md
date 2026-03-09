@@ -1,12 +1,14 @@
 # Changelog
 
+## (unreleased)
+
+### Changes
+
+* Remove organism_grouping_key.
+
 ## v0.3.1 (2026-03-06)
 
 ### Other
-
-* Merge pull request #41 from TomHarrop/add-organism-key-to-specimens.
-
-  feat: add organism grouping key to specimens
 
 * .gitignore .vscode files.
 
@@ -14,31 +16,15 @@
 
 ## v0.3.0 (2026-02-27)
 
-### Changes
-
-* Check taxon ID is valid but defer all other taxonomy-based lookups.
-
-  fix: check taxon_id is valid
-
 ### Fix
 
 * Check taxon_id is valid.
 
 ## v0.2.0 (2026-02-13)
 
-### New
-
-* Identify specimen information for samples.
-
-  new: Identify specimen information for samples
-
 ### Other
 
 * Add NA specimen strings to config.
-
-* Merge pull request #36 from TomHarrop/condense_schema_and_vocab.
-
-  add condense code to read_schema script, should probably split
 
 * Add condense code to read_schema script, should probably split.
 
@@ -76,59 +62,31 @@
 
 ## v0.1.13 (2025-10-17)
 
-### New
-
-* Lookup Augustus dataset for query species.
-
-  Add NCBI taxid to AUGUSTUS dataset
-
 ### Changes
 
 * Prune the NCBI tree to the Augustus datasets, and search for closest.
 
 * Handle boolean optional_file field.
 
-* Remove underscores from organism_grouping_key.
-
-  chg: remove underscores from organism_grouping_key
-
 * Remove underscores from organism_grouping_key (fixes #31)
 
 ### Other
-
-* Merge branch 'oops' into JTUNG25-Augustus_mapping.
 
 * Update taxon names and new species.
 
 * Testing.
 
-* Merge pull request #1 from TomHarrop/jt_augustus_map.
-
-  rename map !cosmetic
-
 * Create taxid_to_AUGUSTUSdataset.tsv.
-
-* Merge pull request #33 from TomHarrop/resource_filter.
-
-  chg: handle boolean optional_file field
 
 ## v0.1.12 (2025-09-11)
 
 ### Changes
-
-* Map assembly type.
-
-  chg: Map assembly type
 
 * Library_type defaults to None (fixes #29)
 
 * Default for library_selection (addresses #29)
 
 ### Other
-
-* Merge pull request #28 from TomHarrop/update-tests.
-
-  chg: update unit and integration tests
 
 * Remove duplicate logic in test, remove redundant factory fixture.
 
@@ -164,20 +122,6 @@
 
 * Update unit tests for config_parser to test default values.
 
-* Merge branch 'main' into update-tests.
-
-* Merge pull request #27 from TomHarrop/extract-experiments.
-
-  new: structure experiments output for database
-
-* Merge branch 'main' into extract-experiments.
-
-# Conflicts
-
-# src/atol_bpa_datamapper/transform_data.py
-
-* Merge branch 'main' into extract-experiments.
-
 * Add tests for transform_data.
 
 * Update contest.py and gitignore.
@@ -186,8 +130,6 @@
 
 * Update tests for package handler.
 
-* Merge branch 'main' into update-tests.
-
 * Add factory fixtures for taxdump, metadata_map and args handler.
 
 * Update unit and integration tests.
@@ -195,12 +137,6 @@
 * Update unit and integration tests.
 
 ## v0.1.11 (2025-08-06)
-
-### New
-
-* Get BUSCO lineage from NCBI taxonomy.
-
-  new: Get BUSCO lineage from NCBI taxonomy
 
 ### Other
 
@@ -216,19 +152,7 @@
 
 * Update README.md.
 
-* Merge pull request #24 from TomHarrop/extract-unique-sample-objects.
-
-  new: Extract unique sample and organism objects
-
-* Merge branch 'main' into extract-unique-sample-objects.
-
 * Update io.py.
-
-* Merge branch 'main' into extract-unique-sample-objects.
-
-# Conflicts
-
-# src/atol_bpa_datamapper/config/field_mapping_bpa_to_atol_packages.json
 
 * Update vocab.
 
@@ -276,12 +200,6 @@
 
 * Update the taxon_id if a single match is found in the taxonomy.
 
-### Other
-
-* Merge pull request #23 from TomHarrop/taxid_snafu.
-
-  new: Update the taxon_id if a single match is found in the taxonomy
-
 ## v0.1.8 (2025-07-03)
 
 ### New
@@ -306,29 +224,13 @@
 
 ### Other
 
-* Vocabularies for Sample, Organism, Experiment and Run sections.
-
-  new: Vocabularies for Sample, Organism, Experiment and Run sections
-
 * Add some terms from the decision log.
 
 * Experiment vocab.
 
-## v0.1.7 (2025-06-11)
-
-### New
-
-* Allow default values in controlled vocab.
-
-  Allow default values in controlled vocab
-
 ## v0.1.6 (2025-06-06)
 
 ### New
-
-* Group Packages by organism during mapping.
-
-  Move organism lookup to mapper
 
 * Group Packages by organism during mapping.
 
@@ -345,12 +247,6 @@
 * Add sex to sample section.
 
 * Map missing values to None during sanitisation.
-
-### Other
-
-* Merge pull request #11 from TomHarrop/8-map-missing-values-to-insdc-accepted-terms.
-
-  Map missing values
 
 ## v0.1.4 (2025-05-26)
 
@@ -379,10 +275,6 @@
 * Parse package metadata schema separately.
 
 ### Other
-
-* Merge pull request #7 from TomHarrop/cleaner-handling-of-nested-resources.
-
-  Cleaner handling of nested resources
 
 * Run manual tests.
 
@@ -416,12 +308,6 @@
 
 ### Other
 
-* Merge pull request #4 from TomHarrop/parse_metadata_spec.
-
-  Parse metadata spec
-
-* Merge pull request #3 from TomHarrop/data-sanitisation-and-mapping.
-
 * Update README.md.
 
 * Ignore resource-level objects during filtering, handle during mapping step only.
@@ -453,14 +339,6 @@
 * Add test case for read fields mapping to parent object properties.
 
 * Save keep attribute.
-
-* Merge branch 'main' into data-sanitisation-and-mapping.
-
-# Conflicts
-
-# .gitignore
-
-# src/atol_bpa_datamapper/config_parser.py
 
 * Add unit tests for mapping nested fields.
 
@@ -531,8 +409,6 @@
 * Cosmetic: changelog.
 
 * Add counts for metadata mapping.
-
-* Merge remote-tracking branch 'refs/remotes/origin/main'
 
 * Test access rights.
 
