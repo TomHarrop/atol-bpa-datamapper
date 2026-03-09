@@ -80,10 +80,8 @@ def main():
                 null_values,
             )
 
-            if hasattr(organism_section, "organism_grouping_key"):
-                grouping_key = organism_section.organism_grouping_key
-                if grouping_key is not None:
-                    grouped_packages.setdefault(grouping_key, []).append(package.id)
+            if organism_section.taxon_id is not None:
+                grouped_packages.setdefault(organism_section.taxon_id, []).append(package.id)
 
             if hasattr(organism_section, "mapped_metadata"):
                 grouping_log[package.id] = [organism_section.mapped_metadata]

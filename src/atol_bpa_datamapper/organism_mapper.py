@@ -18,9 +18,6 @@ class OrganismSection(dict):
         if self.raw_taxon_id is not None:
             self.format_taxon_id()
 
-        if self.taxon_id is not None:
-            self.organism_grouping_key = f"taxid{self.taxon_id}"
-
         self.mapped_metadata = self.__dict__
 
     def format_taxon_id(self):

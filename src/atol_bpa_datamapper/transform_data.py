@@ -5,7 +5,7 @@ This script processes mapped metadata packages to:
 1. Extract unique samples based on bpa_sample_id
 2. Detect and report conflicts in sample attributes
 3. Track which packages (bpa_package_id) relate to each unique sample
-4. Extract unique organisms based on organism_grouping_key
+4. Extract unique organisms based on taxon_id
 """
 
 from .arg_parser import get_config_filepath, parse_args_for_transform
@@ -349,15 +349,14 @@ class EntityTransformer(ABC):
 class OrganismTransformer(EntityTransformer):
     """
     Transform organism data from multiple packages into unique organisms.
-    Organisms are identified by their organism_grouping_key, which is generated
-    in the organism_mapper.py module.
+    Organisms are identified by their taxon_id.
     """
 
     def __init__(self, ignored_fields=None):
-        super().__init__("organism", "organism_grouping_key", ignored_fields)
+        super().__init__("organism", "taxon_id", ignored_fields)
 
     def _get_entity_key(self, entity_data):
-        return entity_data.get("organism_grouping_key")
+        return entity_data.get("taxon_id")
 
     def _build_results(self, unique_entities):
         return {
@@ -383,7 +382,6 @@ class SampleTransformer(EntityTransformer):
     def _pre_process_entity(self, entity_key, entity_data, package_id):
         """
         Pre-process the entity data before adding it to unique entities.
-        This is where we add the organism_grouping_key to the sample data.
         """
         # Check if there's an organism section in the package
         package = None
@@ -394,52 +392,52 @@ class SampleTransformer(EntityTransformer):
         if (
             package
             and "organism" in package
-            and "organism_grouping_key" in package["organism"]
+            and "taxon_id" in package["organism"]
         ):
-            organism_key = package["organism"]["organism_grouping_key"]
+            organism_key = package["organism"]["taxon_id"]
 
             # If this is a new sample, add the organism key directly
             if entity_key not in self.unique_entities:
-                entity_data["organism_grouping_key"] = organism_key
+                entity_data["taxon_id"] = organism_key
             else:
                 # If the sample already exists, check if we need to handle a conflict
                 existing_entity = self.unique_entities[entity_key]
-                if "organism_grouping_key" in existing_entity:
-                    existing_key = existing_entity["organism_grouping_key"]
+                if "taxon_id" in existing_entity:
+                    existing_key = existing_entity["taxon_id"]
                     if existing_key != organism_key:
                         # We have a conflict - record it
                         if entity_key not in self.entity_conflicts:
                             self.entity_conflicts[entity_key] = {}
 
                         if (
-                            "organism_grouping_key"
+                            "taxon_id"
                             not in self.entity_conflicts[entity_key]
                         ):
                             self.entity_conflicts[entity_key][
-                                "organism_grouping_key"
+                                "taxon_id"
                             ] = []
 
                         for key in [existing_key, organism_key]:
                             if (
                                 key
                                 not in self.entity_conflicts[entity_key][
-                                    "organism_grouping_key"
+                                    "taxon_id"
                                 ]
                             ):
                                 self.entity_conflicts[entity_key][
-                                    "organism_grouping_key"
+                                    "taxon_id"
                                 ].append(key)
 
-                        # Set to None if there's a conflict and organism_grouping_key is in ignored fields
+                        # Set to None if there's a conflict and taxon_id is in ignored fields
                         # Otherwise, it will be treated as a critical conflict and the sample will be excluded
-                        if "organism_grouping_key" in self.ignored_fields:
-                            existing_entity["organism_grouping_key"] = None
+                        if "taxon_id" in self.ignored_fields:
+                            existing_entity["taxon_id"] = None
                         logger.warning(
                             f"Sample {entity_key} is associated with multiple organisms: {existing_key} and {organism_key}"
                         )
                 else:
                     # No organism key yet, add it
-                    existing_entity["organism_grouping_key"] = organism_key
+                    existing_entity["taxon_id"] = organism_key
 
     def _get_package_by_id(self, package_id):
         """
@@ -571,7 +569,6 @@ class SpecimenTransformer(EntityTransformer):
 
         merged = sample.copy()
         merged["taxon_id"] = organism.get("taxon_id")
-        merged["organism_grouping_key"] = organism.get("organism_grouping_key")
 
         # Drop this package if key_fields are missing
         for k in self.key_fields:
