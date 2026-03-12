@@ -19,6 +19,7 @@ result_path = Path("results", result_base)
 include: "rules/analysis.smk"
 include: "rules/datamapper.smk"
 include: "rules/pull_bpa_db.smk"
+include: "rules/reference_data_lookups.smk"
 
 
 rule target:
@@ -26,3 +27,4 @@ rule target:
     input:
         rules.mapper_version.output,
         rules.analysis_target.input,
+        rules.taxonomy_version.output,

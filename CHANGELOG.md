@@ -1,5 +1,11 @@
 # Changelog
 
+## (unreleased)
+
+### Changes
+
+* Remove organism_grouping_key.
+
 ## v0.3.1 (2026-03-06)
 
 ### Other
