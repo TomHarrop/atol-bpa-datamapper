@@ -10,8 +10,10 @@ description = "Map data from the BPA data portal for AToL's Genome Engine"
 readme = "README.md"
 license = { text = "GPL-3.0-or-later" }
 authors = [
-    { name = "Tom Harrop", email = "tharrop@unimelb.edu.au" },
+    { name = "Amy Tims", email = "amy.tims@unimelb.edu.au" },
     { name = "Emily Marshall", email = "emily@biocommons.org.au" },
+    { name = "Keeva Connolly", email = "keeva.connolly@qcif.edu.au" },
+    { name = "Tom Harrop", email = "tharrop@unimelb.edu.au" },
 ]
 requires-python = ">=3.12,<3.15"
 classifiers = [
