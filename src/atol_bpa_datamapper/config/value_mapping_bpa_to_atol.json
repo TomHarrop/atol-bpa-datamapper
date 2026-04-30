@@ -19,6 +19,7 @@
                 "HiSeq 2514",
                 "HiSeq 2515",
                 "HiSeq 2516",
+                "HiSeq 2517",
                 "HiSeq 2518",
                 "HiSeq 2519",
                 "HiSeq 2520",
@@ -26,7 +27,6 @@
                 "Illumina HiSeq 2500"
             ],
             "Illumina MiSeq": [
-                "HiSeq 2517",
                 "Illumina MiSeq",
                 "MiSeq"
             ],

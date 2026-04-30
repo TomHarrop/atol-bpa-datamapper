@@ -15,28 +15,35 @@ rule taxonomy_version:
 rule reference_data_lookups:
     input:
         taxid_list=Path(result_path, "organism_info", "all_taxon_ids.txt"),
-        taxids_to_busco_dataset_mapping=Path(
+        busco_odb12_dataset_mapping=Path(
             "resources",
             "mapping_taxids-busco_dataset_name.eukaryota_odb12.2025-01-15.txt.tar.gz",
         ),
+        busco_odb10_dataset_mapping=Path(
+            "resources",
+            "mapping_taxids-busco_dataset_name.eukaryota_odb10.2019-12-16.txt.tar.gz",
+        ),
         nodes=Path("resources", "new_taxdump", "nodes.dmp"),
         names=Path("resources", "new_taxdump", "names.dmp"),
+        oatk_taxid_file=Path("resources", "oatk.TAXID.tsv"),
     output:
         reference_data=Path(
             result_path, "organism_info", "organism_reference_data.json"
         ),
-    params:
-        cache_dir=Path("resources", "cache"),
     log:
         Path(result_path, "logs", "reference_data_lookups.log"),
     container:
-        "docker://quay.io/biocontainers/atol-reference-data-lookups:0.2.0--pyhdfd78af_0"
+        "docker://quay.io/biocontainers/atol-reference-data-lookups:0.4.0--pyhdfd78af_0"
+    params:
+        cache_dir=Path("resources", "cache"),
     shell:
         "atol-reference-data-lookups "
         "--taxid-list {input.taxid_list} "
         "--nodes {input.nodes} "
         "--names {input.names} "
-        "--taxids_to_busco_dataset_mapping {input.taxids_to_busco_dataset_mapping} "
+        "--taxids_to_busco_odb12_dataset_mapping {input.busco_odb12_dataset_mapping} "
+        "--taxids_to_busco_odb10_dataset_mapping {input.busco_odb10_dataset_mapping} "
+        "--oatk_taxid_file {input.oatk_taxid_file} "
         "--cache_dir {params.cache_dir} "
         "> {output.reference_data} "
         "2> {log}"
@@ -62,16 +69,20 @@ rule get_reference_data:
     output:
         nodes=Path("resources", "new_taxdump", "nodes.dmp"),
         names=Path("resources", "new_taxdump", "names.dmp"),
-        taxids_to_busco_dataset_mapping=Path(
+        busco_odb12_dataset_mapping=Path(
             "resources",
             "mapping_taxids-busco_dataset_name.eukaryota_odb12.2025-01-15.txt.tar.gz",
         ),
+        busco_odb10_dataset_mapping=Path(
+            "resources",
+            "mapping_taxids-busco_dataset_name.eukaryota_odb10.2019-12-16.txt.tar.gz",
+        ),
+        oatk_taxid_file=Path("resources", "oatk.TAXID.tsv"),
         timestamp=Path("resources", "new_taxdump", "TIMESTAMP"),
     log:
         Path(result_path, "logs", "get_reference_data.log"),
-    retries:
-        2
+    retries: 2
     container:
-        "docker://quay.io/biocontainers/atol-reference-data-lookups:0.2.0--pyhdfd78af_0"
+        "docker://quay.io/biocontainers/atol-reference-data-lookups:0.4.0--pyhdfd78af_0"
     shell:
         "get-remote-files &> {log}"

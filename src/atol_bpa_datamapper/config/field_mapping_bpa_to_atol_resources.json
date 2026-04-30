@@ -25,6 +25,9 @@
         "bioplatforms_url": [
             "resources.url"
         ],
+        "bioplatforms_base_url": [
+            "base_url"
+        ],
         "read_number": [
             "resources.read"
         ],
