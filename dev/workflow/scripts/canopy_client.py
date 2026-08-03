@@ -3,10 +3,8 @@
 from collections.abc import Generator
 import gzip
 import json
-from pathlib import Path
 import urllib
 
-from atol_bpa_datamapper.io import read_gzip_textfile
 import requests
 
 
