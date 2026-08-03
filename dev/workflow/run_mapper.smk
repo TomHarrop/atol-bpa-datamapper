@@ -20,6 +20,7 @@ include: "rules/analysis.smk"
 include: "rules/datamapper.smk"
 include: "rules/pull_bpa_db.smk"
 include: "rules/reference_data_lookups.smk"
+include: "rules/push_to_canopy.smk"
 
 
 rule target:
