@@ -12,7 +12,7 @@ def get_request_body(json_file: str) -> Generator[dict[str, str]]:
     if json_file.endswith(".gz"):
         f = gzip.open(json_file, "rt")
     else:
-        raise NotImplementedError(json_file)
+        raise NotImplementedError(f"TODO: read {json_file} in get_request_body")
 
     return json.loads(f.read())
 
@@ -38,7 +38,7 @@ def main():
     request_url = urllib.parse.urljoin(_api_url, endpoint_url)
 
     if request_type == "GET":
-        raise NotImplementedError("TODO implement GET")
+        raise NotImplementedError("TODO: implement GET")
     if request_type == "POST":
         response = requests.post(
             request_url, headers=request_header, data=json.dumps(request_body)
