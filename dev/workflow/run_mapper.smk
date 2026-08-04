@@ -26,6 +26,7 @@ include: "rules/push_to_canopy.smk"
 rule target:
     default_target: True
     input:
-        rules.mapper_version.output,
         rules.analysis_target.input,
+        rules.experiments_bulk_import.output,
+        rules.mapper_version.output,
         rules.taxonomy_version.output,

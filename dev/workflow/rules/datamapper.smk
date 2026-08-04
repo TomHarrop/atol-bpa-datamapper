@@ -49,7 +49,7 @@ rule mapper_version:
     input:
         filtered=Path(result_path, "filtered.jsonl.gz"),
         mapped=Path(result_path, "mapped.jsonl.gz"),
-        transformed=Path(result_path, "transformed.jsonl.gz"),
+        transformed=Path(result_path, "transformed.json.gz"),
         datasets_timestamp=ancient("resources/datasets.jsonl.gz.TIMESTAMP"),
     output:
         version=Path(result_path, "mapper_version.txt"),
@@ -65,7 +65,7 @@ rule transform_data:
     input:
         mapped=Path(result_path, "mapped.jsonl.gz"),
     output:
-        transformed=Path(result_path, "transformed.jsonl.gz"),
+        transformed=Path(result_path, "transformed.json.gz"),
         sample_conflicts=Path(
             result_path, "transform_data", "sample_conflicts.jsonl.gz"
         ),
@@ -76,7 +76,7 @@ rule transform_data:
             result_path, "transform_data", "transformation_changes.jsonl.gz"
         ),
         unique_organisms=Path(
-            result_path, "transform_data", "unique_organisms.jsonl.gz"
+            result_path, "transform_data", "unique_organisms.json.gz"
         ),
         organism_conflicts=Path(
             result_path, "transform_data", "organism_conflicts.jsonl.gz"
