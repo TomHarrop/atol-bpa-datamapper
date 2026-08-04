@@ -1,5 +1,29 @@
 # Changelog
 
+## v0.4.3 (2026-08-04)
+
+### New
+
+* Push data mapper output to test Canopy instance.
+
+### Other
+
+* Merge pull request #45 from TomHarrop/push_to_canopy.
+
+  Push to canopy
+
+## v0.4.2 (2026-07-14)
+
+### Other
+
+* Add venom.
+
+## v0.4.1 (2026-04-30)
+
+### Changes
+
+* Output base_url.
+
 ## v0.4.0 (2026-03-12)
 
 ### Changes
