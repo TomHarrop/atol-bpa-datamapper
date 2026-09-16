@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.5.0 (2026-09-16)
+
+### New
+
+* Modify the organism output with jq and feed it to Canopy (fixes #46)
+
+### Other
+
+* Merge pull request #47 from TomHarrop/46-overwrite-the-value-of-augustus_dataset_name-with-eg-tiberius_modelvertebrates.
+
 ## v0.4.3 (2026-08-04)
 
 ### New
