@@ -110,7 +110,9 @@ rule samples_bulk_import_specimens:
 # https://github.com/AustralianBioCommons/atol-canopy/issues/42
 rule taxonomy_info_bulk_upsert:
     input:
-        request_body=Path(result_path, "organism_info", "organism_reference_data.json"),
+        request_body=Path(
+            result_path, "organism_info", "organism_reference_data_tiberius.json"
+        ),
         organisms_bulk_import=Path(
             result_path, "canopy_import", "organisms_bulk_import.response"
         ),

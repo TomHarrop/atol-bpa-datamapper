@@ -12,6 +12,33 @@ rule taxonomy_version:
         "cp {input.timestamp} {output.timestamp} "
 
 
+rule modify_organisms_output:
+    input:
+        reference_data=Path(
+            result_path, "organism_info", "organism_reference_data.json"
+        ),
+    output:
+        reference_data=Path(
+            result_path, "organism_info", "organism_reference_data_tiberius.json"
+        ),
+    log:
+        Path(result_path, "logs", "modify_organisms_output.log"),
+    container:
+        container_uri if use_container else None
+    shell:
+        "jq "
+        "'with_entries( "
+        "    if .value.tiberius_model_cfg != null then "
+        '        .value.augustus_dataset_name = ("tiberius_model_cfg:" + .value.tiberius_model_cfg) '
+        "    else "
+        "        . "
+        "    end "
+        "| del(.value.tiberius_model_cfg) "
+        ")' "
+        "< {input.reference_data} "
+        "> {output.reference_data} "
+
+
 rule reference_data_lookups:
     input:
         taxid_list=Path(result_path, "organism_info", "all_taxon_ids.txt"),
@@ -26,6 +53,7 @@ rule reference_data_lookups:
         nodes=Path("resources", "new_taxdump", "nodes.dmp"),
         names=Path("resources", "new_taxdump", "names.dmp"),
         oatk_taxid_file=Path("resources", "oatk.TAXID.tsv"),
+        tiberius_map_file=Path("resources", "tiberius_map.tsv.gz"),
     output:
         reference_data=Path(
             result_path, "organism_info", "organism_reference_data.json"
@@ -33,7 +61,7 @@ rule reference_data_lookups:
     log:
         Path(result_path, "logs", "reference_data_lookups.log"),
     container:
-        "docker://quay.io/biocontainers/atol-reference-data-lookups:0.4.0--pyhdfd78af_0"
+        "docker://quay.io/biocontainers/atol-reference-data-lookups:0.5.0--pyhdfd78af_0"
     params:
         cache_dir=Path("resources", "cache"),
     shell:
@@ -44,6 +72,7 @@ rule reference_data_lookups:
         "--taxids_to_busco_odb12_dataset_mapping {input.busco_odb12_dataset_mapping} "
         "--taxids_to_busco_odb10_dataset_mapping {input.busco_odb10_dataset_mapping} "
         "--oatk_taxid_file {input.oatk_taxid_file} "
+        "--tiberius_map_file {input.tiberius_map_file} "
         "--cache_dir {params.cache_dir} "
         "> {output.reference_data} "
         "2> {log}"
@@ -83,6 +112,6 @@ rule get_reference_data:
         Path(result_path, "logs", "get_reference_data.log"),
     retries: 2
     container:
-        "docker://quay.io/biocontainers/atol-reference-data-lookups:0.4.0--pyhdfd78af_0"
+        "docker://quay.io/biocontainers/atol-reference-data-lookups:0.5.0--pyhdfd78af_0"
     shell:
         "get-remote-files &> {log}"
