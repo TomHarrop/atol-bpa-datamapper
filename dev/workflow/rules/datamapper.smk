@@ -51,6 +51,7 @@ rule mapper_version:
         mapped=Path(result_path, "mapped.jsonl.gz"),
         transformed=Path(result_path, "transformed.json.gz"),
         datasets_timestamp=ancient("resources/datasets.jsonl.gz.TIMESTAMP"),
+        sorted_by_creation_date=Path(result_path, "packages_by_date"),
     output:
         version=Path(result_path, "mapper_version.txt"),
         datasets_timestamp=Path(result_path, "datasets.jsonl.gz.TIMESTAMP"),
@@ -75,9 +76,7 @@ rule transform_data:
         transformation_changes=Path(
             result_path, "transform_data", "transformation_changes.jsonl.gz"
         ),
-        unique_organisms=Path(
-            result_path, "transform_data", "unique_organisms.json.gz"
-        ),
+        unique_organisms=Path(result_path, "transform_data", "unique_organisms.json.gz"),
         organism_conflicts=Path(
             result_path, "transform_data", "organism_conflicts.jsonl.gz"
         ),
@@ -97,13 +96,13 @@ rule transform_data:
         specimen_transformation_changes=Path(
             result_path, "transform_data", "specimen_transformation_changes.json.gz"
         ),
-    params:
-        call=format_call("transform_data", use_container),
-        organism_ignored_fields="scientific_name",
     log:
         log=Path(result_path, "logs", "transform_data.log"),
     container:
         container_uri if use_container else None
+    params:
+        call=format_call("transform_data", use_container),
+        organism_ignored_fields="scientific_name",
     shell:
         "{params.call} "
         "--sample_conflicts {output.sample_conflicts} "
@@ -143,14 +142,14 @@ rule map_metadata:
         sanitization_changes=Path(
             result_path, "map_metadata", "sanitization_changes.jsonl.gz"
         ),
-    params:
-        call=format_call("map_metadata", use_container),
     log:
         log=Path(result_path, "logs", "map_metadata.log"),
         mapping_log=Path(result_path, "map_metadata", "mapping_log.csv.gz"),
         grouping_log=Path(result_path, "map_metadata", "grouping_log.csv.gz"),
     container:
         container_uri if use_container else None
+    params:
+        call=format_call("map_metadata", use_container),
     shell:
         "{params.call} "
         "--grouped_packages {output.grouped_packages} "
@@ -175,13 +174,13 @@ rule filter_packages:
         raw_field_usage=Path(result_path, "filter_packages", "raw_field_usage.jsonl.gz"),
         bpa_field_usage=Path(result_path, "filter_packages", "bpa_field_usage.jsonl.gz"),
         bpa_value_usage=Path(result_path, "filter_packages", "bpa_value_usage.jsonl.gz"),
-    params:
-        call=format_call("filter_packages", use_container),
     log:
         log=Path(result_path, "logs", "filter_packages.log"),
         decision_log=Path(result_path, "filter_packages", "decision_log.csv.gz"),
     container:
         container_uri if use_container else None
+    params:
+        call=format_call("filter_packages", use_container),
     shell:
         "{params.call} "
         "--bpa_field_usage {output.bpa_field_usage} "
@@ -191,3 +190,16 @@ rule filter_packages:
         "< {input.bpa_data} "
         "> {output.filtered} "
         "2> {log.log}"
+
+
+rule sort_by_creation_date:
+    input:
+        bpa_data="resources/datasets.jsonl.gz",
+    output:
+        outdir=directory(Path(result_path, "packages_by_date")),
+    log:
+        Path(result_path, "logs", "sort_by_creation_date.log"),
+    container:
+        container_uri if use_container else None
+    script:
+        "../scripts/sort_by_creation_date.py"
