@@ -121,19 +121,20 @@ def parse_date(raw_date: str, date_format: str) -> datetime.date:
     return transfer_date
 
 
-package_by_initiative = {"REJECTED": []}
+def sanitise_initiative_name(initiative_name: str) -> str:
+    return re.sub(r"[\W_]+", "", initiative_name)
 
 
 def main():
 
-    if snakemake:
+    try:
         metadata_path = Path(snakemake.input["bpa_data"])
         outdir = Path(snakemake.output["outdir"])
         fh = FileHandler(snakemake.log[0])
         fh.setLevel(logger.level)
         logger.handlers.clear()
         logger.addHandler(fh)
-    else:
+    except NameError:
         args = parse_args()
         metadata_path = args.metadata_path
         outdir = args.outdir
@@ -141,6 +142,8 @@ def main():
     # starting script
     logger.info(f"Starting script")
     i, j = (0, 0)
+
+    package_by_initiative = {"REJECTED": []}
 
     for package in read_jsonl_file(metadata_path):
         # don't look at Packages with no data
@@ -175,12 +178,23 @@ def main():
     # check if the output directory exists
     _ = outdir.mkdir(parents=True, exist_ok=True)
 
+    # sort the dict for easy tab finding
+    package_by_initiative = dict(
+        sorted(
+            package_by_initiative.items(), key=lambda x: sanitise_initiative_name(x[0])
+        )
+    )
+
     # write the output
-    for k, v in package_by_initiative.items():
-        filename = Path(outdir, f"{re.sub(r"[\W_]+", "", k)}.csv.gz")
-        df = pd.DataFrame(v).sort_values(by="package_date", ascending=False)
-        logger.info(f"Writing {k} output to {filename}.")
-        df.to_csv(filename, index=False)
+    with pd.ExcelWriter(Path(outdir, "all_packages.xlsx")) as writer:
+        for k, v in package_by_initiative.items():
+            sanitised_name = sanitise_initiative_name(k)
+            filename = Path(outdir, f"{sanitised_name}.csv.gz")
+            df = pd.DataFrame(v).sort_values(by="package_date", ascending=False)
+            logger.info(f"Writing {k} output to {filename}.")
+            df.to_csv(filename, index=False)
+            logger.info(f"Adding {k} output to all_packages.xlsx.")
+            df.to_excel(writer, sheet_name=sanitised_name, index=False)
 
 
 if __name__ == "__main__":
