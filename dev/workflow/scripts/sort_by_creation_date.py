@@ -15,7 +15,7 @@ def check_data_type(package_summary: dict[str, str]) -> tuple[bool, str]:
     try:
         verbatim_data_type = package_summary.get("verbatim_data_type", "").lower()
     except AttributeError:
-        return (False, "")
+        verbatim_data_type = ""
 
     if "pacbio-hifi" in verbatim_data_type:
         return (True, "pacbio-hifi")
