@@ -214,3 +214,28 @@ mapping spec can be generated from [AToL's metadata
 schema](https://docs.google.com/spreadsheets/d/1ml5hASZ-qlAuuTrwHeGzNVqqe1mXsmmoDTekd6d9pto)
 using the script at
 [`dev/scripts/read_atol_schemas.py`](dev/scripts/read_atol_schemas.py).
+
+### Mapper workflow
+
+A Snakemake workflow for using the Mapper is included at
+dev/workflow/run_mapper.smk.
+
+The following steps are included, with logging:
+
+1. Dump the BPA database and [look up reference
+   information](https://github.com/TomHarrop/atol-reference-data-lookups) used
+   in the assembly process.
+2. Run the [filtering](#filter-packages), [mapping](#map-metadata-1) and
+   [transformation](#transform-data) steps.
+3. POST the transformed data to Canopy.
+
+The workflow requires the DM_CONTAINER environment variable to run. Set to `0`
+to run against the local codebase.
+
+```bash
+DM_CONTAINER="docker://quay.io/biocontainers/atol-bpa-datamapper:0.5.0--pyhdfd78af_0" \
+    snakemake \
+    -s dev/workflow/run_mapper.smk
+```
+
+![](assets/graph.png)
